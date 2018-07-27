@@ -28,6 +28,7 @@ commit_pkg(){
         source trunk/PKGBUILD
         [[ $arch == 'any' ]] && CARCH=any
         local ver=$(get_full_version "${package}")
+        local commit_msg=""
 
         if ${remove};then
             local action='remove'
@@ -39,13 +40,19 @@ commit_pkg(){
                 git rm -r repos/"${source_repo}-$CARCH"
             fi
             msg "Action: [%s] '%s' %s" "${source_repo}" "$pkg" "${action}"
-            git commit -m "[${source_repo}] '$pkg' ${action}"
+            commit_msg="[${source_repo}] '$pkg' ${action}"
         else
             local action='modify'
             msg "Action: [%s] '%s' %s" "${source_repo}" "${package}-$ver" "${action}"
             git add .
-            git commit -m "[${source_repo}] '${package}-$ver' ${action}"
+            commit_msg="[${source_repo}] '${package}-$ver' ${action}"
         fi
+        git commit -m "$commit_msg"
+
+        cd ${tree_dir_artix}/${git_tree}
+        subrepo_push "${package}"
+        git add ${package}/.gitrepo
+        git commit -m "$commit_msg"
 
         if ${push};then
             msg "Checking (%s)" "${git_tree}"
@@ -86,10 +93,15 @@ symlink_commit_pkg(){
             cp repos/$src/* repos/$dest/
             git rm -r repos/$src
         fi
-
         msg "Action: [%s] -> [%s] '%s' %s" "${source_repo}" "${target_repo}" "${package}-$ver" "${action}"
+        local commit_msg="[${source_repo}] -> [${target_repo}] '${package}-$ver' ${action}"
         git add .
-        git commit -m "[${source_repo}] -> [${target_repo}] '${package}-$ver' ${action}"
+        git commit -m "$commit_msg"
+
+        cd ${tree_dir_artix}/${git_tree}
+        subrepo_push "${package}"
+        git add ${package}/.gitrepo
+        git commit -m "$commit_msg"
 
         if ${push};then
             msg "Checking (%s)" "${git_tree}"
