@@ -165,6 +165,7 @@ from_arch(){
 
         mkdir $pkg
         subrepo_init "$pkg"
+        write_jenkinsfile "$pkg"
         create_repo "$pkg"
 
         info "Import from archlinux (%s)" "$git_tree_arch"
