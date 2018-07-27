@@ -37,7 +37,7 @@ pull_tree_arch(){
 
 pull_tree_artix(){
     cd ${tree_dir_artix}
-    for tree in system world galaxy lib32;do
+    for tree in packages packages-galaxy;do
         if [[ -d ${tree} ]];then
             cd ${tree}
                 git config --bool pull.rebase true
@@ -59,7 +59,7 @@ pull_tree_artix(){
 
 show_version_table(){
     msg_table_header "%-20s %-20s %-25s %-30s %-30s" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version"
-    for tree in system world galaxy lib32;do
+    for tree in packages packages-galaxy;do
         local git=$(find ${tree_dir_artix}/$tree/ -mindepth 1 -maxdepth 1 -type d)
         for pkg_path in ${git[@]}; do
             local artixrepo=$(find_repo "$pkg_path" "${unstable}" "${staging}")
