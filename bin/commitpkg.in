@@ -18,7 +18,7 @@ DATADIR='@datadir@'
 [[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
 import ${LIBDIR}/util.sh
 import ${LIBDIR}/util-pkg.sh
-import ${LIBDIR}/util-gitea.sh
+import ${LIBDIR}/util-pkg-gitea.sh
 
 commit_pkg(){
     local git_tree=$(find_tree "${tree_dir_artix}" "${package}")
