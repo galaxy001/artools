@@ -18,6 +18,7 @@ DATADIR='@datadir@'
 [[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
 import ${LIBDIR}/util.sh
 import ${LIBDIR}/util-pkg.sh
+import ${LIBDIR}/util-gitea.sh
 
 pull_tree_arch(){
     cd ${tree_dir_arch}

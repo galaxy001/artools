@@ -60,6 +60,12 @@ init_artools_base(){
 
 init_artools_pkg(){
 
+    [[ -z ${git_domain} ]] && git_domain='gitea.artixlinux.org'
+
+    [[ -z ${git_url} ]] && git_url="https://${git_domain}"
+
+    [[ -z ${git_token} ]] && git_token=''
+
     [[ -z ${tree_dir_artix} ]] && tree_dir_artix=${workspace_dir}/artix
 
     [[ -z ${host_tree_artix} ]] && host_tree_artix='https://github.com/artix-linux'

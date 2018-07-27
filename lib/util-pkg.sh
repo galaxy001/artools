@@ -77,6 +77,30 @@ patch_pkg(){
     esac
 }
 
+write_jenkinsfile(){
+    local pkg="$1" jenkins=Jenkinsfile
+    echo '@Library(["PackagePipeline", "BuildPkg", "DeployPkg", "Notify", "PostBuild", "RepoPackage"]) import org.artixlinux.RepoPackage' > $pkg/$jenkins
+    echo '' >> $pkg/$jenkins
+    echo 'PackagePipeline(new RepoPackage(this))' >> $pkg/$jenkins
+    echo '' >> $pkg/$jenkins
+}
+
+subrepo_init(){
+    local pkg="$1"
+    git subrepo init $pkg -r gitea@${git_domain}:packages/$pkg.git -b master
+}
+
+subrepo_push(){
+    local pkg="$1"
+    git subrepo push -u "$pkg" -b master
+}
+
+find_repo_pkgs(){
+    local repo="$1"
+    local pkgs=$(find $tree -type d -path "*repos/$repo-*")
+    echo ${pkgs[@]}
+}
+
 find_tree(){
     local tree="$1" pkg="$2"
     local result=$(find $tree -mindepth 2 -maxdepth 2 -type d -name "$pkg")
