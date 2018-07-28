@@ -68,7 +68,7 @@ init_artools_pkg(){
 
     [[ -z ${tree_dir_artix} ]] && tree_dir_artix=${workspace_dir}/artix
 
-    [[ -z ${host_tree_artix} ]] && host_tree_artix="${git_url}/artix"
+    [[ -z ${host_tree_artix} ]] && host_tree_artix="gitea@gitea.artixlinux.org:artix"
 
     [[ -z ${tree_dir_arch} ]] && tree_dir_arch=${workspace_dir}/archlinux
 

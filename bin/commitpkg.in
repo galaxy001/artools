@@ -39,13 +39,14 @@ commit_pkg(){
                 local pkg="${package}-$ver"
                 git rm -r repos/"${source_repo}-$CARCH"
             fi
-            msg "Action: [%s] '%s' %s" "${source_repo}" "$pkg" "${action}"
             commit_msg="[${source_repo}] '$pkg' ${action}"
+            msg "Action: %s" "$commit_msg"
         else
             local action='modify'
-            msg "Action: [%s] '%s' %s" "${source_repo}" "${package}-$ver" "${action}"
-            git add .
             commit_msg="[${source_repo}] '${package}-$ver' ${action}"
+            msg "Action: %s" "$commit_msg"
+            git add .
+
         fi
         git commit -m "$commit_msg"
 
@@ -54,8 +55,8 @@ commit_pkg(){
         subrepo_push "${package}"
         sleep 1
 
-        git add .
-        git commit -m "$commit_msg"
+#         git add .
+#         git commit -m "$commit_msg"
 
         if ${push};then
             msg "Checking (%s)" "${git_tree}"
@@ -96,8 +97,8 @@ symlink_commit_pkg(){
             cp repos/$src/* repos/$dest/
             git rm -r repos/$src
         fi
-        msg "Action: [%s] -> [%s] '%s' %s" "${source_repo}" "${target_repo}" "${package}-$ver" "${action}"
         local commit_msg="[${source_repo}] -> [${target_repo}] '${package}-$ver' ${action}"
+        msg "Action: %s" "$commit_msg"
         git add .
         git commit -m "$commit_msg"
 
@@ -106,8 +107,8 @@ symlink_commit_pkg(){
         subrepo_push "${package}"
         sleep 1
 
-        git add .
-        git commit -m "$commit_msg"
+#         git add .
+#         git commit -m "$commit_msg"
 
         if ${push};then
             msg "Checking (%s)" "${git_tree}"

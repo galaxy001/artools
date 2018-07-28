@@ -163,9 +163,8 @@ from_arch(){
 
         dest=${tree_dir_artix}/$git_tree_artix/$pkg/trunk
 
-        mkdir $pkg
+#         mkdir $pkg
         subrepo_init "$pkg"
-        write_jenkinsfile "$pkg"
         create_repo "$pkg"
 
         info "Import from archlinux (%s)" "$git_tree_arch"
