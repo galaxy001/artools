@@ -18,7 +18,7 @@ DATADIR='@datadir@'
 [[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
 import ${LIBDIR}/util.sh
 import ${LIBDIR}/util-pkg.sh
-import ${LIBDIR}/util-pkg-gitea.sh
+import ${LIBDIR}/util-pkg-subrepo.sh
 
 commit_pkg(){
     local git_tree=$(find_tree "${tree_dir_artix}" "${package}")
@@ -54,7 +54,7 @@ commit_pkg(){
         subrepo_push "${package}"
         sleep 1
 
-        git add ${package}/.gitrepo
+        git add .
         git commit -m "$commit_msg"
 
         if ${push};then
@@ -106,7 +106,7 @@ symlink_commit_pkg(){
         subrepo_push "${package}"
         sleep 1
 
-        git add ${package}/.gitrepo
+        git add .
         git commit -m "$commit_msg"
 
         if ${push};then
