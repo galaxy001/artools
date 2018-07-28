@@ -22,14 +22,3 @@ add_repo_to_team(){
 
     curl -X PUT "${git_url}/api/v1/teams/$id/repos/packages/$pkg?access_token=${git_token}" -H  "accept: application/json"
 }
-
-migrate(){
-    local tree="$1" repo="$2" id=0
-    local pkgs=$(find_repo_pkgs "$repo")
-    for p in ${pkgs[@]}; do
-        local name=${p%/repos*}
-        create_repo "${name##*/}"
-#         delete_repo "${name##*/}"
-        add_repo_to_team "${name##*/}" "$repo"
-    done
-}

@@ -95,10 +95,20 @@ subrepo_push(){
     git subrepo push -u "$pkg" -b master
 }
 
+subrepo_pull(){
+    local pkg="$1" name="${2:-$1}"
+    git subrepo pull "$pkg" -b master -r gitea@${git_domain}:packages/$name.git -u
+}
+
+subrepo_clone(){
+    local pkg="$1" name="${2:-$1}"
+    git subrepo clone gitea@gitea.artixlinux.org:packages/$pkg.git "$name" -b master
+}
+
 find_repo_pkgs(){
     local repo="$1"
     local pkgs=$(find $tree -type d -path "*repos/$repo-*")
-    echo ${pkgs[@]}
+    echo ${pkgs[*]}
 }
 
 find_tree(){

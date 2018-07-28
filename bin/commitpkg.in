@@ -50,7 +50,9 @@ commit_pkg(){
         git commit -m "$commit_msg"
 
         cd ${tree_dir_artix}/${git_tree}
+        subrepo_pull "${package}"
         subrepo_push "${package}"
+
         git add ${package}/.gitrepo
         git commit -m "$commit_msg"
 
@@ -99,7 +101,9 @@ symlink_commit_pkg(){
         git commit -m "$commit_msg"
 
         cd ${tree_dir_artix}/${git_tree}
+        subrepo_pull "${package}"
         subrepo_push "${package}"
+
         git add ${package}/.gitrepo
         git commit -m "$commit_msg"
 
