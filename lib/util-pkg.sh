@@ -77,6 +77,14 @@ patch_pkg(){
     esac
 }
 
+write_jenkinsfile(){
+    local pkg="$1" jenkins=Jenkinsfile
+    echo '@Library(["PackagePipeline", "BuildPkg", "DeployPkg", "Notify", "PostBuild", "RepoPackage"]) import org.artixlinux.RepoPackage' > $pkg/$jenkins
+    echo '' >> $pkg/$jenkins
+    echo 'PackagePipeline(new RepoPackage(this))' >> $pkg/$jenkins
+    echo '' >> $pkg/$jenkins
+}
+
 find_tree(){
     local tree="$1" pkg="$2"
     local result=$(find $tree -mindepth 2 -maxdepth 2 -type d -name "$pkg")
