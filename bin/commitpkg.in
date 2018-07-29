@@ -51,16 +51,12 @@ commit_pkg(){
         git commit -m "$commit_msg"
 
         cd ${tree_dir_artix}/${git_tree}
-#         subrepo_pull "${package}"
-        subrepo_push "${package}"
-        sleep 1
-
-#         git add .
-#         git commit -m "$commit_msg"
 
         if ${push};then
             msg "Checking (%s)" "${git_tree}"
             git pull origin master
+            subrepo_push "${package}"
+            sleep 1
             git push origin master
         fi
     else
@@ -99,20 +95,17 @@ symlink_commit_pkg(){
         fi
         local commit_msg="[${source_repo}] -> [${target_repo}] '${package}-$ver' ${action}"
         msg "Action: %s" "$commit_msg"
+
         git add .
         git commit -m "$commit_msg"
 
         cd ${tree_dir_artix}/${git_tree}
-#         subrepo_pull "${package}"
-        subrepo_push "${package}"
-        sleep 1
-
-#         git add .
-#         git commit -m "$commit_msg"
 
         if ${push};then
             msg "Checking (%s)" "${git_tree}"
             git pull origin master
+            subrepo_push "${package}"
+            sleep 1
             git push origin master
         fi
     else
