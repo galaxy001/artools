@@ -20,7 +20,8 @@ get_compliant_name(){
 
 create_repo(){
     local pkg="$1"
-    curl -X POST "${git_url}/api/v1/org/packages/repos?access_token=${git_token}" -H "accept: application/json" -H "content-type: application/json" -d "{ \"auto_init\": true, \"name\":\"$pkg\", \"readme\": \"Default\" }"
+    local gitname=$(get_compliant_name "$pkg")
+    curl -X POST "${git_url}/api/v1/org/packages/repos?access_token=${git_token}" -H "accept: application/json" -H "content-type: application/json" -d "{ \"auto_init\": true, \"name\":\"$gitname\", \"readme\": \"Default\" }"
 }
 
 delete_repo(){
