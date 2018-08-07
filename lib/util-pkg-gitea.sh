@@ -20,8 +20,7 @@ get_compliant_name(){
 
 create_repo(){
     local pkg="$1"
-    local gitname=$(get_compliant_name "$pkg")
-    curl -X POST "${git_url}/api/v1/org/packages/repos?access_token=${git_token}" -H "accept: application/json" -H "content-type: application/json" -d "{\"name\":\"$gitname\"}"
+    curl -X POST "${git_url}/api/v1/org/packages/repos?access_token=${git_token}" -H "accept: application/json" -H "content-type: application/json" -d "{ \"auto_init\": true, \"name\":\"$pkg\", \"readme\": \"Default\" }"
 }
 
 delete_repo(){
@@ -30,15 +29,30 @@ delete_repo(){
     curl -X DELETE "${git_url}/api/v1/repos/packages/$gitname?access_token=${git_token}" -H  "accept: application/json"
 }
 
+find_team(){
+    local pkg="$1" team_id=
+
+    if [[ -f $pkg/repos/core-x86_64/PKGBUILD ]];then
+        team_id=18
+    elif [[ -f $pkg/repos/core-any/PKGBUILD ]];then
+        team_id=18
+    elif [[ -f $pkg/repos/extra-x86_64/PKGBUILD ]];then
+        team_id=19
+    elif [[ -f $pkg/repos/extra-any/PKGBUILD ]];then
+        team_id=19
+    elif [[ -f $pkg/repos/community-x86_64/PKGBUILD ]];then
+        team_id=20
+    elif [[ -f $pkg/repos/community-any/PKGBUILD ]];then
+        team_id=20
+    elif [[ -f $pkg/repos/multilib-x86_64/PKGBUILD ]];then
+        team_id=21
+    fi
+    echo $team_id
+}
+
 add_repo_to_team(){
-    local pkg="$1" repo="$2"
-    local id=0
-    case $repo in
-        core) id=18 ;;
-        extra) id=19 ;;
-        community) id=20 ;;
-        multilib) id=21 ;;
-    esac
+    local pkg="$1" path="$2"
+    local id=$(find_team "$path")
 
     curl -X PUT "${git_url}/api/v1/teams/$id/repos/packages/$pkg?access_token=${git_token}" -H  "accept: application/json"
 }
