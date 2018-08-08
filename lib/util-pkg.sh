@@ -45,8 +45,7 @@ patch_pkg(){
         ;;
         'linux')
             sed -e 's|-ARCH|-ARTIX|g' -i $pkg/trunk/PKGBUILD
-            sed -e 's|CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION="-ARTIX"|' \
-                -e 's|CONFIG_DEFAULT_HOSTNAME=.*|CONFIG_DEFAULT_HOSTNAME="artixlinux"|' \
+            sed -e 's|CONFIG_DEFAULT_HOSTNAME=.*|CONFIG_DEFAULT_HOSTNAME="artixlinux"|' \
                 -e 's|CONFIG_CRYPTO_SPECK=.*|CONFIG_CRYPTO_SPECK=n|' \
                 -i $pkg/trunk/config
             cd $pkg/trunk
