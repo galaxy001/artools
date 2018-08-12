@@ -24,10 +24,11 @@ import ${LIBDIR}/util-pkg-subrepo.sh
 pull_tree_arch(){
     cd ${tree_dir_arch}
     for tree in packages community;do
-        if [[ -d ${tree_dir_arch}/${tree} ]];then
-            cd ${tree_dir_arch}/${tree}
+        if [[ -d ${tree} ]];then
+            cd ${tree}
             msg "Checking (%s)" "${tree}"
             pull_tree
+            cd ..
         else
             msg "Cloning (%s) ..." "$tree"
             clone_tree "${host_tree_arch}/${tree}"
@@ -36,28 +37,31 @@ pull_tree_arch(){
 }
 
 config_tree(){
-    git config --bool pull.rebase true
-    git config commit.gpgsign true
-    if [[ -n "${GPGKEY}" ]];then
-        git config user.signingkey "${GPGKEY}"
-    else
-        warning "No GPGKEY configured in makepkg.conf!"
-    fi
+    local tree="$1"
+    cd $tree
+        git config --bool pull.rebase true
+        git config commit.gpgsign true
+        if [[ -n "${GPGKEY}" ]];then
+            git config user.signingkey "${GPGKEY}"
+        else
+            warning "No GPGKEY configured in makepkg.conf!"
+        fi
+    cd ..
 }
 
 pull_tree_artix(){
     cd ${tree_dir_artix}
     for tree in packages packages-galaxy;do
-        if [[ -d ${tree_dir_artix}/${tree} ]];then
-            cd ${tree_dir_artix}/${tree}
+        if [[ -d ${tree} ]];then
+            cd ${tree}
             config_tree
             msg "Checking (%s)" "${tree}"
             pull_tree
+            cd ..
         else
             msg "Cloning (%s) ..." "$tree"
             clone_tree "${host_tree_artix}/${tree}"
-            cd ${tree_dir_artix}/${tree}
-            config_tree
+            config_tree "${tree}"
         fi
     done
 }
