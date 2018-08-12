@@ -36,24 +36,29 @@ pull_tree_arch(){
     done
 }
 
+config_tree(){
+    git config --bool pull.rebase true
+    git config commit.gpgsign true
+    if [[ -n "${GPGKEY}" ]];then
+        git config user.signingkey "${GPGKEY}"
+    else
+        warning "No GPGKEY configured in makepkg.conf!"
+    fi
+}
+
 pull_tree_artix(){
     cd ${tree_dir_artix}
     for tree in packages packages-galaxy;do
         if [[ -d ${tree} ]];then
             cd ${tree}
-                git config --bool pull.rebase true
-                git config commit.gpgsign true
-                if [[ -n "${GPGKEY}" ]];then
-                    git config user.signingkey "${GPGKEY}"
-                else
-                    warning "No GPGKEY configured in makepkg.conf!"
-                fi
+                config_tree
                 msg "Checking (%s)" "${tree}"
                 pull_tree
             cd ..
         else
             msg "Cloning (%s) ..." "$tree"
             clone_tree "${host_tree_artix}/${tree}"
+            config_tree
         fi
     done
 }
