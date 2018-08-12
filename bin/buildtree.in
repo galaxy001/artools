@@ -22,6 +22,7 @@ import ${LIBDIR}/util-pkg-gitea.sh
 import ${LIBDIR}/util-pkg-subrepo.sh
 
 pull_tree_arch(){
+    cd ${tree_dir_arch}
     for tree in packages community;do
         if [[ -d ${tree_dir_arch}/${tree} ]];then
             cd ${tree_dir_arch}/${tree}
@@ -45,6 +46,7 @@ config_tree(){
 }
 
 pull_tree_artix(){
+    cd ${tree_dir_artix}
     for tree in packages packages-galaxy;do
         if [[ -d ${tree_dir_artix}/${tree} ]];then
             cd ${tree_dir_artix}/${tree}
