@@ -53,8 +53,8 @@ pull_tree_artix(){
     cd ${tree_dir_artix}
     for tree in packages packages-galaxy;do
         if [[ -d ${tree} ]];then
+            config_tree "${tree}"
             cd ${tree}
-            config_tree
             msg "Checking (%s)" "${tree}"
             pull_tree
             cd ..
