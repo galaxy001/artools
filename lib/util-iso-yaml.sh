@@ -33,11 +33,11 @@ write_servicescfg_conf(){
     local conf="$1"/services-"$init".conf
     msg2 "Writing %s ..." "${conf##*/}"
     echo '---' >  "$conf"
-    case $init in
-        runit)
-            echo 'svdir: /etc/runit/sv' >> "$conf"
+    case "$init" in
+        'runit')
+            echo 'svDir: /etc/runit/sv' >> "$conf"
             echo '' >> "$conf"
-            echo 'runsvdir: /etc/runit/runsvdir' >> "$conf"
+            echo 'runsvDir: /etc/runit/runsvdir' >> "$conf"
             echo '' >> "$conf"
             echo 'services:' >> "$conf"
             echo "    enabled:" >> "$conf"
@@ -46,7 +46,11 @@ write_servicescfg_conf(){
                 echo '        runlevel: default' >> "$conf"
             done
         ;;
-        openrc)
+        'openrc')
+            echo 'initdDir: /etc/init.d' >> "$conf"
+            echo '' >> "$conf"
+            echo 'runlevelsDir: /etc/runlevels' >> "$conf"
+            echo '' >> "$conf"
             echo 'services:' >> "$conf"
             for svc in ${services[@]};do
                 echo "      - name: $svc" >> "$conf"
