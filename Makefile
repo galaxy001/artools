@@ -22,17 +22,6 @@ M4 = m4 -P
 CHMODAW = chmod a-w
 CHMODX = chmod +x
 
-ifdef WITH-PKG
-WITH-PKG = no
-else
-WITH-PKG = yes
-endif
-ifdef WITH-ISO
-WITH-ISO = no
-else
-WITH-ISO = yes
-endif
-
 CPIODIR = $(SYSCONFDIR)/initcpio
 
 SYSCONF = \
@@ -103,19 +92,7 @@ LIBS_ISO = \
 SHARED_ISO = \
 	data/mkinitcpio.conf
 
-ifeq ($(WITH-PKG),yes)
-
-all: $(BIN_PKG)
-
-endif
-
-ifeq ($(WITH-ISO),yes)
-
-all: $(BIN_ISO)
-
-endif
-
-all: $(BIN_BASE)
+all: $(BIN_BASE) $(BIN_PKG) $(BIN_ISO)
 
 EDIT = sed -e "s|@datadir[@]|$(DATADIR)/$(TOOLS)|g" \
 	-e "s|@sysconfdir[@]|$(SYSCONFDIR)/$(TOOLS)|g" \
@@ -177,54 +154,6 @@ install_iso: install_cpio
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)
 	install $(FILEMODE) $(SHARED_ISO) $(DESTDIR)$(DATADIR)/$(TOOLS)
 
-uninstall_base:
-	for f in $(notdir $(SYSCONF)); do $(RM) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)/$$f; done
-	for f in $(notdir $(BIN_BASE)); do $(RM) $(DESTDIR)$(BINDIR)/$$f; done
-	for f in $(notdir $(LIBS_BASE)); do $(RM) $(DESTDIR)$(LIBDIR)/$(TOOLS)/$$f; done
-	for f in $(notdir $(SHARED_BASE)); do $(RM) $(DESTDIR)$(DATADIR)/$(TOOLS)/$$f; done
-	$(RMD) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
-	$(RMD) $(DESTDIR)$(LIBDIR)/$(TOOLS)
-	$(RMD) $(DESTDIR)$(DATADIR)/$(TOOLS)
+install: install_base install_pkg install_iso
 
-uninstall_pkg:
-	for f in $(notdir $(BIN_PKG)); do $(RM) $(DESTDIR)$(BINDIR)/$$f; done
-	$(RM) $(DESTDIR)$(BINDIR)/find-libprovides
-	for l in $(COMMITPKG_SYMS); do $(RM) $(DESTDIR)$(BINDIR)/$$l; done
-	for f in $(notdir $(LIBS_PKG)); do $(RM) $(DESTDIR)$(LIBDIR)/$(TOOLS)/$$f; done
-	for f in $(notdir $(PATCHES)); do $(RM) $(DESTDIR)$(DATADIR)/$(TOOLS)/patches/$$f; done
-	for f in $(notdir $(SHARED_PKG)); do $(RM) $(DESTDIR)$(DATADIR)/$(TOOLS)/$$f; done
-
-uninstall_cpio:
-	+make CPIODIR=$(CPIODIR) DESTDIR=$(DESTDIR) -C initcpio uninstall
-
-uninstall_iso: uninstall_cpio
-	for f in $(notdir $(BIN_ISO)); do $(RM) $(DESTDIR)$(BINDIR)/$$f; done
-	for l in $(notdir $(BIN_ISO_SYMS)); do $(RM) $(DESTDIR)$(BINDIR)/$$l; done
-	for f in $(notdir $(LIBS_ISO)); do $(RM) $(DESTDIR)$(LIBDIR)/$(TOOLS)/$$f; done
-	for f in $(notdir $(SHARED_ISO)); do $(RM) $(DESTDIR)$(DATADIR)/$(TOOLS)/$$f; done
-
-ifeq ($(WITH-PKG),yes)
-
-install: install_pkg
-
-uninstall: uninstall_pkg
-
-endif
-
-ifeq ($(WITH-ISO),yes)
-
-install: install_iso
-
-uninstall: uninstall_iso
-
-endif
-
-install: install_base
-
-uninstall: uninstall_base
-
-dist:
-	git archive --format=tar --prefix=$(TOOLS)-$(VERSION)/ $(VERSION) | gzip -9 > $(TOOLS)-$(VERSION).tar.gz
-	gpg --detach-sign --use-agent $(TOOLS)-$(VERSION).tar.gz
-
-.PHONY: all clean install uninstall dist
+.PHONY: all clean install
