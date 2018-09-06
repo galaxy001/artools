@@ -30,22 +30,30 @@ write_users_conf(){
 
 write_servicescfg_conf(){
     local init="$2"
-    local conf="$1"/"$init"cfg.conf state='add'
+    local conf="$1"/services-"$init".conf
     msg2 "Writing %s ..." "${conf##*/}"
     echo '---' >  "$conf"
-    if [[ "$init" == 'runit' ]];then
-        state='enabled'
-        echo 'svdir: /etc/runit/sv' >> "$conf"
-        echo '' >> "$conf"
-        echo 'runsvdir: /etc/runit/runsvdir' >> "$conf"
-    fi
-    echo '' >> "$conf"
-    echo 'services:' >> "$conf"
-    echo "    $state:" >> "$conf"
-    for svc in ${services[@]};do
-        echo "      - name: $svc" >> "$conf"
-        echo '        runlevel: default' >> "$conf"
-    done
+    case $init in
+        runit)
+            echo 'svdir: /etc/runit/sv' >> "$conf"
+            echo '' >> "$conf"
+            echo 'runsvdir: /etc/runit/runsvdir' >> "$conf"
+            echo '' >> "$conf"
+            echo 'services:' >> "$conf"
+            echo "    enabled:" >> "$conf"
+            for svc in ${services[@]};do
+                echo "      - name: $svc" >> "$conf"
+                echo '        runlevel: default' >> "$conf"
+            done
+        ;;
+        openrc)
+            echo 'services:' >> "$conf"
+            for svc in ${services[@]};do
+                echo "      - name: $svc" >> "$conf"
+                echo '        runlevel: default' >> "$conf"
+            done
+        ;;
+    esac
 }
 
 write_postcfg_conf(){
