@@ -6,9 +6,6 @@ artools
 
 * PREFIX=/usr/local (default if defined)
 * SYSCONFDIR=/etc
-* WITH-PKG=yes
-* WITH-ISO=yes
-
 
 #### Dependencies
 
@@ -21,7 +18,6 @@ artools
 ##### Runtime:
 
 - base:
-
   * openssh
   * rsync
   * haveged
@@ -30,9 +26,8 @@ artools
   * pacman
 
 - pkg:
-
   * namcap
-  * git
+  * git-subrepo
 
 - iso:
   * dosfstools
