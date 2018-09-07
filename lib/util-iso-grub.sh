@@ -20,6 +20,11 @@ prepare_initcpio(){
 prepare_initramfs(){
     local mnt="$1"
     cp ${DATADIR}/mkinitcpio.conf $mnt/etc/mkinitcpio-artix.conf
+
+    if [[ "${profile}" != 'base' ]];then
+        sed -e 's/artix_pxe_common artix_pxe_http artix_pxe_nbd artix_pxe_nfs //' -i $mnt/etc/mkinitcpio-artix.conf
+    fi
+
     if [[ -n ${gpgkey} ]]; then
         user_run "gpg --export ${gpgkey} >${AT_USERCONFDIR}/gpgkey"
         exec 17<>${AT_USERCONFDIR}/gpgkey
@@ -40,8 +45,12 @@ prepare_initramfs(){
 
 prepare_boot_extras(){
     local src="$1" dest="$2"
-#     cp $src/boot/intel-ucode.img $dest/intel_ucode.img
-#     cp $src/usr/share/licenses/intel-ucode/LICENSE $dest/intel_ucode.LICENSE
+
+#     for u in intel amd;do
+#         cp $src/boot/$u-ucode.img $dest/$u-ucode.img
+#         cp $src/usr/share/licenses/$u-ucode/LICENSE $dest/$u-ucode.LICENSE
+#     done
+
     cp $src/boot/memtest86+/memtest.bin $dest/memtest
     cp $src/usr/share/licenses/common/GPL2/license.txt $dest/memtest.COPYING
 }
@@ -83,8 +92,13 @@ prepare_grub(){
     cp -r ${theme}/themes/artix ${grub}/themes/
     cp -r ${theme}/{locales,tz} ${grub}
 
-    msg2 "Creating %s ..." "unicode.pf2"
-    grub-mkfont -o ${grub}/unicode.pf2 /usr/share/fonts/misc/unifont.bdf
+    if [[ -f /usr/share/grub/unicode.pf2 ]];then
+        msg2 "Copying %s ..." "unicode.pf2"
+        cp /usr/share/grub/unicode.pf2 ${grub}/unicode.pf2
+    else
+        msg2 "Creating %s ..." "unicode.pf2"
+        grub-mkfont -o ${grub}/unicode.pf2 /usr/share/fonts/misc/unifont.bdf
+    fi
 
     local size=4M mnt="${mnt_dir}/efiboot" efi_img="$3/efi.img"
     msg2 "Creating fat image of %s ..." "${size}"
