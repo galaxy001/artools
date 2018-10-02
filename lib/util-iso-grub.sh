@@ -46,10 +46,10 @@ prepare_initramfs(){
 prepare_boot_extras(){
     local src="$1" dest="$2"
 
-#     for u in intel amd;do
-#         cp $src/boot/$u-ucode.img $dest/$u-ucode.img
-#         cp $src/usr/share/licenses/$u-ucode/LICENSE $dest/$u-ucode.LICENSE
-#     done
+    for u in intel amd;do
+        cp $src/boot/$u-ucode.img $dest/$u-ucode.img
+        cp $src/usr/share/licenses/$u-ucode/LICENSE $dest/$u-ucode.LICENSE
+    done
 
     cp $src/boot/memtest86+/memtest.bin $dest/memtest
     cp $src/usr/share/licenses/common/GPL2/license.txt $dest/memtest.COPYING

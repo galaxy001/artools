@@ -10,21 +10,21 @@
 # GNU General Public License for more details.
 
 subrepo_init(){
-    local pkg="$1"
-    git subrepo init $pkg -r gitea@${git_domain}:packages/$pkg.git -b master
+    local pkg="$1" branch=master org=packages
+    git subrepo init "$pkg" -r gitea@"${git_domain}":"$org"/"$pkg".git -b "$branch"
 }
 
 subrepo_push(){
-    local pkg="$1"
-    git subrepo push -u "$pkg" -b master
+    local pkg="$1" branch=master
+    git subrepo push "$pkg" -u -b "$branch"
 }
 
 subrepo_pull(){
-    local pkg="$1" name="${2:-$1}"
-    git subrepo pull "$pkg" -b master -r gitea@${git_domain}:packages/$name.git -u
+    local pkg="$1" name="${2:-$1}" branch=master org=packages
+    git subrepo pull "$pkg" -r gitea@"${git_domain}":"$org"/"$name".git -u -b "$branch"
 }
 
 subrepo_clone(){
-    local pkg="$1" name="${2:-$1}"
-    git subrepo clone gitea@gitea.artixlinux.org:packages/$pkg.git "$name" -b master
+    local pkg="$1" name="${2:-$1}" branch=master org=packages
+    git subrepo clone gitea@"${git_domain}":"$org"/"$name".git "$pkg" -b "$branch"
 }
