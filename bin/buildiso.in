@@ -44,6 +44,7 @@ prepare_build(){
     mnt_dir=${chroots_iso}/${profile}/mnt
     prepare_dir "${mnt_dir}"
     prepare_dir "${iso_dir}"
+    prepare_dir "${iso_root}"
 }
 
 show_profile(){
