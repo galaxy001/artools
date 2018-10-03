@@ -25,7 +25,13 @@ write_users_conf(){
     echo "setRootPassword: true" >> "$conf"
 #     echo "doReusePassword: false" >> "$conf" # only used in old 'users' module
     echo "availableShells: /bin/bash, /bin/zsh" >> "$conf" # only used in new 'users' module
-    echo "avatarFilePath:  ~/.face" >> "$conf"
+#     echo "avatarFilePath:  ~/.face" >> "$conf"
+#     echo "passwordRequirements:" >> "$conf"
+#     echo "    minLength: -1" >> "$conf"
+#     echo "    maxLength: -1" >> "$conf"
+#     echo "    libpwquality:" >> "$conf"
+#     echo "        - minlen=8" >> "$conf"
+#     echo "        - minclass=80" >> "$conf"
 }
 
 write_servicescfg_conf(){
