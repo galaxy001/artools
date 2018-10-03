@@ -65,16 +65,10 @@ write_postcfg_conf(){
     sed -e "s|openrc|$init|" -i "$conf"
 }
 
-# write_netinstall_conf(){
-#     local conf="$1/netinstall.conf" init="$2"
-#     sed -e "s|netgroups-openrc.yaml|netgroups-$init.yaml|" -i "$conf"
-# }
-
 configure_calamares(){
     local mods="$1/etc/calamares/modules" init="$2"
     if [[ -d "$mods" ]];then
         info "Configuring [Calamares]"
-#         write_netinstall_conf "$mods" "$init"
         write_users_conf "$mods"
         write_servicescfg_conf "$mods" "$init"
         write_postcfg_conf "$mods" "$init"

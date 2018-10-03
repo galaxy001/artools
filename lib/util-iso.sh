@@ -87,7 +87,7 @@ error_function() {
 # $1: function
 run_log(){
     local func="$1" log_dir='/var/log/artools'
-    mkdir -p $log_dir
+    [[ ! -d $log_dir ]] && mkdir -p $log_dir
     local logfile=${log_dir}/$(gen_iso_fn).$func.log
     logpipe=$(mktemp -u "/tmp/$func.pipe.XXXXXXXX")
     mkfifo "$logpipe"
