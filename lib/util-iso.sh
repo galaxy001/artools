@@ -407,7 +407,10 @@ make_iso() {
 gen_iso_fn(){
     local vars=("artix") name
     vars+=("${profile}")
-    [[ ${initsys} == 'runit' ]] && vars+=("${initsys}")
+    vars+=("${initsys}")
+    case "${stablility}" in
+        'gremlins'|'goblins') vars+=("${stablility}") ;;
+    esac
     vars+=("${iso_version}")
     vars+=("${target_arch}")
     for n in ${vars[@]};do
