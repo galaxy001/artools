@@ -34,7 +34,6 @@ artools
   * libisoburn
   * squashfs-tools
   * mkinitcpio
-  * mktorrent
   * grub
 
 #### Configuration

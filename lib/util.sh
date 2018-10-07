@@ -98,19 +98,11 @@ init_artools_iso(){
 
     [[ -z ${uplimit} ]] && uplimit=100
 
-    [[ -z ${tracker_url} ]] && tracker_url='udp://mirror.strits.dk:6969'
-
-    [[ -z ${piece_size} ]] && piece_size=21
-
     [[ -z ${file_host} ]] && file_host="sourceforge.net"
 
     [[ -z ${project} ]] && project="artix-linux"
 
     [[ -z ${account} ]] && account="[SetUser]"
-
-    [[ -z ${host_mirrors[@]} ]] && host_mirrors=('netcologne' 'freefr' 'netix' 'kent' '10gbps-io')
-
-    torrent_meta="$(get_osname)"
 }
 
 

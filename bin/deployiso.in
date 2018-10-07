@@ -16,7 +16,23 @@ SYSCONFDIR='@sysconfdir@'
 
 [[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
 import ${LIBDIR}/util.sh
-import ${LIBDIR}/util-iso-publish.sh
+
+connect(){
+    local home="/home/frs/project/${project}"
+    echo "${account},${project}@frs.${file_host}:${home}"
+}
+
+prepare_transfer(){
+    target_dir="/iso/${profile}/"
+    src_dir="${iso_pool}/${profile}/"
+}
+
+sync_dir(){
+    msg "Start upload [%s] ..." "${profile}"
+    rsync "${rsync_args[@]}" ${src_dir} $(connect)${target_dir}
+    msg "Done upload [%s]" "${profile}"
+    show_elapsed_time "${FUNCNAME}" "${timer_start}"
+}
 
 display_settings(){
     show_version
@@ -29,14 +45,6 @@ display_settings(){
     msg "ARGS:"
     msg2 "update: %s" "${update}"
     msg2 "verbose: %s" "${verbose}"
-    msg2 "torrent: %s" "${torrent}"
-
-    if ${torrent};then
-        msg2 "tracker_url: %s" "${tracker_url}"
-        msg2 "piece_size: %s" "${piece_size}"
-        msg2 "host_mirrors: %s" "${host_mirrors[*]}"
-        msg2 "torrent_meta: %s" "${torrent_meta}"
-    fi
 
     msg "REMOTE:"
     msg2 "account: %s" "${account}"
@@ -55,7 +63,6 @@ load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artoo
 pretend=false
 update=false
 verbose=false
-torrent=false
 
 rsync_args=(-aP --progress -e ssh)
 
@@ -64,7 +71,6 @@ usage() {
     echo "    -p                 Source folder to upload [default: ${profile}]"
     echo "    -l                 Limit bandwidth in kB/s [default:${uplimit}]"
     echo '    -u                 Update remote directory'
-    echo '    -t                 Create iso torrent'
     echo '    -q                 Query settings and pretend upload'
     echo '    -v                 Verbose output'
     echo '    -h                 This help'
@@ -73,14 +79,13 @@ usage() {
     exit $1
 }
 
-opts='p:l:uvtqh'
+opts='p:l:uvqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         p) profile="$OPTARG" ;;
         l) uplimit="$OPTARG" ;;
         u) update=true; rsync_args+=(-u) ;;
-        t) torrent=true ;;
         v) verbose=true; rsync_args+=(-v --stats) ;;
         q) pretend=true; rsync_args+=(-n) ;;
         h|?) usage 0 ;;
