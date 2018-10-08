@@ -33,45 +33,9 @@ get_os_name(){
     echo "$str"
 }
 
-get_chroot_arch(){
-    local elf=$(file $1/usr/bin/file)
-    elf=${elf//*executable,}
-    echo ${elf%%,*}
-}
-
 chroot_part_mount() {
     info "mount: [%s]" "$2"
     mount "$@" && CHROOT_ACTIVE_PART_MOUNTS=("$2" "${CHROOT_ACTIVE_PART_MOUNTS[@]}")
-}
-
-select_os(){
-    local os_list=( $(detect) ) count=${#os_list[@]}
-    if [[ ${count} > 1 ]];then
-        msg "Detected systems:"
-        local i=0
-        for os in ${os_list[@]};do
-            local last=${os##*:}
-            case $last in
-                'efi') count=$((count-1)) ;;
-                *) info "$i) $(get_os_name $os)"; i=$((i+1)) ;;
-            esac
-        done
-        i=0
-        msg "Select system to mount [0-%s] : " "$((count-1))"
-        read select
-    else
-        select=0
-    fi
-    local os_str=${os_list[$select]} type
-    type=$os_str
-    root=${os_str%%:*}
-    type=${type##*:}
-    if [[ "${type##*:}" == 'linux' ]];then
-        msg "Mounting (%s) [%s]" "$(get_os_name $os_str)" "$root"
-        mount_os "$1" "$root"
-    else
-        die "You can't mount %s!" "$select"
-    fi
 }
 
 trap_setup(){
@@ -151,16 +115,6 @@ mount_os(){
         esac
     done
 
-    local chroot_arch=$(get_chroot_arch $1)
-    [[ ${chroot_arch} == x86-64 ]] && chroot_arch=${chroot_arch/-/_}
-    case ${target_arch} in
-        i686)
-            if [[ ${chroot_arch} == x86_64 ]];then
-                die "You can't chroot from %s host into %s!" "${target_arch}" "${chroot_arch}"
-            fi
-        ;;
-    esac
-
     chroot_setup "$1"
     chroot_add_resolv_conf "$1"
 }
@@ -171,16 +125,18 @@ chroot_api_mount() {
     chroot_setup "$1"
 }
 
-chroot_part_umount() {
-    info "umount: [%s]" "${CHROOT_ACTIVE_MOUNTS[@]}"
-    umount "${CHROOT_ACTIVE_MOUNTS[@]}"
-    info "umount: [%s]" "${CHROOT_ACTIVE_PART_MOUNTS[@]}"
-    umount "${CHROOT_ACTIVE_PART_MOUNTS[@]}"
-    unset CHROOT_ACTIVE_PART_MOUNTS CHROOT_ACTIVE_MOUNTS
-}
-
 chroot_api_umount() {
-    info "umount: [%s]" "${CHROOT_ACTIVE_MOUNTS[@]}"
-    umount "${CHROOT_ACTIVE_MOUNTS[@]}"
+    if (( ${#CHROOT_ACTIVE_MOUNTS[@]} )); then
+        info "umount: [%s]" "${CHROOT_ACTIVE_MOUNTS[@]}"
+        umount "${CHROOT_ACTIVE_MOUNTS[@]}"
+    fi
     unset CHROOT_ACTIVE_MOUNTS
 }
+
+chroot_part_umount() {
+    chroot_api_umount
+    info "umount: [%s]" "${CHROOT_ACTIVE_PART_MOUNTS[@]}"
+    umount "${CHROOT_ACTIVE_PART_MOUNTS[@]}"
+    unset CHROOT_ACTIVE_PART_MOUNTS
+}
+
