@@ -35,7 +35,7 @@ prepare_build(){
 
     iso_file=$(gen_iso_fn).iso
 
-    mkchroot_args+=(-C ${pacman_conf})
+    mkchroot_args+=(-C ${pacman_conf} -m)
     work_dir=${chroots_iso}/${profile}/${target_arch}
 
     iso_dir="${iso_pool}/${profile}"

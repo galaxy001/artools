@@ -23,6 +23,8 @@ working_dir=''
 files=()
 
 nosetarch=false
+copy_mirrorlist=true
+basestrap_args=(-Gc)
 
 usage() {
     echo "Usage: ${0##*/} [options] working-dir package-list..."
@@ -31,6 +33,7 @@ usage() {
     echo '    -M <file>     Location of a makepkg config file'
     echo '    -c <dir>      Set pacman cache'
     echo '    -f <file>     Copy file from the host to the chroot'
+    echo '    -m            Do not copy mirrorlist to the chroot'
     echo '    -s            Do not run setarch'
     echo '    -h            This message'
     exit 1
@@ -38,7 +41,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='hC:M:c:f:s'
+opts='hC:M:c:f:sm'
 
 while getopts ${opts} arg; do
     case "${arg}" in
@@ -47,6 +50,7 @@ while getopts ${opts} arg; do
         c) cache_dir="$OPTARG" ;;
         f) files+=("$OPTARG") ;;
         s) nosetarch=true ;;
+        m) copy_mirrorlist=false; basestrap_args+=(-M) ;;
         h|?) usage ;;
         *) error "invalid argument '%s'" "$arg"; usage ;;
     esac
@@ -96,7 +100,7 @@ while read -r varname; do
     _env+=("$varname=${!varname}")
 done < <(declare -x | sed -r 's/^declare -x ([^=]*)=.*/\1/' | grep -i '_proxy$')
 env -i "${_env[@]}" \
-basestrap -Gc ${pacman_conf:+-C "$pacman_conf"} "$working_dir" ${cache_dirs[@]/#/--cachedir=} "$@" || die 'Failed to install all packages'
+basestrap "${basestrap_args[@]}" ${pacman_conf:+-C "$pacman_conf"} "$working_dir" ${cache_dirs[@]/#/--cachedir=} "$@" || die 'Failed to install all packages'
 
 echo "$chroot_version" > "$working_dir/.artools"
 
