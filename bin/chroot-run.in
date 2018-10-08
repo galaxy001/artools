@@ -22,7 +22,6 @@ import ${LIBDIR}/util-mount.sh
 
 working_dir=''
 files=()
-keep_mirrors=false
 nosetarch=false
 
 usage() {
