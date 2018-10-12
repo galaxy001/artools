@@ -96,7 +96,7 @@ init_artools_iso(){
 
     [[ -z ${gpgkey} ]] && gpgkey=''
 
-    [[ -z ${uplimit} ]] && uplimit=100
+    [[ -z ${uplimit} ]] && uplimit=1000
 
     [[ -z ${file_host} ]] && file_host="sourceforge.net"
 

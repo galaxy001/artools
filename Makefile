@@ -3,9 +3,7 @@ VERSION=0.9
 CHROOT_VERSION=0.8
 
 TOOLS = artools
-ifdef PREFIX
-PREFIX = /usr/local
-endif
+PREFIX ?= /usr/local
 SYSCONFDIR = /etc
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
