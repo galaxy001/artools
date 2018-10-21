@@ -52,8 +52,8 @@ show_profile(){
     if ${verbose};then
         msg2 "AUTOLOGIN: %s" "${AUTOLOGIN}"
 
-        msg2 "HOSTNAME: %s" "${HOSTNAME}"
-        msg2 "USERNAME: %s" "${USERNAME}"
+        msg2 "HOST_NAME: %s" "${HOST_NAME}"
+        msg2 "USER_NAME: %s" "${USER_NAME}"
         msg2 "PASSWORD: %s" "${PASSWORD}"
         msg2 "ADDGROUPS: %s" "${ADDGROUPS}"
 
@@ -69,7 +69,7 @@ display_settings(){
     msg "OPTIONS:"
     msg2 "PROFILE: %s" "${PROFILE}"
     msg2 "INITSYS: %s" "${INITSYS}"
-    [[ -n ${GPG_KEY} ]] && msg2 "gpgkey: %s" "${gpgkey}"
+    [[ -n ${GPG_KEY} ]] && msg2 "GPG_KEY: %s" "${GPG_KEY}"
     msg2 "REPOSITORY: %s" "${REPOSITORY}"
 
     msg "ARGS:"
