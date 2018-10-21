@@ -1,6 +1,5 @@
 DIRMODE = -dm0755
 MODE =  -m0755
-RM = rm -f
 
 CPIOHOOKS = \
 	$(wildcard hooks/*)
@@ -19,13 +18,6 @@ install_initcpio:
 	install $(MODE) $(CPIOINST) $(DESTDIR)$(CPIODIR)/install
 	install $(MODE) $(SCRIPT) $(DESTDIR)$(CPIODIR)
 
-uninstall_initcpio:
-	for f in $(notdir $(CPIOHOOKS)); do $(RM) $(DESTDIR)$(CPIODIR)/hooks/$$f; done
-	for f in $(notdir $(CPIOINST)); do $(RM) $(DESTDIR)$(CPIODIR)/install/$$f; done
-	for f in $(notdir $(SCRIPT)); do $(RM) $(DESTDIR)$(CPIODIR)/$$f; done
-
 install: install_initcpio
 
-uninstall: uninstall_initcpio
-
-.PHONY: install uninstall
+.PHONY: install

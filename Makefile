@@ -8,18 +8,6 @@ SYSCONFDIR = /etc
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
 DATADIR = $(PREFIX)/share
-
-DIRMODE = -dm0755
-FILEMODE = -m0644
-MODE =  -m0755
-
-LN = ln -sf
-RM = rm -f
-RMD = rm -fr --one-file-system
-M4 = m4 -P
-CHMODAW = chmod a-w
-CHMODX = chmod +x
-
 CPIODIR = $(SYSCONFDIR)/initcpio
 
 SYSCONF = \
@@ -88,6 +76,16 @@ LIBS_ISO = \
 
 SHARED_ISO = \
 	data/mkinitcpio.conf
+
+DIRMODE = -dm0755
+FILEMODE = -m0644
+MODE =  -m0755
+
+LN = ln -sf
+RM = rm -f
+M4 = m4 -P
+CHMODAW = chmod a-w
+CHMODX = chmod +x
 
 all: $(BIN_BASE) $(BIN_PKG) $(BIN_ISO)
 
