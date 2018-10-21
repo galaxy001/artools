@@ -23,9 +23,8 @@ write_users_conf(){
     echo "doAutologin:     false" >> "$conf"
     echo "sudoersGroup:    wheel" >> "$conf"
     echo "setRootPassword: true" >> "$conf"
-#     echo "doReusePassword: false" >> "$conf" # only used in old 'users' module
     echo "availableShells: /bin/bash, /bin/zsh" >> "$conf" # only used in new 'users' module
-#     echo "avatarFilePath:  ~/.face" >> "$conf"
+
 #     echo "passwordRequirements:" >> "$conf"
 #     echo "    minLength: -1" >> "$conf"
 #     echo "    maxLength: -1" >> "$conf"

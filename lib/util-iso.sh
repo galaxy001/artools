@@ -485,8 +485,6 @@ make_livefs() {
 
         configure_live_image "${livefs}"
 
-        pacman -Qr "${livefs}" > ${iso_dir}/$(gen_iso_fn)-pkgs.txt
-
         umount_overlay
 
         clean_up_image "${livefs}"
