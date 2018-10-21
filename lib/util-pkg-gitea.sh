@@ -21,13 +21,13 @@ get_compliant_name(){
 create_repo(){
     local pkg="$1"
     local gitname=$(get_compliant_name "$pkg")
-    curl -X POST "${git_url}/api/v1/org/packages/repos?access_token=${git_token}" -H "accept: application/json" -H "content-type: application/json" -d "{ \"auto_init\": true, \"name\":\"$gitname\", \"readme\": \"Default\" }"
+    curl -X POST "${GIT_URL}/api/v1/org/packages/repos?access_token=${GIT_TOKEN}" -H "accept: application/json" -H "content-type: application/json" -d "{ \"auto_init\": true, \"name\":\"$gitname\", \"readme\": \"Default\" }"
 }
 
 delete_repo(){
     local pkg="$1"
     local gitname=$(get_compliant_name "$pkg")
-    curl -X DELETE "${git_url}/api/v1/repos/packages/$gitname?access_token=${git_token}" -H  "accept: application/json"
+    curl -X DELETE "${GIT_URL}/api/v1/repos/packages/$gitname?access_token=${GIT_TOKEN}" -H  "accept: application/json"
 }
 
 find_team(){
@@ -55,5 +55,5 @@ add_repo_to_team(){
     local pkg="$1" path="$2"
     local id=$(find_team "$path")
 
-    curl -X PUT "${git_url}/api/v1/teams/$id/repos/packages/$pkg?access_token=${git_token}" -H  "accept: application/json"
+    curl -X PUT "${GIT_URL}/api/v1/teams/$id/repos/packages/$pkg?access_token=${GIT_TOKEN}" -H  "accept: application/json"
 }

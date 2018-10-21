@@ -11,25 +11,25 @@
 init_profile(){
     local profdir="$1" prof="$2"
 
-    root_list="$profdir/base/Packages-Root"
-    root_overlay="$profdir/base/root-overlay"
-    live_list="$profdir/base/Packages-Live"
-    live_overlay="$profdir/base/live-overlay"
+    ROOT_LIST="$profdir/base/Packages-Root"
+    ROOT_OVERLAY="$profdir/base/root-overlay"
+    LIVE_LIST="$profdir/base/Packages-Live"
+    LIVE_OVERLAY="$profdir/base/live-overlay"
 
-    [[ -f "$profdir/$prof/Packages-Root" ]] && root_list="$profdir/$prof/Packages-Root"
-    [[ -d "$profdir/$prof/root-overlay" ]] && root_overlay="$profdir/$prof/root-overlay"
+    [[ -f "$profdir/$prof/Packages-Root" ]] && ROOT_LIST="$profdir/$prof/Packages-Root"
+    [[ -d "$profdir/$prof/root-overlay" ]] && ROOT_OVERLAY="$profdir/$prof/root-overlay"
 
-    [[ -f "$profdir/$prof/Packages-Desktop" ]] && desktop_list="$profdir/$prof/Packages-Desktop"
-    [[ -d "$profdir/$prof/desktop-overlay" ]] && desktop_overlay="$profdir/$prof/desktop-overlay"
+    [[ -f "$profdir/$prof/Packages-Desktop" ]] && DESKTOP_LIST="$profdir/$prof/Packages-Desktop"
+    [[ -d "$profdir/$prof/desktop-overlay" ]] && DESKTOP_OVERLAY="$profdir/$prof/desktop-overlay"
 
-    [[ -f "$profdir/$prof/Packages-Live" ]] && live_list="$profdir/$prof/Packages-Live"
-    [[ -d "$profdir/$prof/live-overlay" ]] && live_overlay="$profdir/$prof/live-overlay"
+    [[ -f "$profdir/$prof/Packages-Live" ]] && LIVE_LIST="$profdir/$prof/Packages-Live"
+    [[ -d "$profdir/$prof/live-overlay" ]] && LIVE_OVERLAY="$profdir/$prof/live-overlay"
 }
 
 load_profile(){
     local prof="$1"
     local profdir="${DATADIR}/iso-profiles"
-    [[ -d ${workspace_dir}/iso-profiles ]] && profdir=${workspace_dir}/iso-profiles
+    [[ -d ${WORKSPACE_DIR}/iso-profiles ]] && profdir=${WORKSPACE_DIR}/iso-profiles
 
     init_profile "$profdir" "$prof"
 
@@ -37,34 +37,34 @@ load_profile(){
 
     [[ -r $profdir/$prof/profile.conf ]] && source $profdir/$prof/profile.conf
 
-    [[ -z ${displaymanager} ]] && displaymanager="none"
+    [[ -z ${DISPLAYMANAGER} ]] && DISPLAYMANAGER="none"
 
-    [[ -z ${autologin} ]] && autologin="true"
-    [[ ${displaymanager} == 'none' ]] && autologin="false"
+    [[ -z ${AUTOLOGIN} ]] && AUTOLOGIN="true"
+    [[ ${DISPLAYMANAGER} == 'none' ]] && AUTOLOGIN="false"
 
-    [[ -z ${hostname} ]] && hostname="artix"
+    [[ -z ${HOSTNAME} ]] && HOSTNAME="artix"
 
-    [[ -z ${username} ]] && username="artix"
+    [[ -z ${USERNAME} ]] && USERNAME="artix"
 
-    [[ -z ${password} ]] && password="artix"
+    [[ -z ${PASSWORD} ]] && PASSWORD="artix"
 
-    if [[ -z ${addgroups} ]];then
-        addgroups="video,power,storage,optical,network,lp,scanner,wheel,users,log"
+    if [[ -z ${ADDGROUPS} ]];then
+        ADDGROUPS="video,power,storage,optical,network,lp,scanner,wheel,users,log"
     fi
 
-    if [[ -z ${services[@]} ]];then
-        services=('acpid' 'bluetooth' 'cronie' 'cupsd' 'syslog-ng' 'NetworkManager')
+    if [[ -z ${SERVICES[@]} ]];then
+        SERVICES=('acpid' 'bluetooth' 'cronie' 'cupsd' 'syslog-ng' 'NetworkManager')
     fi
 
-    if [[ ${displaymanager} != "none" ]];then
-        case "${initsys}" in
-            'openrc') services+=('xdm') ;;
-            'runit') services+=("${displaymanager}") ;;
+    if [[ ${DISPLAYMANAGER} != "none" ]];then
+        case "${INITSYS}" in
+            'openrc') SERVICES+=('xdm') ;;
+            'runit') SERVICES+=("${DISPLAYMANAGER}") ;;
         esac
     fi
 
-    if [[ -z ${services_live[@]} ]];then
-        services_live=('artix-live' 'pacman-init')
+    if [[ -z ${SERVICES_LIVE[@]} ]];then
+        SERVICES_LIVE=('artix-live' 'pacman-init')
     fi
 
     return 0
@@ -78,16 +78,16 @@ write_live_session_conf(){
     echo '# live session configuration' > ${conf}
     echo '' >> ${conf}
     echo '# autologin' >> ${conf}
-    echo "autologin=${autologin}" >> ${conf}
+    echo "AUTOLOGIN=${AUTOLOGIN}" >> ${conf}
     echo '' >> ${conf}
-    echo '# live username' >> ${conf}
-    echo "username=${username}" >> ${conf}
+    echo '# live user name' >> ${conf}
+    echo "USERNAME=${USERNAME}" >> ${conf}
     echo '' >> ${conf}
     echo '# live password' >> ${conf}
-    echo "password=${password}" >> ${conf}
+    echo "PASSWORD=${PASSWORD}" >> ${conf}
     echo '' >> ${conf}
     echo '# live group membership' >> ${conf}
-    echo "addgroups='${addgroups}'" >> ${conf}
+    echo "ADDGROUPS='${ADDGROUPS}'" >> ${conf}
 }
 
 load_pkgs(){

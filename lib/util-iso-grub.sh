@@ -21,25 +21,25 @@ prepare_initramfs(){
     local mnt="$1"
     cp ${DATADIR}/mkinitcpio.conf $mnt/etc/mkinitcpio-artix.conf
 
-    if [[ "${profile}" != 'base' ]];then
+    if [[ "${PROFILE}" != 'base' ]];then
         sed -e 's/artix_pxe_common artix_pxe_http artix_pxe_nbd artix_pxe_nfs //' -i $mnt/etc/mkinitcpio-artix.conf
     fi
 
-    if [[ -n ${gpgkey} ]]; then
-        user_run "gpg --export ${gpgkey} >${AT_USERCONFDIR}/gpgkey"
-        exec 17<>${AT_USERCONFDIR}/gpgkey
+    if [[ -n ${GPG_KEY} ]]; then
+        user_run "gpg --export ${GPG_KEY} >${AT_USERCONFDIR}/gpgkey"
+        exec 17<>${AT_USERCONFDIR}/GPG_KEY
     fi
     local _kernel=$(cat $mnt/usr/lib/modules/*/version)
-    ARTIX_GNUPG_FD=${gpgkey:+17} chroot-run $mnt \
+    ARTIX_GNUPG_FD=${GPG_KEY:+17} chroot-run $mnt \
         /usr/bin/mkinitcpio -k ${_kernel} \
         -c /etc/mkinitcpio-artix.conf \
         -g /boot/initramfs.img
 
-    if [[ -n ${gpgkey} ]]; then
+    if [[ -n ${GPG_KEY} ]]; then
         exec 17<&-
     fi
-    if [[ -f ${AT_USERCONFDIR}/gpgkey ]]; then
-        rm ${AT_USERCONFDIR}/gpgkey
+    if [[ -f ${AT_USERCONFDIR}/GPG_KEY ]]; then
+        rm ${AT_USERCONFDIR}/GPG_KEY
     fi
 }
 
@@ -57,7 +57,7 @@ prepare_boot_extras(){
 
 configure_grub(){
     local conf="$1/boot/grub/kernels.cfg"
-    sed -e "s|@iso_label@|${iso_label}|" -i $conf
+    sed -e "s|@iso_label@|${ISO_LABEL}|" -i $conf
 }
 
 prepare_grub(){
@@ -100,7 +100,7 @@ prepare_grub(){
         grub-mkfont -o ${grub}/unicode.pf2 /usr/share/fonts/misc/unifont.bdf
     fi
 
-    local size=4M mnt="${mnt_dir}/efiboot" efi_img="$3/efi.img"
+    local size=4M mnt="${MNT_DIR}/efiboot" efi_img="$3/efi.img"
     msg2 "Creating fat image of %s ..." "${size}"
     truncate -s ${size} "${efi_img}"
     mkfs.fat -n ARTIX_EFI "${efi_img}" &>/dev/null

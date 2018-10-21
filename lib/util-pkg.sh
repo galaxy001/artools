@@ -117,8 +117,8 @@ push_tree(){
 get_import_path(){
     local tree="$1" import_path=
     case $tree in
-        packages) import_path=${tree_dir_arch}/packages ;;
-        packages-galaxy) import_path=${tree_dir_arch}/community ;;
+        packages) import_path=${TREE_DIR_ARCH}/packages ;;
+        packages-galaxy) import_path=${TREE_DIR_ARCH}/community ;;
     esac
     echo $import_path
 }

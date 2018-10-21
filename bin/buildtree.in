@@ -9,7 +9,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-version=@version@
+VERSION=@version@
 
 LIBDIR='@libdir@'
 SYSCONFDIR='@sysconfdir@'
@@ -22,7 +22,7 @@ import ${LIBDIR}/util-pkg-gitea.sh
 import ${LIBDIR}/util-pkg-subrepo.sh
 
 pull_tree_arch(){
-    cd ${tree_dir_arch}
+    cd ${TREE_DIR_ARCH}
     for tree in packages community;do
         if [[ -d ${tree} ]];then
             cd ${tree}
@@ -31,7 +31,7 @@ pull_tree_arch(){
             cd ..
         else
             msg "Cloning (%s) ..." "$tree"
-            clone_tree "${host_tree_arch}/${tree}"
+            clone_tree "${HOST_TREE_ARCH}/${tree}"
         fi
     done
 }
@@ -50,7 +50,7 @@ config_tree(){
 }
 
 pull_tree_artix(){
-    cd ${tree_dir_artix}
+    cd ${TREE_DIR_ARTIX}
     for tree in packages packages-galaxy;do
         if [[ -d ${tree} ]];then
             config_tree "${tree}"
@@ -60,7 +60,7 @@ pull_tree_artix(){
             cd ..
         else
             msg "Cloning (%s) ..." "$tree"
-            clone_tree "${host_tree_artix}/${tree}"
+            clone_tree "${HOST_TREE_ARTIX}/${tree}"
             config_tree "${tree}"
         fi
     done
@@ -69,7 +69,7 @@ pull_tree_artix(){
 show_version_table(){
     msg_table_header "%-20s %-20s %-25s %-30s %-30s" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version"
     for tree in packages packages-galaxy;do
-        local git=$(find ${tree_dir_artix}/$tree/ -mindepth 1 -maxdepth 1 -type d)
+        local git=$(find ${TREE_DIR_ARTIX}/$tree/ -mindepth 1 -maxdepth 1 -type d)
         for pkg_path in ${git[@]}; do
             local artixrepo=$(find_repo "$pkg_path" "${unstable}" "${staging}")
             if [[ -d $pkg_path/repos/$artixrepo ]];then
@@ -138,24 +138,24 @@ show_deps(){
 
 from_arch(){
     local pkg="$1" src= dest=
-    local git_tree_arch=$(find_tree "${tree_dir_arch}" "$pkg")
+    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "$pkg")
     [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "$pkg"
 
-    local pkg_path=${tree_dir_arch}/$git_tree_arch/$pkg
+    local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
     local repo=$(find_repo "$pkg_path" "${unstable}")
 
     src=$pkg_path/repos/$repo
     $trunk && src=$pkg_path/trunk
 
-    local git_tree_artix=$(find_tree "${tree_dir_artix}" "$pkg")
-    dest=${tree_dir_artix}/$git_tree_artix/$pkg/trunk
+    local git_tree_artix=$(find_tree "${TREE_DIR_ARTIX}" "$pkg")
+    dest=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg/trunk
 
-    cd ${tree_dir_arch}/$git_tree_arch
+    cd ${TREE_DIR_ARCH}/$git_tree_arch
 
     show_deps "$src" "$repo"
 
     if [[ -d $dest ]];then
-        cd ${tree_dir_artix}/$git_tree_artix
+        cd ${TREE_DIR_ARTIX}/$git_tree_artix
 
         source $dest/PKGBUILD 2>/dev/null
         local artixver=$(get_full_version $pkg)
@@ -168,9 +168,9 @@ from_arch(){
         [[ $git_tree_arch == 'packages' ]] && git_tree_artix=$git_tree_arch
         [[ $git_tree_arch == 'community' ]] && git_tree_artix='packages-galaxy'
 
-        cd ${tree_dir_artix}/$git_tree_artix
+        cd ${TREE_DIR_ARTIX}/$git_tree_artix
 
-        dest=${tree_dir_artix}/$git_tree_artix/$pkg/trunk
+        dest=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg/trunk
 
         create_repo "$pkg"
         add_repo_to_team "$pkg" "$pkg_path"
@@ -184,10 +184,10 @@ from_arch(){
 
 view_build(){
     local pkg="$1" src=
-    local git_tree_arch=$(find_tree "${tree_dir_arch}" "$pkg")
+    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "$pkg")
     [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "$pkg"
 
-    local pkg_path=${tree_dir_arch}/$git_tree_arch/$pkg
+    local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
     local repo=$(find_repo "$pkg_path" "${unstable}")
 
     src=$pkg_path/repos/$repo
@@ -221,8 +221,8 @@ display_settings(){
     msg2 "trunk: %s" "${trunk}"
 
     msg "PATHS:"
-    msg2 "tree_dir_artix: %s" "${tree_dir_artix}"
-    msg2 "tree_dir_arch: %s" "${tree_dir_arch}"
+    msg2 "TREE_DIR_ARTIX: %s" "${TREE_DIR_ARTIX}"
+    msg2 "TREE_DIR_ARCH: %s" "${TREE_DIR_ARCH}"
 }
 
 load_user_info
@@ -294,8 +294,8 @@ done
 
 shift $(($OPTIND - 1))
 
-prepare_dir "${tree_dir_artix}"
-prepare_dir "${tree_dir_arch}"
+prepare_dir "${TREE_DIR_ARTIX}"
+prepare_dir "${TREE_DIR_ARCH}"
 
 ${pretend} && display_settings && exit 1
 

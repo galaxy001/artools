@@ -9,7 +9,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-version=@version@
+VERSION=@version@
 
 LIBDIR='@libdir@'
 DATADIR='@datadir@'
@@ -22,7 +22,7 @@ import ${LIBDIR}/util-iso.sh
 prepare_build(){
     timer_start=$(get_timer)
 
-    load_profile "${profile}"
+    load_profile "${PROFILE}"
 
     local pacman_conf pac_file="pacman-default.conf"
 
@@ -36,29 +36,29 @@ prepare_build(){
     iso_file=$(gen_iso_fn).iso
 
     mkchroot_args+=(-C ${pacman_conf} -m)
-    work_dir=${chroots_iso}/${profile}/${target_arch}
+    WORK_DIR=${CHROOTS_ISO}/${PROFILE}/${ARCH}
 
-    iso_dir="${iso_pool}/${profile}"
+    ISO_DIR="${ISO_POOL}/${PROFILE}"
 
-    iso_root=${chroots_iso}/${profile}/iso
-    mnt_dir=${chroots_iso}/${profile}/mnt
-    prepare_dir "${mnt_dir}"
-    prepare_dir "${iso_dir}"
-    prepare_dir "${iso_root}"
+    ISO_ROOT=${CHROOTS_ISO}/${PROFILE}/iso
+    MNT_DIR=${CHROOTS_ISO}/${PROFILE}/mnt
+    prepare_dir "${MNT_DIR}"
+    prepare_dir "${ISO_DIR}"
+    prepare_dir "${ISO_ROOT}"
 }
 
 show_profile(){
     msg2 "iso_file: %s" "${iso_file}"
     if ${verbose};then
-        msg2 "autologin: %s" "${autologin}"
+        msg2 "AUTOLOGIN: %s" "${AUTOLOGIN}"
 
-        msg2 "hostname: %s" "${hostname}"
-        msg2 "username: %s" "${username}"
-        msg2 "password: %s" "${password}"
-        msg2 "addgroups: %s" "${addgroups}"
+        msg2 "HOSTNAME: %s" "${HOSTNAME}"
+        msg2 "USERNAME: %s" "${USERNAME}"
+        msg2 "PASSWORD: %s" "${PASSWORD}"
+        msg2 "ADDGROUPS: %s" "${ADDGROUPS}"
 
-        msg2 "services_live: %s" "${services_live[*]}"
-        msg2 "services: %s" "${services[*]}"
+        msg2 "SERVICES_LIVE: %s" "${SERVICES_LIVE[*]}"
+        msg2 "SERVICES: %s" "${SERVICES[*]}"
     fi
 }
 
@@ -67,9 +67,9 @@ display_settings(){
     show_config
 
     msg "OPTIONS:"
-    msg2 "profile: %s" "${profile}"
-    msg2 "initsys: %s" "${initsys}"
-    [[ -n ${gpgkey} ]] && msg2 "gpgkey: %s" "${gpgkey}"
+    msg2 "PROFILE: %s" "${PROFILE}"
+    msg2 "INITSYS: %s" "${INITSYS}"
+    [[ -n ${GPG_KEY} ]] && msg2 "gpgkey: %s" "${gpgkey}"
     msg2 "stablility: %s" "${stablility}"
 
     msg "ARGS:"
@@ -79,16 +79,16 @@ display_settings(){
     msg2 "persist: %s" "${persist}"
 
     msg "ISO SETTINGS:"
-    msg2 "iso_version: %s" "${iso_version}"
+    msg2 "ISO_VERSION: %s" "${ISO_VERSION}"
 
     msg "BUILD:"
     show_profile
 }
 
 build(){
-    msg "Start building [%s]" "${profile}"
+    msg "Start building [%s]" "${PROFILE}"
     if ${clean_first};then
-        for copy in "${work_dir}"/*; do
+        for copy in "${WORK_DIR}"/*; do
             [[ -d $copy ]] || continue
             msg2 "Deleting chroot copy '%s'..." "$(basename "${copy}")"
 
@@ -99,24 +99,24 @@ build(){
         done
         lock_close 9
 
-        rm -rf --one-file-system "${work_dir}"
-        clean_iso_root "${iso_root}"
+        rm -rf --one-file-system "${WORK_DIR}"
+        clean_iso_root "${ISO_ROOT}"
     fi
 
     if ${iso_only}; then
-        [[ ! -d ${work_dir} ]] && die "Create images: buildiso -p %s -x" "${profile}"
+        [[ ! -d ${WORK_DIR} ]] && die "Create images: buildiso -p %s -x" "${PROFILE}"
         compress_images
         exit 1
     fi
     if ${images_only}; then
         prepare_images
-        warning "Continue compress: buildiso -p %s -zc ..." "${profile}"
+        warning "Continue compress: buildiso -p %s -zc ..." "${PROFILE}"
         exit 1
     else
         prepare_images
         compress_images
     fi
-    msg "Finished building [%s]" "${profile}"
+    msg "Finished building [%s]" "${PROFILE}"
     show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }
 
@@ -137,15 +137,15 @@ stablility=${cmd##*-}
 
 usage() {
     echo "Usage: ${0##*/} [options]"
-    echo "    -p <profile>       Profile [default: ${profile}]"
+    echo "    -p <profile>       Profile [default: ${PROFILE}]"
     echo '    -r <dir>           Chroots directory'
-    echo "                       [default: ${chroots_iso}]"
+    echo "                       [default: ${CHROOTS_ISO}]"
     echo '    -t <dir>           Target directory'
-    echo "                       [default: ${iso_pool}]"
+    echo "                       [default: ${ISO_POOL}]"
     echo '    -i <name>          Init system to use'
-    echo "                       [default: ${initsys}]"
+    echo "                       [default: ${INITSYS}]"
     echo '    -g <key>           The gpg key for sfs signing'
-    echo "                       [default: ${gpgkey}]"
+    echo "                       [default: ${GPG_KEY}]"
     echo '    -m                 Set SquashFS image mode to persistence'
     echo '    -c                 Disable clean work dir'
     echo '    -x                 Build images only'
@@ -166,10 +166,10 @@ opts='p:r:t:i:g:czxmvqh'
 while getopts "${opts}" arg; do
     case "${arg}" in
         p) profile="$OPTARG" ;;
-        r) chroots_iso="$OPTARG" ;;
-        t) iso_pool="$OPTARG" ;;
-        i) initsys="$OPTARG" ;;
-        g) gpgkey="$OPTARG" ;;
+        r) CHROOTS_ISO="$OPTARG" ;;
+        t) ISO_POOL="$OPTARG" ;;
+        i) INITSYS="$OPTARG" ;;
+        g) GPG_KEY="$OPTARG" ;;
         c) clean_first=false ;;
         x) images_only=true ;;
         z) iso_only=true ;;

@@ -9,7 +9,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-version=@version@
+VERSION=@version@
 
 LIBDIR='@libdir@'
 SYSCONFDIR='@sysconfdir@'
@@ -18,19 +18,19 @@ SYSCONFDIR='@sysconfdir@'
 import ${LIBDIR}/util.sh
 
 connect(){
-    local home="/home/frs/project/${project}"
-    echo "${account},${project}@frs.${file_host}:${home}"
+    local home="/home/frs/project/${PROJECT}"
+    echo "${ACCOUNT},${PROJECT}@frs.${FILE_HOST}:${home}"
 }
 
 prepare_transfer(){
-    target_dir="/iso/${profile}/"
-    src_dir="${iso_pool}/${profile}/"
+    DEST_DIR="/iso/${PROFILE}/"
+    SRC_DIR="${ISO_POOL}/${PROFILE}/"
 }
 
 sync_dir(){
-    msg "Start upload [%s] ..." "${profile}"
-    rsync "${rsync_args[@]}" ${src_dir} $(connect)${target_dir}
-    msg "Done upload [%s]" "${profile}"
+    msg "Start upload [%s] ..." "${PROFILE}"
+    rsync "${rsync_args[@]}" ${SRC_DIR} $(connect)${DEST_DIR}
+    msg "Done upload [%s]" "${PROFILE}"
     show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }
 
@@ -39,21 +39,21 @@ display_settings(){
     show_config
 
     msg "OPTIONS:"
-    msg2 "profile: %s" "${profile}"
-    msg2 "uplimit: %s kB/s" "${uplimit}"
+    msg2 "PROFILE: %s" "${PROFILE}"
+    msg2 "UPLIMIT: %s kB/s" "${UPLIMIT}"
 
     msg "ARGS:"
     msg2 "update: %s" "${update}"
     msg2 "verbose: %s" "${verbose}"
 
     msg "REMOTE:"
-    msg2 "account: %s" "${account}"
-    msg2 "file_host: %s" "${file_host}"
-    msg2 "project: %s" "${project}"
+    msg2 "ACCOUNT: %s" "${ACCOUNT}"
+    msg2 "FILE_HOST: %s" "${FILE_HOST}"
+    msg2 "PROFILE: %s" "${PROJECT}"
 
     msg "UPLOAD:"
-    msg2 "src_dir: ${src_dir}"
-    msg2 "target_dir: ${target_dir}"
+    msg2 "SRC_DIR: ${SRC_DIR}"
+    msg2 "DEST_DIR: ${DEST_DIR}"
 }
 
 load_user_info
@@ -68,8 +68,8 @@ rsync_args=(-aP --progress -e ssh)
 
 usage() {
     echo "Usage: ${0##*/} [options]"
-    echo "    -p                 Source folder to upload [default: ${profile}]"
-    echo "    -l                 Limit bandwidth in kB/s [default:${uplimit}]"
+    echo "    -p                 Source folder to upload [default: ${PROFILE}]"
+    echo "    -l                 Limit bandwidth in kB/s [default:${UPLIMIT}]"
     echo '    -u                 Update remote directory'
     echo '    -q                 Query settings and pretend upload'
     echo '    -v                 Verbose output'
@@ -83,8 +83,8 @@ opts='p:l:uvqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        p) profile="$OPTARG" ;;
-        l) uplimit="$OPTARG" ;;
+        p) PROFILE="$OPTARG" ;;
+        l) UPLIMIT="$OPTARG" ;;
         u) update=true; rsync_args+=(-u) ;;
         v) verbose=true; rsync_args+=(-v --stats) ;;
         q) pretend=true; rsync_args+=(-n) ;;
@@ -97,7 +97,7 @@ shift $(($OPTIND - 1))
 
 timer_start=$(get_timer)
 
-rsync_args+=(--bwlimit=${uplimit})
+rsync_args+=(--bwlimit=${UPLIMIT})
 
 prepare_transfer
 

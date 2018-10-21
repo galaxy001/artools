@@ -9,7 +9,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-version=@version@
+VERSION=@version@
 
 LIBDIR='@libdir@'
 SYSCONFDIR='@sysconfdir@'
@@ -21,9 +21,9 @@ import ${LIBDIR}/util-pkg.sh
 import ${LIBDIR}/util-pkg-subrepo.sh
 
 commit_pkg(){
-    local git_tree=$(find_tree "${tree_dir_artix}" "${package}")
+    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${package}")
     if [[ -n ${git_tree} ]];then
-        cd ${tree_dir_artix}/${git_tree}/${package}
+        cd ${TREE_DIR_ARTIX}/${git_tree}/${package}
 
         source trunk/PKGBUILD
         [[ $arch == 'any' ]] && CARCH=any
@@ -50,7 +50,7 @@ commit_pkg(){
         fi
         git commit -m "$commit_msg"
 
-        cd ${tree_dir_artix}/${git_tree}
+        cd ${TREE_DIR_ARTIX}/${git_tree}
 
         if ${push};then
             msg "Checking (%s)" "${git_tree}"
@@ -66,9 +66,9 @@ commit_pkg(){
 }
 
 symlink_commit_pkg(){
-    local git_tree=$(find_tree "${tree_dir_artix}" "${package}")
+    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${package}")
     if [[ -n ${git_tree} ]];then
-        cd ${tree_dir_artix}/${git_tree}/${package}
+        cd ${TREE_DIR_ARTIX}/${git_tree}/${package}
 
         source trunk/PKGBUILD
         [[ $arch == 'any' ]] && CARCH=any
@@ -100,7 +100,7 @@ symlink_commit_pkg(){
         git add .
         git commit -m "$commit_msg"
 
-        cd ${tree_dir_artix}/${git_tree}
+        cd ${TREE_DIR_ARTIX}/${git_tree}
 
         if ${push};then
             msg "Checking (%s)" "${git_tree}"

@@ -9,7 +9,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-version=@version@
+VERSION=@version@
 
 LIBDIR='@libdir@'
 SYSCONFDIR='@sysconfdir@'
@@ -20,7 +20,7 @@ import ${LIBDIR}/util-pkg.sh
 
 update_repo(){
     local repo="$1" pkgfile ver ext=db.tar.xz
-    local repo_path=${repos_root}/$repo/os/${target_arch} packages=()
+    local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
     source PKGBUILD
     for name in ${pkgname[@]};do
         [[ $arch == any ]] && CARCH=any
@@ -55,7 +55,7 @@ display_settings(){
     show_config
 
     msg "OPTIONS:"
-    msg2 "repository: %s" "${repository}"
+    msg2 "REPOSITORY: %s" "${REPOSITORY}"
 
     msg "ARGS:"
     msg2 "add_pkg: %s" "${add_pkg}"
@@ -72,12 +72,12 @@ load_vars /etc/makepkg.conf
 pretend=false
 add_pkg=false
 del_pkg=false
-repository=
+REPOSITORY=
 sign_pkg=false
 
 usage() {
     echo "Usage: ${0##*/} [options]"
-    echo "    -d                 Destination repository [default:${repository}]"
+    echo "    -d                 Destination repository [default:${REPOSITORY}]"
     echo '    -a                 Add package(s) to repository'
     echo '    -r                 Remove package(s) from repository'
     echo '    -s                 Sign package(s)'
@@ -94,7 +94,7 @@ opts='d:arsqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        d) repository="$OPTARG" ;;
+        d) REPOSITORY="$OPTARG" ;;
         a) add_pkg=true; del_pkg=false ;;
         r) del_pkg=true; add_pkg=false ;;
         s) sign_pkg=true ;;
@@ -106,8 +106,8 @@ done
 
 shift $(($OPTIND - 1))
 
-prepare_dir "${repos_root}"
+prepare_dir "${REPOS_ROOT}"
 
 ${pretend} && display_settings && exit 1
 
-update_repo "${repository}"
+update_repo "${REPOSITORY}"

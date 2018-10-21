@@ -49,60 +49,60 @@ get_osname(){
 
 init_artools_base(){
 
-    target_arch=$(uname -m)
+    ARCH=$(uname -m)
 
-    [[ -z ${chroots_dir} ]] && chroots_dir='/var/lib/artools'
+    [[ -z ${CHROOTS_DIR} ]] && CHROOTS_DIR='/var/lib/artools'
 
-    [[ -z ${workspace_dir} ]] && workspace_dir=/home/${OWNER}/artools-workspace
+    [[ -z ${WORKSPACE_DIR} ]] && WORKSPACE_DIR=/home/${OWNER}/artools-workspace
 
-    prepare_dir "${workspace_dir}"
+    prepare_dir "${WORKSPACE_DIR}"
 }
 
 init_artools_pkg(){
 
-    git_domain='gitea.artixlinux.org'
+    GIT_DOMAIN='gitea.artixlinux.org'
 
-    git_url="https://${git_domain}"
+    GIT_URL="https://${GIT_DOMAIN}"
 
-    [[ -z ${git_token} ]] && git_token=''
+    [[ -z ${GIT_TOKEN} ]] && GIT_TOKEN=''
 
-    [[ -z ${tree_dir_artix} ]] && tree_dir_artix=${workspace_dir}/artix
+    [[ -z ${TREE_DIR_ARTIX} ]] && TREE_DIR_ARTIX=${WORKSPACE_DIR}/artix
 
-    [[ -z ${host_tree_artix} ]] && host_tree_artix="gitea@gitea.artixlinux.org:artix"
+    [[ -z ${HOST_TREE_ARTIX} ]] && HOST_TREE_ARTIX="gitea@gitea.artixlinux.org:artix"
 
-    [[ -z ${tree_dir_arch} ]] && tree_dir_arch=${workspace_dir}/archlinux
+    [[ -z ${TREE_DIR_ARCH} ]] && TREE_DIR_ARCH=${WORKSPACE_DIR}/archlinux
 
-    [[ -z ${host_tree_arch} ]] && host_tree_arch='git://projects.archlinux.org/svntogit'
+    [[ -z ${HOST_TREE_ARCH} ]] && HOST_TREE_ARCH='git://projects.archlinux.org/svntogit'
 
-    chroots_pkg="${chroots_dir}/buildpkg"
+    CHROOTS_PKG="${CHROOTS_DIR}/buildpkg"
 
-    [[ -z ${repos_root} ]] && repos_root="${workspace_dir}/repos"
+    [[ -z ${REPOS_ROOT} ]] && REPOS_ROOT="${WORKSPACE_DIR}/repos"
 }
 
 init_artools_iso(){
-    chroots_iso="${chroots_dir}/buildiso"
+    CHROOTS_ISO="${CHROOTS_DIR}/buildiso"
 
-    [[ -z ${iso_pool} ]] && iso_pool="${workspace_dir}/iso"
+    [[ -z ${ISO_POOL} ]] && ISO_POOL="${WORKSPACE_DIR}/iso"
 
-    prepare_dir "${iso_pool}"
+    prepare_dir "${ISO_POOL}"
 
-    profile='base'
+    PROFILE='base'
 
-    [[ -z ${iso_version} ]] && iso_version=$(date +%Y%m%d)
+    [[ -z ${ISO_VERSION} ]] && ISO_VERSION=$(date +%Y%m%d)
 
-    iso_label="ARTIX_$(date +%Y%m)"
+    ISO_LABEL="ARTIX_$(date +%Y%m)"
 
-    [[ -z ${initsys} ]] && initsys="openrc"
+    [[ -z ${INITSYS} ]] && INITSYS="openrc"
 
-    [[ -z ${gpgkey} ]] && gpgkey=''
+    [[ -z ${GPG_KEY} ]] && GPG_KEY=''
 
-    [[ -z ${uplimit} ]] && uplimit=1000
+    [[ -z ${UPLIMIT} ]] && UPLIMIT=1000
 
-    [[ -z ${file_host} ]] && file_host="sourceforge.net"
+    [[ -z ${FILE_HOST} ]] && FILE_HOST="sourceforge.net"
 
-    [[ -z ${project} ]] && project="artix-linux"
+    [[ -z ${PROJECT} ]] && PROJECT="artix-linux"
 
-    [[ -z ${account} ]] && account="[SetUser]"
+    [[ -z ${ACCOUNT} ]] && ACCOUNT="[SetUser]"
 }
 
 
@@ -110,9 +110,9 @@ load_config(){
 
     [[ -f $1 ]] || return 1
 
-    artools_conf="$1"
+    ARTOOLS_CONF="$1"
 
-    [[ -r ${artools_conf} ]] && source ${artools_conf}
+    [[ -r ${ARTOOLS_CONF} ]] && source ${ARTOOLS_CONF}
 
     init_artools_base
 
@@ -154,15 +154,15 @@ load_user_info(){
 }
 
 show_version(){
-    msg "artools"
-    msg2 "version: %s" "${version}"
+    msg "ARTOOLS"
+    msg2 "VERSION: %s" "${VERSION}"
 }
 
 show_config(){
     if [[ -f ${AT_USERCONFDIR}/artools.conf ]]; then
         msg2 "config: %s" "~/.config/artools/artools.conf"
     else
-        msg2 "config: %s" "${artools_conf}"
+        msg2 "config: %s" "${ARTOOLS_CONF}"
     fi
 }
 

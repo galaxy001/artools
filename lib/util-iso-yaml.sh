@@ -15,7 +15,7 @@ write_users_conf(){
     echo "---" > "$conf"
     echo "defaultGroups:" >> "$conf"
     local IFS=','
-    for g in ${addgroups[@]};do
+    for g in ${ADDGROUPS[@]};do
         echo "    - $g" >> "$conf"
     done
     unset IFS
@@ -46,7 +46,7 @@ write_servicescfg_conf(){
             echo '' >> "$conf"
             echo 'services:' >> "$conf"
             echo "    enabled:" >> "$conf"
-            for svc in ${services[@]};do
+            for svc in ${SERVICES[@]};do
                 echo "      - name: $svc" >> "$conf"
                 echo '        runlevel: default' >> "$conf"
             done
@@ -57,7 +57,7 @@ write_servicescfg_conf(){
             echo 'runlevelsDir: /etc/runlevels' >> "$conf"
             echo '' >> "$conf"
             echo 'services:' >> "$conf"
-            for svc in ${services[@]};do
+            for svc in ${SERVICES[@]};do
                 echo "      - name: $svc" >> "$conf"
                 echo '        runlevel: default' >> "$conf"
             done
