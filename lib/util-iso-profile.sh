@@ -42,9 +42,9 @@ load_profile(){
     [[ -z ${AUTOLOGIN} ]] && AUTOLOGIN="true"
     [[ ${DISPLAYMANAGER} == 'none' ]] && AUTOLOGIN="false"
 
-    [[ -z ${HOSTNAME} ]] && HOSTNAME="artix"
+    [[ -z ${HOST_NAME} ]] && HOST_NAME="artix"
 
-    [[ -z ${USERNAME} ]] && USERNAME="artix"
+    [[ -z ${USER_NAME} ]] && USER_NAME="artix"
 
     [[ -z ${PASSWORD} ]] && PASSWORD="artix"
 

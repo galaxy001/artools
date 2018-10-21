@@ -44,7 +44,7 @@ mount_overlay(){
     local lower= upper="$1" work="$2" pkglist="$3"
     local fs=${upper##*/}
     local rootfs="$work/rootfs" desktopfs="$work/desktopfs" livefs="$work/livefs"
-    mkdir -p "${MNT_DIR}/work"
+    mkdir -p "${mnt_dir}/work"
     mkdir -p "$upper"
     case $fs in
         desktopfs) lower="$rootfs" ;;
@@ -57,7 +57,7 @@ mount_overlay(){
             [[ -f $pkglist ]] && lower="$livefs":"$desktopfs":"$rootfs"
         ;;
     esac
-    track_fs -t overlay overlay -olowerdir="$lower",upperdir="$upper",workdir="${MNT_DIR}/work" "$upper"
+    track_fs -t overlay overlay -olowerdir="$lower",upperdir="$upper",workdir="${mnt_dir}/work" "$upper"
 }
 
 umount_overlay(){
@@ -65,7 +65,7 @@ umount_overlay(){
         info "overlayfs umount: [%s]" "${FS_ACTIVE_MOUNTS[@]}"
         umount "${FS_ACTIVE_MOUNTS[@]}"
         unset FS_ACTIVE_MOUNTS
-        rm -rf "${MNT_DIR}/work"
+        rm -rf "${mnt_dir}/work"
     fi
 }
 
@@ -156,7 +156,7 @@ set_xdm(){
 }
 
 configure_hosts(){
-    sed -e "s|localhost.localdomain|localhost.localdomain ${HOSTNAME}|" -i $1/etc/hosts
+    sed -e "s|localhost.localdomain|localhost.localdomain ${HOST_NAME}|" -i $1/etc/hosts
 }
 
 configure_logind(){
@@ -201,7 +201,7 @@ configure_system(){
             configure_logind "$mnt" "elogind"
         ;;
     esac
-    echo ${HOSTNAME} > $mnt/etc/hostname
+    echo ${HOST_NAME} > $mnt/etc/hostname
 }
 
 clean_iso_root(){
@@ -292,7 +292,7 @@ make_sfs() {
         error "The path %s does not exist" "${src}"
         retrun 1
     fi
-    local timer=$(get_timer) dest=${ISO_ROOT}/artix/${ARCH}
+    local timer=$(get_timer) dest=${iso_root}/artix/${ARCH}
     local name=${1##*/}
     local sfs="${dest}/${name}.sfs"
     mkdir -p ${dest}
@@ -312,7 +312,7 @@ make_sfs() {
 
     if ${persist};then
         local size=32G
-        local mnt="${MNT_DIR}/${name}"
+        local mnt="${mnt_dir}/${name}"
         msg2 "Creating ext4 image of %s ..." "${size}"
         truncate -s ${size} "${src}.img"
         local ext4_args=()
@@ -320,7 +320,7 @@ make_sfs() {
         ext4_args+=(-O ^has_journal,^resize_inode -E lazy_itable_init=0 -m 0)
         mkfs.ext4 ${ext4_args[@]} -F "${src}.img" &>/dev/null
         tune2fs -c 0 -i 0 "${src}.img" &> /dev/null
-        mount_img "${WORK_DIR}/${name}.img" "${mnt}"
+        mount_img "${work_dir}/${name}.img" "${mnt}"
         msg2 "Copying %s ..." "${src}/"
         cp -aT "${src}/" "${mnt}/"
         umount_img "${mnt}"
@@ -330,7 +330,7 @@ make_sfs() {
     msg2 "Creating SquashFS image, this may take some time..."
     local mksfs_args=()
     if ${persist};then
-        mksfs_args+=(${WORK_DIR}/${name}.img)
+        mksfs_args+=(${work_dir}/${name}.img)
     else
         mksfs_args+=(${src})
     fi
@@ -369,36 +369,36 @@ assemble_iso(){
         -r -graft-points -no-pad \
         --sort-weight 0 / \
         --sort-weight 1 /boot \
-        --grub2-mbr ${ISO_ROOT}/boot/grub/i386-pc/boot_hybrid.img \
+        --grub2-mbr ${iso_root}/boot/grub/i386-pc/boot_hybrid.img \
         -partition_offset 16 \
         -b boot/grub/i386-pc/eltorito.img \
         -c boot.catalog \
         -no-emul-boot -boot-load-size 4 -boot-info-table --grub2-boot-info \
         -eltorito-alt-boot \
-        -append_partition 2 0xef ${ISO_ROOT}/efi.img \
+        -append_partition 2 0xef ${iso_root}/efi.img \
         -e --interval:appended_partition_2:all:: -iso_mbr_part_type 0x00 \
         -no-emul-boot \
         -iso-level 3 \
-        -o ${ISO_DIR}/${iso_file} \
-        ${ISO_ROOT}/
+        -o ${iso_dir}/${iso_file} \
+        ${iso_root}/
 }
 
 # Build ISO
 make_iso() {
     msg "Start [Build ISO]"
-    touch "${ISO_ROOT}/.artix"
-    for sfs_dir in $(find "${WORK_DIR}" -maxdepth 1 -type d); do
-        if [[ "${sfs_dir}" != "${WORK_DIR}" ]]; then
+    touch "${iso_root}/.artix"
+    for sfs_dir in $(find "${work_dir}" -maxdepth 1 -type d); do
+        if [[ "${sfs_dir}" != "${work_dir}" ]]; then
             make_sfs "${sfs_dir}"
         fi
     done
 
     msg "Making bootable image"
     # Sanity checks
-    [[ ! -d "${ISO_ROOT}" ]] && return 1
-    if [[ -f "${ISO_DIR}/${iso_file}" ]]; then
+    [[ ! -d "${iso_root}" ]] && return 1
+    if [[ -f "${iso_dir}/${iso_file}" ]]; then
         msg2 "Removing existing bootable image..."
-        rm -rf "${ISO_DIR}/${iso_file}"
+        rm -rf "${iso_dir}/${iso_file}"
     fi
     assemble_iso
     msg "Done [Build ISO]"
@@ -408,8 +408,8 @@ gen_iso_fn(){
     local vars=("artix") name
     vars+=("${PROFILE}")
     vars+=("${INITSYS}")
-    case "${stablility}" in
-        'gremlins'|'goblins') vars+=("${stablility}") ;;
+    case "${REPOSITORY}" in
+        'gremlins'|'goblins') vars+=("${REPOSITORY}") ;;
     esac
     vars+=("${ISO_VERSION}")
     vars+=("${ARCH}")
@@ -434,9 +434,9 @@ copy_overlay(){
 }
 
 make_rootfs() {
-    if [[ ! -e ${WORK_DIR}/rootfs.lock ]]; then
+    if [[ ! -e ${work_dir}/rootfs.lock ]]; then
         msg "Prepare [Base installation] (rootfs)"
-        local rootfs="${WORK_DIR}/rootfs"
+        local rootfs="${work_dir}/rootfs"
 
         prepare_dir "${rootfs}"
 
@@ -451,13 +451,13 @@ make_rootfs() {
 }
 
 make_desktopfs() {
-    if [[ ! -e ${WORK_DIR}/desktopfs.lock ]]; then
+    if [[ ! -e ${work_dir}/desktopfs.lock ]]; then
         msg "Prepare [Desktop installation] (desktopfs)"
-        local desktopfs="${WORK_DIR}/desktopfs"
+        local desktopfs="${work_dir}/desktopfs"
 
         prepare_dir "${desktopfs}"
 
-        mount_overlay "${desktopfs}" "${WORK_DIR}"
+        mount_overlay "${desktopfs}" "${work_dir}"
 
         install_packages "${desktopfs}"
 
@@ -471,13 +471,13 @@ make_desktopfs() {
 }
 
 make_livefs() {
-    if [[ ! -e ${WORK_DIR}/livefs.lock ]]; then
+    if [[ ! -e ${work_dir}/livefs.lock ]]; then
         msg "Prepare [Live installation] (livefs)"
-        local livefs="${WORK_DIR}/livefs"
+        local livefs="${work_dir}/livefs"
 
         prepare_dir "${livefs}"
 
-        mount_overlay "${livefs}" "${WORK_DIR}" "${DESKTOP_LIST}"
+        mount_overlay "${livefs}" "${work_dir}" "${DESKTOP_LIST}"
 
         install_packages "${livefs}"
 
@@ -494,17 +494,17 @@ make_livefs() {
 }
 
 make_bootfs() {
-    if [[ ! -e ${WORK_DIR}/bootfs.lock ]]; then
+    if [[ ! -e ${work_dir}/bootfs.lock ]]; then
         msg "Prepare [/iso/boot]"
-        local boot="${ISO_ROOT}/boot"
+        local boot="${iso_root}/boot"
 
         prepare_dir "${boot}"
 
-        cp ${WORK_DIR}/rootfs/boot/vmlinuz* ${boot}/vmlinuz-${ARCH}
+        cp ${work_dir}/rootfs/boot/vmlinuz* ${boot}/vmlinuz-${ARCH}
 
-        local bootfs="${WORK_DIR}/bootfs"
+        local bootfs="${work_dir}/bootfs"
 
-        mount_overlay "${bootfs}" "${WORK_DIR}" "${DESKTOP_LIST}"
+        mount_overlay "${bootfs}" "${work_dir}" "${DESKTOP_LIST}"
 
         prepare_initcpio "${bootfs}"
         prepare_initramfs "${bootfs}"
@@ -515,20 +515,20 @@ make_bootfs() {
         umount_overlay
 
         rm -R ${bootfs}
-        : > ${WORK_DIR}/bootfs.lock
+        : > ${work_dir}/bootfs.lock
         msg "Done [/iso/boot]"
     fi
 }
 
 make_grub(){
-    if [[ ! -e ${WORK_DIR}/grub.lock ]]; then
+    if [[ ! -e ${work_dir}/grub.lock ]]; then
         msg "Prepare [/iso/boot/grub]"
 
-        prepare_grub "${WORK_DIR}/rootfs" "${WORK_DIR}/livefs" "${ISO_ROOT}"
+        prepare_grub "${work_dir}/rootfs" "${work_dir}/livefs" "${iso_root}"
 
-        configure_grub "${ISO_ROOT}"
+        configure_grub "${iso_root}"
 
-        : > ${WORK_DIR}/grub.lock
+        : > ${work_dir}/grub.lock
         msg "Done [/iso/boot/grub]"
     fi
 }
@@ -536,7 +536,7 @@ make_grub(){
 compress_images(){
     local timer=$(get_timer)
     run_safe "make_iso"
-    user_own "${ISO_DIR}" "-R"
+    user_own "${iso_dir}" "-R"
     show_elapsed_time "${FUNCNAME}" "${timer}"
 }
 

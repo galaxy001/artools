@@ -100,7 +100,7 @@ prepare_grub(){
         grub-mkfont -o ${grub}/unicode.pf2 /usr/share/fonts/misc/unifont.bdf
     fi
 
-    local size=4M mnt="${MNT_DIR}/efiboot" efi_img="$3/efi.img"
+    local size=4M mnt="${mnt_dir}/efiboot" efi_img="$3/efi.img"
     msg2 "Creating fat image of %s ..." "${size}"
     truncate -s ${size} "${efi_img}"
     mkfs.fat -n ARTIX_EFI "${efi_img}" &>/dev/null
