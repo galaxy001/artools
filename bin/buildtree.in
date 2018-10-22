@@ -114,7 +114,7 @@ show_version_table(){
                         fi
                     fi
                 fi
-                unset pkgver epoch pkgrel artixver archver _package
+                unset pkgver epoch pkgrel artixver archver
             fi
         done
     done
@@ -205,7 +205,7 @@ display_settings(){
     show_config
 
     msg "OPTIONS:"
-    msg2 "package: %s" "${package}"
+    msg2 "PACKAGE: %s" "${PACKAGE}"
 
     msg "ARGS:"
     msg2 "sync: %s" "${sync}"
@@ -243,7 +243,7 @@ artix=false
 import=false
 view=false
 trunk=false
-package=''
+PACKAGE=''
 
 rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
 
@@ -274,7 +274,7 @@ opts='p:csudayiztxvqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        p) package="$OPTARG" ;;
+        p) PACKAGE="$OPTARG" ;;
         s) sync=true ;;
         z) sync_arch=false ;;
         c) compare=true ;;
@@ -301,8 +301,8 @@ ${pretend} && display_settings && exit 1
 
 ${sync} && sync_repos
 
-${view} && view_build "${package}"
+${view} && view_build "${PACKAGE}"
 
 ${compare} && show_version_table
 
-${import} && from_arch "${package}"
+${import} && from_arch "${PACKAGE}"

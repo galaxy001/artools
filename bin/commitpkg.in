@@ -21,29 +21,29 @@ import ${LIBDIR}/util-pkg.sh
 import ${LIBDIR}/util-pkg-subrepo.sh
 
 commit_pkg(){
-    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${package}")
+    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
     if [[ -n ${git_tree} ]];then
-        cd ${TREE_DIR_ARTIX}/${git_tree}/${package}
+        cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
 
         source trunk/PKGBUILD
         [[ $arch == 'any' ]] && CARCH=any
-        local ver=$(get_full_version "${package}")
+        local ver=$(get_full_version "${PACKAGE}")
         local commit_msg=""
 
         if ${remove};then
             local action='remove'
-            if [[ "${source_repo}" == 'trunk' ]];then
-                local pkg=${package}
+            if [[ "${REPO_SRC}" == 'trunk' ]];then
+                local pkg=${PACKAGE}
                 git rm -r trunk
             else
-                local pkg="${package}-$ver"
-                git rm -r repos/"${source_repo}-$CARCH"
+                local pkg="${PACKAGE}-$ver"
+                git rm -r repos/"${REPO_SRC}-$CARCH"
             fi
-            commit_msg="[${source_repo}] '$pkg' ${action}"
+            commit_msg="[${REPO_SRC}] '$pkg' ${action}"
             msg "Action: %s" "$commit_msg"
         else
             local action='modify'
-            commit_msg="[${source_repo}] '${package}-$ver' ${action}"
+            commit_msg="[${REPO_SRC}] '${PACKAGE}-$ver' ${action}"
             msg "Action: %s" "$commit_msg"
             git add .
 
@@ -55,28 +55,28 @@ commit_pkg(){
         if ${push};then
             msg "Checking (%s)" "${git_tree}"
             git pull origin master
-            subrepo_push "${package}"
+            subrepo_push "${PACKAGE}"
             sleep 1
             git push origin master
         fi
         git prune
     else
-        error "Package '%s' does not exist!" "${package}"
+        error "Package '%s' does not exist!" "${PACKAGE}"
     fi
 }
 
 symlink_commit_pkg(){
-    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${package}")
+    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
     if [[ -n ${git_tree} ]];then
-        cd ${TREE_DIR_ARTIX}/${git_tree}/${package}
+        cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
 
         source trunk/PKGBUILD
         [[ $arch == 'any' ]] && CARCH=any
-        local ver=$(get_full_version "${package}")
+        local ver=$(get_full_version "${PACKAGE}")
 
-        if [[ ${source_repo} == 'trunk' ]];then
+        if [[ ${REPO_SRC} == 'trunk' ]];then
             local action='add'
-            local dest="${target_repo}-$CARCH"
+            local dest="${REPO_DEST}-$CARCH"
 
             [[ -d repos/$dest ]] && git rm -r repos/$dest
             [[ ! -d repos ]] && mkdir repos
@@ -85,7 +85,7 @@ symlink_commit_pkg(){
             cp trunk/* repos/$dest/
         else
             local action='move'
-            local src="${source_repo}-$CARCH" dest="${target_repo}-$CARCH"
+            local src="${REPO_SRC}-$CARCH" dest="${REPO_DEST}-$CARCH"
 
             [[ -d repos/$dest ]] && git rm -r repos/$dest
             [[ ! -d repos ]] && mkdir repos
@@ -94,7 +94,7 @@ symlink_commit_pkg(){
             cp repos/$src/* repos/$dest/
             git rm -r repos/$src
         fi
-        local commit_msg="[${source_repo}] -> [${target_repo}] '${package}-$ver' ${action}"
+        local commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$ver' ${action}"
         msg "Action: %s" "$commit_msg"
 
         git add .
@@ -105,13 +105,13 @@ symlink_commit_pkg(){
         if ${push};then
             msg "Checking (%s)" "${git_tree}"
             git pull origin master
-            subrepo_push "${package}"
+            subrepo_push "${PACKAGE}"
             sleep 1
             git push origin master
         fi
         git prune
     else
-        error "Package '%s' does not exist!" "${package}"
+        error "Package '%s' does not exist!" "${PACKAGE}"
     fi
 }
 
@@ -120,9 +120,9 @@ display_settings(){
     show_config
 
     msg "OPTIONS:"
-    msg2 "source_repo: %s" "${source_repo}"
-    msg2 "target_repo: %s" "${target_repo}"
-    msg2 "package: %s" "${package}"
+    msg2 "REPO_SRC: %s" "${REPO_SRC}"
+    msg2 "REPO_DEST: %s" "${REPO_DEST}"
+    msg2 "PACKAGE: %s" "${PACKAGE}"
 
     msg "ARGS:"
     msg2 "remove: %s" "${remove}"
@@ -135,18 +135,18 @@ load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artoo
 load_vars "${PAC_USERCONFDIR}/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
 load_vars /etc/makepkg.conf
 
-source_repo='trunk'
-package=''
+REPO_SRC='trunk'
+PACKAGE=''
 remove=false
 push=false
 pretend=false
 
 cmd=${0##*/}
-target_repo=${cmd%pkg}
+REPO_DEST=${cmd%pkg}
 
 usage() {
     echo "Usage: ${0##*/} [options]"
-    echo "    -s <name>          Source repository [default:${source_repo}]"
+    echo "    -s <name>          Source repository [default:${REPO_SRC}]"
     echo '    -p <pkg>           Package name'
     echo '    -r                 Delete from repo (commitpkg only)'
     echo '    -u                 Push'
@@ -163,8 +163,8 @@ opts='p:s:urqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        s) source_repo="$OPTARG" ;;
-        p) package="$OPTARG" ;;
+        s) REPO_SRC="$OPTARG" ;;
+        p) PACKAGE="$OPTARG" ;;
         r) remove=true ;;
         u) push=true ;;
         q) pretend=true ;;
@@ -177,12 +177,12 @@ shift $(($OPTIND - 1))
 
 ${pretend} && display_settings && exit 1
 
-if $(is_valid_repo "${source_repo}");then
+if $(is_valid_repo "${REPO_SRC}");then
     if [[ "${cmd}" == 'commitpkg' ]];then
         commit_pkg
     else
         symlink_commit_pkg
     fi
 else
-    error "source repository '%s' is not valid!" "${source_repo}"
+    error "source repository '%s' is not valid!" "${REPO_SRC}"
 fi
