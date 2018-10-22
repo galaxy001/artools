@@ -66,11 +66,11 @@ init_artools_pkg(){
 
     [[ -z ${GIT_TOKEN} ]] && GIT_TOKEN=''
 
-    [[ -z ${TREE_DIR_ARTIX} ]] && TREE_DIR_ARTIX=${WORKSPACE_DIR}/artix
+    [[ -z ${TREE_DIR_ARTIX} ]] && TREE_DIR_ARTIX="${WORKSPACE_DIR}/artix"
 
     [[ -z ${HOST_TREE_ARTIX} ]] && HOST_TREE_ARTIX="gitea@gitea.artixlinux.org:artix"
 
-    [[ -z ${TREE_DIR_ARCH} ]] && TREE_DIR_ARCH=${WORKSPACE_DIR}/archlinux
+    [[ -z ${TREE_DIR_ARCH} ]] && TREE_DIR_ARCH="${WORKSPACE_DIR}/archlinux"
 
     [[ -z ${HOST_TREE_ARCH} ]] && HOST_TREE_ARCH='git://projects.archlinux.org/svntogit'
 
@@ -89,8 +89,6 @@ init_artools_iso(){
     PROFILE='base'
 
     [[ -z ${ISO_VERSION} ]] && ISO_VERSION=$(date +%Y%m%d)
-
-    ISO_LABEL="ARTIX_$(date +%Y%m)"
 
     [[ -z ${INITSYS} ]] && INITSYS="openrc"
 

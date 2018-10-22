@@ -362,7 +362,7 @@ assemble_iso(){
     xorriso -as mkisofs \
         --modification-date=${mod_date} \
         --protective-msdos-label \
-        -volid "${ISO_LABEL}" \
+        -volid "${iso_label}" \
         -appid "$(get_osname) Live/Rescue CD" \
         -publisher "$(get_osname) <$(get_disturl)>" \
         -preparer "Prepared by artools/${0##*/}" \

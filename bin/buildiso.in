@@ -35,6 +35,8 @@ prepare_build(){
 
     iso_file=$(gen_iso_fn).iso
 
+    iso_label="ARTIX_$(date +%Y%m)"
+
     mkchroot_args+=(-C ${pacman_conf} -m)
     work_dir=${CHROOTS_ISO}/${PROFILE}/${ARCH}
 
@@ -51,12 +53,10 @@ show_profile(){
     msg2 "iso_file: %s" "${iso_file}"
     if ${verbose};then
         msg2 "AUTOLOGIN: %s" "${AUTOLOGIN}"
-
         msg2 "HOST_NAME: %s" "${HOST_NAME}"
         msg2 "USER_NAME: %s" "${USER_NAME}"
         msg2 "PASSWORD: %s" "${PASSWORD}"
         msg2 "ADDGROUPS: %s" "${ADDGROUPS}"
-
         msg2 "SERVICES_LIVE: %s" "${SERVICES_LIVE[*]}"
         msg2 "SERVICES: %s" "${SERVICES[*]}"
     fi
@@ -133,6 +133,7 @@ persist=false
 
 mkchroot_args=()
 cmd=${0##*/}
+
 REPOSITORY=${cmd##*-}
 
 usage() {

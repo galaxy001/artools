@@ -57,7 +57,7 @@ prepare_boot_extras(){
 
 configure_grub(){
     local conf="$1/boot/grub/kernels.cfg"
-    sed -e "s|@iso_label@|${ISO_LABEL}|" -i $conf
+    sed -e "s|@iso_label@|${iso_label}|" -i $conf
 }
 
 prepare_grub(){
