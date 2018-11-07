@@ -18,8 +18,8 @@ SYSCONFDIR='@sysconfdir@'
 import ${LIBDIR}/util.sh
 
 connect(){
-    local home="/home/frs/project/${PROJECT}"
-    echo "${ACCOUNT},${PROJECT}@frs.${FILE_HOST}:${home}"
+    local home="/home/frs/project/${project}"
+    echo "${ACCOUNT},${project}@frs.${file_host}:${home}"
 }
 
 prepare_transfer(){
@@ -48,8 +48,6 @@ display_settings(){
 
     msg "REMOTE:"
     msg2 "ACCOUNT: %s" "${ACCOUNT}"
-    msg2 "FILE_HOST: %s" "${FILE_HOST}"
-    msg2 "PROFILE: %s" "${PROJECT}"
 
     msg "UPLOAD:"
     msg2 "SRC_DIR: ${SRC_DIR}"
@@ -59,6 +57,9 @@ display_settings(){
 load_user_info
 
 load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+
+project='artix-linux'
+file_host='sourceforge.net'
 
 pretend=false
 update=false
