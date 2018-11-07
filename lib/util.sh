@@ -96,10 +96,6 @@ init_artools_iso(){
 
     [[ -z ${UPLIMIT} ]] && UPLIMIT=1000
 
-    [[ -z ${FILE_HOST} ]] && FILE_HOST="sourceforge.net"
-
-    [[ -z ${PROJECT} ]] && PROJECT="artix-linux"
-
     [[ -z ${ACCOUNT} ]] && ACCOUNT="[SetUser]"
 }
 
