@@ -9,21 +9,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-declare -A repo_map=(
-                    [system]=core
-                    [world]=extra
-                    [gremlins]=testing
-                    [goblins]=staging
-                    [galaxy]=community
-                    [galaxy-gremlins]=community-testing
-                    [galaxy-goblins]=community-staging
-                    [lib32]=multilib
-                    [lib32-gremlins]=multilib-testing
-                    [lib32-goblins]=multilib-staging
-#                     [kde-unstable]=kde-unstable
-#                     [gnome-unstable]=gnome-unstable
-                    )
-
 get_local_head(){
     echo $(git log --pretty=%H ...refs/heads/$1^ | head -n 1)
 }
