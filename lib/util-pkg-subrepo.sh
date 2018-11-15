@@ -16,12 +16,12 @@ subrepo_init(){
 
 subrepo_push(){
     local pkg="$1" branch=master
-    git subrepo push "$pkg" -u -b "$branch"
+    git subrepo push "$pkg" -u -b "$branch" --clean
 }
 
 subrepo_pull(){
     local pkg="$1" name="${2:-$1}" branch=master org=packages
-    git subrepo pull "$pkg" -r gitea@"${GIT_DOMAIN}":"$org"/"$name".git -u -b "$branch"
+    git subrepo pull "$pkg" -r gitea@"${GIT_DOMAIN}":"$org"/"$name".git -u -b "$branch" --clean
 }
 
 subrepo_clone(){
