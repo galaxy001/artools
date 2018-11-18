@@ -60,7 +60,9 @@ init_artools_base(){
 
 init_artools_pkg(){
 
-    GIT_DOMAIN='gitea.artixlinux.org'
+    DOMAIN='artixlinux.org'
+
+    GIT_DOMAIN="gitea.${DOMAIN}"
 
     GIT_URL="https://${GIT_DOMAIN}"
 
@@ -68,7 +70,7 @@ init_artools_pkg(){
 
     [[ -z ${TREE_DIR_ARTIX} ]] && TREE_DIR_ARTIX="${WORKSPACE_DIR}/artix"
 
-    [[ -z ${HOST_TREE_ARTIX} ]] && HOST_TREE_ARTIX="gitea@gitea.artixlinux.org:artix"
+    [[ -z ${HOST_TREE_ARTIX} ]] && HOST_TREE_ARTIX="gitea@${GIT_DOMAIN}:artix"
 
     [[ -z ${TREE_DIR_ARCH} ]] && TREE_DIR_ARCH="${WORKSPACE_DIR}/archlinux"
 
@@ -96,7 +98,13 @@ init_artools_iso(){
 
     [[ -z ${UPLIMIT} ]] && UPLIMIT=1000
 
-    [[ -z ${ACCOUNT} ]] && ACCOUNT="[SetUser]"
+    FILE_HOST="download.${DOMAIN}"
+
+    [[ -z ${FILE_HOME} ]] && FILE_HOME="/srv/iso"
+
+    [[ -z ${FILE_PORT} ]] && FILE_PORT=65432
+
+    [[ -z ${ACCOUNT} ]] && ACCOUNT="naughtyISOuploader"
 }
 
 

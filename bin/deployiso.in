@@ -17,15 +17,8 @@ SYSCONFDIR='@sysconfdir@'
 [[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
 import ${LIBDIR}/util.sh
 
-# connect(){
-#     local home="/home/frs/project/${project}"
-#     echo "${ACCOUNT},${project}@frs.${file_host}:${home}"
-# }
-
 connect(){
-    local home="/srv/iso"
-    local file_host='download.artixlinux.org'
-    echo "${ACCOUNT}@${file_host}:${home}"
+    echo "${ACCOUNT}@${FILE_HOST}:${FILE_HOME}"
 }
 
 prepare_transfer(){
@@ -64,14 +57,11 @@ load_user_info
 
 load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
 
-# project='artix-linux'
-# file_host='sourceforge.net'
-
 pretend=false
 update=false
 verbose=false
 
-rsync_args=(-aP --progress -e ssh)
+rsync_args=(-aP --progress -e "ssh -p ${FILE_PORT}")
 
 usage() {
     echo "Usage: ${0##*/} [options]"
