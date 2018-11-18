@@ -23,8 +23,8 @@ import ${LIBDIR}/util.sh
 # }
 
 connect(){
-    local home="/srv/iso/iso"
-    local file_host='downloads.artixlinux.org'
+    local home="/srv/iso"
+    local file_host='download.artixlinux.org'
     echo "${ACCOUNT}@${file_host}:${home}"
 }
 
