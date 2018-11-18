@@ -21,7 +21,7 @@ subrepo_push(){
 
 subrepo_pull(){
     local pkg="$1" name="${2:-$1}" branch=master org=packages
-    git subrepo pull "$pkg" -r gitea@"${GIT_DOMAIN}":"$org"/"$name".git -u -b "$branch" --clean
+    git subrepo pull "$pkg" -r gitea@"${GIT_DOMAIN}":"$org"/"$name".git -u -b "$branch" #--clean
 }
 
 subrepo_clone(){
