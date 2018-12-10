@@ -23,7 +23,7 @@ import ${LIBDIR}/util-pkg-subrepo.sh
 
 pull_tree_arch(){
     cd ${TREE_DIR_ARCH}
-    for tree in packages community;do
+    for tree in ${TREE_NAMES_ARCH[@]};do
         if [[ -d ${tree} ]];then
             cd ${tree}
             msg "Checking (%s)" "${tree}"
@@ -51,7 +51,7 @@ config_tree(){
 
 pull_tree_artix(){
     cd ${TREE_DIR_ARTIX}
-    for tree in packages packages-galaxy;do
+    for tree in ${TREE_NAMES_ARTIX[@]};do
         if [[ -d ${tree} ]];then
             config_tree "${tree}"
             cd ${tree}
@@ -68,53 +68,69 @@ pull_tree_artix(){
 
 show_version_table(){
     msg_table_header "%-20s %-20s %-25s %-30s %-30s" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version"
-    for tree in packages packages-galaxy;do
+
+    for tree in ${TREE_NAMES_ARTIX[@]};do
+
         local git=$(find ${TREE_DIR_ARTIX}/$tree/ -mindepth 1 -maxdepth 1 -type d)
-        for pkg_path in ${git[@]}; do
-            local artixrepo=$(find_repo "$pkg_path" "${unstable}" "${staging}")
-            if [[ -d $pkg_path/repos/$artixrepo ]];then
-                source $pkg_path/repos/$artixrepo/PKGBUILD 2>/dev/null
-                local pkg=${pkg_path##*/}
+
+        for package in ${git[@]}; do
+
+            local pkg=${package##*/}
+            local artixrepo=$(find_repo "$package" "${unstable}" "${staging}")
+            local artixshow=${artixrepo%-*}
+            local pkgbuild=$package/repos/$artixrepo/PKGBUILD
+
+            if [[ -f $pkgbuild ]];then
+
+                source $pkgbuild 2>/dev/null
                 local artixver=$(get_full_version $pkg)
-                local src=$(get_import_path "$tree" "$pkg")
-                local archrepo=$(find_repo "$src/$pkg" "${unstable}" "${staging}")
-                if [[ -d $src/$pkg/repos/$archrepo ]];then
-                    source $src/$pkg/repos/$archrepo/PKGBUILD 2>/dev/null
+
+                local archpath=${TREE_DIR_ARCH}/$tree/$pkg
+                local archrepo=$(find_repo "$archpath" "${unstable}" "${staging}")
+                local archshow=${archrepo%-*}
+                pkgbuild=$archpath/repos/$archrepo/PKGBUILD
+
+                if [[ -f $pkgbuild ]];then
+                    source $pkgbuild 2>/dev/null
                     local archver=$(get_full_version $pkg)
                 fi
+
                 if ${artix};then
+
                     if [ $(vercmp "$artixver" "$archver") -eq 0 ] || [ $(vercmp "$artixver" "$archver") -gt 0 ];then
-                        local ar=$(find_artix_name "$artixrepo")
-                        case $ar in
-                            *goblins)
+                        case $artixrepo in
+                            *staging*)
                                 if [[ "$archrepo" == "$artixrepo" ]];then
-                                    msg_row "%-20s %-20s %-25s %-30s %-30s" "${archrepo%-*}" "${ar}" "$pkg" "$archver" "$artixver"
+                                    msg_row "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
                                 else
-                                    msg_row_notify "%-20s %-20s %-25s %-30s %-30s" "${archrepo%-*}" "${ar}" "$pkg" "$archver" "$artixver"
+                                    msg_row_notify "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
                                 fi
                             ;;
-                            *gremlins)
+                            *testing*)
                                 if [[ "$archrepo" == "$artixrepo" ]];then
-                                    msg_row "%-20s %-20s %-25s %-30s %-30s" "${archrepo%-*}" "${ar}" "$pkg" "$archver" "$artixver"
+                                    msg_row "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
                                 else
-                                    msg_row_notify "%-20s %-20s %-25s %-30s %-30s" "${archrepo%-*}" "${ar}" "$pkg" "$archver" "$artixver"
+                                    msg_row_notify "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
                                 fi
                             ;;
                         esac
                     fi
+
                 else
+
                     if [ $(vercmp "$artixver" "$archver") -lt 0 ];then
-                        local ar=$(find_artix_name "$artixrepo")
-                        ${upgrades} && msg_row_upgrade "%-20s %-20s %-25s %-30s %-30s" "${archrepo%-*}" "${ar}" "$pkg" "$archver" "$artixver"
+                        ${upgrades} && msg_row_upgrade "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
                     fi
+
                     if [ $(vercmp "$artixver" "$archver") -gt 0 ];then
-                        local ar=$(find_artix_name "$artixrepo")
                         if [[ -n $archver ]] && [[ -n $archrepo ]];then
-                            ${downgrades} && msg_row_downgrade "%-20s %-20s %-25s %-30s %-30s" "${archrepo%-*}" "${ar}" "$pkg" "$archver" "$artixver"
+                            ${downgrades} && msg_row_downgrade "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
                         fi
                     fi
+
                 fi
                 unset pkgver epoch pkgrel artixver archver
+
             fi
         done
     done
@@ -122,14 +138,19 @@ show_version_table(){
 
 show_deps(){
     local src="$1" repo="$2"
+
     source $src/PKGBUILD 2>/dev/null
+
     [[ $arch == 'any' ]] && CARCH=any
+
     local archver=$(get_full_version $pkg)
+
     msg "git tree: %s" "$git_tree_arch"
     msg2 "repo: %s" "$repo"
     msg2 "Package Name: %s" "$pkg"
     msg2 "Arch Version: %s" "$archver"
     msg2 "arch: %s" "$CARCH"
+
     [[ -n ${makedepends[@]} ]] && msg2 "makedepends: %s" "${makedepends[*]}"
     [[ -n ${checkdepends[@]} ]] && msg2 "checkdepends: %s" "${checkdepends[*]}"
     [[ -n ${depends[@]} ]] && msg2 "depends: %s" "${depends[*]}"
@@ -141,18 +162,15 @@ from_arch(){
     local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "$pkg")
     [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "$pkg"
 
-    local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
-    local repo=$(find_repo "$pkg_path" "${unstable}")
+    local package=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
+    local repo=$(find_repo "$package" "${unstable}")
 
-    src=$pkg_path/repos/$repo
-    $trunk && src=$pkg_path/trunk
+    src=$package/repos/$repo
 
     local git_tree_artix=$(find_tree "${TREE_DIR_ARTIX}" "$pkg")
     dest=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg/trunk
 
-    cd ${TREE_DIR_ARCH}/$git_tree_arch
-
-    show_deps "$src" "$repo"
+    show_deps "${TREE_DIR_ARCH}/$git_tree_arch/$src" "$repo"
 
     if [[ -d $dest ]];then
         cd ${TREE_DIR_ARTIX}/$git_tree_artix
@@ -163,22 +181,30 @@ from_arch(){
         msg2 "Artix Version: %s" "$artixver"
         info "Update from archlinux (%s)" "$git_tree_arch"
         rsync "${rsync_args[@]}" $src/ $dest/
-        patch_pkg "$pkg" "$tree"
+        patch_pkg "$pkg"
     else
         [[ $git_tree_arch == 'packages' ]] && git_tree_artix=$git_tree_arch
-        [[ $git_tree_arch == 'community' ]] && git_tree_artix='packages-galaxy'
+        [[ $git_tree_arch == 'community' ]] && git_tree_artix=$git_tree_arch
 
         cd ${TREE_DIR_ARTIX}/$git_tree_artix
 
-        dest=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg/trunk
+        local org=$(get_pkg_org "$pkg")
 
-        create_repo "$pkg"
-        add_repo_to_team "$pkg" "$pkg_path"
-        subrepo_clone "$pkg"
+        create_repo "$pkg" "$org"
+
+        add_repo_to_team "$pkg" "$org" "$git_tree_artix"
+
+        subrepo_clone "$pkg" "$org"
+
+        cd ${TREE_DIR_ARTIX}/$git_tree_artix/$pkg
+
+        commit_jenkins_files
+
+        cd ${TREE_DIR_ARTIX}/$git_tree_artix
 
         info "Import from archlinux (%s)" "$git_tree_arch"
         rsync "${rsync_args[@]}" $src/ $dest/
-        patch_pkg "$pkg" "$tree"
+        patch_pkg "$pkg"
     fi
 }
 
@@ -218,7 +244,6 @@ display_settings(){
     msg2 "unstable: %s" "${unstable}"
     msg2 "import: %s" "${import}"
     msg2 "view: %s" "${view}"
-    msg2 "trunk: %s" "${trunk}"
 
     msg "PATHS:"
     msg2 "TREE_DIR_ARTIX: %s" "${TREE_DIR_ARTIX}"
@@ -242,7 +267,7 @@ downgrades=false
 artix=false
 import=false
 view=false
-trunk=false
+
 PACKAGE=''
 
 rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
@@ -259,7 +284,7 @@ usage() {
     echo "    -y            Don't inlcude staging packages"
     echo '    -x            Include unstable kde and gnome'
     echo '    -i            Import a package from arch repos'
-    echo '    -t            Import from arch trunk'
+    echo "    -w            Don't write Jenkinsfile and agent.yaml on import"
     echo '    -v            View package depends'
     echo '    -q            Query settings'
     echo '    -h            This help'
@@ -270,7 +295,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:csudayiztxvqh'
+opts='p:csudayizxvqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -283,7 +308,6 @@ while getopts "${opts}" arg; do
         a) artix=true ;;
         y) staging=false ;;
         i) import=true ;;
-        t) trunk=true ;;
         v) view=true ;;
         x) unstable=true ;;
         q) pretend=true ;;

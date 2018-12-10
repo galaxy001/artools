@@ -17,18 +17,8 @@ get_remote_head(){
     echo $(git ls-remote origin -h refs/heads/$1 | cut -f1)
 }
 
-is_dirty() {
-    [[ $(git diff --shortstat 2> /dev/null | tail -n1) != "" ]] || return 1
-    return 0
-}
-
-is_untracked(){
-    [[ $(git ls-files --others --exclude-standard)  != "" ]] || return 1
-    return 0
-}
-
 patch_pkg(){
-    local pkg="$1" repo="$2"
+    local pkg="$1"
     case $pkg in
         'glibc')
             sed -e 's|{locale,systemd/system,tmpfiles.d}|{locale,tmpfiles.d}|' \
@@ -76,12 +66,12 @@ patch_pkg(){
     esac
 }
 
-write_jenkinsfile(){
-    local pkg="$1" jenkins=Jenkinsfile
-    echo '@Library(["PackagePipeline", "BuildPkg", "DeployPkg", "Notify", "PostBuild", "RepoPackage"]) import org.artixlinux.RepoPackage' > $pkg/$jenkins
-    echo '' >> $pkg/$jenkins
-    echo 'PackagePipeline(new RepoPackage(this))' >> $pkg/$jenkins
-    echo '' >> $pkg/$jenkins
+get_compliant_name(){
+    local gitname="$1"
+    case $gitname in
+        *+) gitname=${gitname//+/plus}
+    esac
+    echo $gitname
 }
 
 find_tree(){
@@ -89,6 +79,20 @@ find_tree(){
     local result=$(find $tree -mindepth 2 -maxdepth 2 -type d -name "$pkg")
     result=${result%/*}
     echo ${result##*/}
+}
+
+find_repo(){
+    local pkg="$1" unst="$2" stag="$3" repo=
+    local repos=(core extra testing community community-testing mulitilib multilib-testing)
+
+    $stag && repos+=(staging community-staging mulitilib-staging)
+    $unst && repos+=(gnome-unstable kde-unstable)
+
+    for r in ${repos[@]};do
+        [[ -f $pkg/repos/$r-x86_64/PKGBUILD ]] && repo=$r-x86_64
+        [[ -f $pkg/repos/$r-any/PKGBUILD ]] && repo=$r-any
+    done
+    echo $repo
 }
 
 clone_tree(){
@@ -109,85 +113,16 @@ pull_tree(){
     fi
 }
 
-push_tree(){
-    local branch="master"
-    git push origin "$branch"
-}
-
-get_import_path(){
-    local tree="$1" import_path=
-    case $tree in
-        packages) import_path=${TREE_DIR_ARCH}/packages ;;
-        packages-galaxy) import_path=${TREE_DIR_ARCH}/community ;;
+get_pkg_org(){
+    local pkg="$1" org= sub=
+    case ${pkg} in
+        perl-*) org=${pkg:0:6}; sub="${org:5}"; echo "packagesPerl" ;;
+        python-*) org=${pkg:0:8}; sub="${org:7}"; echo "packagesPython" ;;
+        python2-*) org=${pkg:0:9}; sub="${org:8}"; echo "packagesPython" ;;
+        lib32*) org=${pkg:0:7}; sub="${org:6}"; echo "packagesL" ;; #"packages${sub^^}" ;;
+#         lib*) org=${pkg:0:4}; sub="${org:3}"; echo "packagesLib${sub^^}" ;;
+        *) org=${pkg:0:1}; echo "packages${org^^}" ;;
     esac
-    echo $import_path
-}
-
-is_valid_repo(){
-    local src="$1"
-    case $src in
-        core|extra|community|multilib|testing|staging|community-testing|community-staging|multilib-testing|multilib-staging|trunk) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-find_repo(){
-    local pkg="$1" unst="$2" stag="$3" repo=
-    local repos=(core extra testing community community-testing mulitilib multilib-testing)
-
-    $stag && repos+=(staging community-staging mulitilib-staging)
-    $unst && repos+=(gnome-unstable kde-unstable)
-
-    for r in ${repos[@]};do
-        [[ -f $pkg/repos/$r-x86_64/PKGBUILD ]] && repo=$r-x86_64
-        [[ -f $pkg/repos/$r-any/PKGBUILD ]] && repo=$r-any
-    done
-    echo $repo
-}
-
-find_artix_name(){
-    local repo="$1"
-    case $repo in
-        core-*) repo=system ;;
-        extra-*) repo=world ;;
-        community-x86_64|community-any) repo=galaxy ;;
-        multilib-x86_64) repo=lib32 ;;
-        testing-*) repo=gremlins ;;
-        staging-*) repo=goblins ;;
-        multilib-testing-x86_64) repo=lib32-gremlins ;;
-        multilib-staging-x86_64) repo=lib32-goblins ;;
-        community-testing-*) repo=galaxy-gremlins ;;
-        community-staging-*) repo=galaxy-goblins ;;
-        kde-unstable-*|gnome-unstable-*) repo=goblins ;;
-    esac
-    echo $repo
-}
-
-# $1: sofile
-# $2: soarch
-process_sofile() {
-    # extract the library name: libfoo.so
-    local soname="${1%.so?(+(.+([0-9])))}".so
-    # extract the major version: 1
-    soversion="${1##*\.so\.}"
-    if [[ "$soversion" = "$1" ]] && (($IGNORE_INTERNAL)); then
-        continue
-    fi
-    if ! in_array "${soname}=${soversion}-$2" ${soobjects[@]}; then
-    # libfoo.so=1-64
-        msg "${soname}=${soversion}-$2"
-        soobjects+=("${soname}=${soversion}-$2")
-    fi
-}
-
-pkgver_equal() {
-    if [[ $1 = *-* && $2 = *-* ]]; then
-        # if both versions have a pkgrel, then they must be an exact match
-        [[ $1 = "$2" ]]
-    else
-        # otherwise, trim any pkgrel and compare the bare version.
-        [[ ${1%%-*} = "${2%%-*}" ]]
-    fi
 }
 
 find_cached_package() {

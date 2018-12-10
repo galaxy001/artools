@@ -31,7 +31,7 @@ update_repo(){
             if ${add_pkg};then
                 local action='add'
                 packages+=("$pkg")
-#                 checkpkg $pkg
+                checkpkg "${pkgfile}"
                 if ${sign_pkg};then
                     [[ -e ${pkgfile}.sig ]] && rm ${pkgfile}.sig
                     signfile ${pkgfile}

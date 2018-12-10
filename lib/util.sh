@@ -68,9 +68,13 @@ init_artools_pkg(){
 
     [[ -z ${GIT_TOKEN} ]] && GIT_TOKEN=''
 
-    [[ -z ${TREE_DIR_ARTIX} ]] && TREE_DIR_ARTIX="${WORKSPACE_DIR}/artix"
+    TREE_NAMES_ARTIX=(packages community)
 
-    [[ -z ${HOST_TREE_ARTIX} ]] && HOST_TREE_ARTIX="gitea@${GIT_DOMAIN}:artix"
+    [[ -z ${TREE_DIR_ARTIX} ]] && TREE_DIR_ARTIX="${WORKSPACE_DIR}/artixlinux"
+
+    [[ -z ${HOST_TREE_ARTIX} ]] && HOST_TREE_ARTIX="gitea@${GIT_DOMAIN}:artixlinux"
+
+    TREE_NAMES_ARCH=(packages community)
 
     [[ -z ${TREE_DIR_ARCH} ]] && TREE_DIR_ARCH="${WORKSPACE_DIR}/archlinux"
 

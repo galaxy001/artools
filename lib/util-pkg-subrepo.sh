@@ -9,22 +9,44 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-subrepo_init(){
-    local pkg="$1" branch=master org=packages
-    git subrepo init "$pkg" -r gitea@"${GIT_DOMAIN}":"$org"/"$pkg".git -b "$branch"
-}
-
 subrepo_push(){
-    local pkg="$1" branch=master
-    git subrepo push "$pkg" -u -b "$branch" --clean
+    local pkg="$1"
+    git subrepo push "$pkg" --clean
 }
 
 subrepo_pull(){
-    local pkg="$1" name="${2:-$1}" branch=master org=packages
-    git subrepo pull "$pkg" -r gitea@"${GIT_DOMAIN}":"$org"/"$name".git -u -b "$branch" #--clean
+    local pkg="$1"
+    git subrepo pull "$pkg"
 }
 
 subrepo_clone(){
-    local pkg="$1" name="${2:-$1}" branch=master org=packages
-    git subrepo clone gitea@"${GIT_DOMAIN}":"$org"/"$name".git "$pkg" -b "$branch"
+    local pkg="$1" org="$2"
+    local gitname=$(get_compliant_name "$pkg")
+    git subrepo clone gitea@"${GIT_DOMAIN}":"$org"/"$gitname".git "$pkg"
+}
+
+write_jenkinsfile(){
+    local jenkins=Jenkinsfile
+    echo '@Library(["PackagePipeline", "RepoPackage"]) import org.artixlinux.RepoPackage' > $jenkins
+    echo '' >> $jenkins
+    echo 'PackagePipeline(new RepoPackage(this))' >> $jenkins
+    echo '' >> $jenkins
+}
+
+write_agentyaml(){
+    local agent=.artixlinux/agent.yaml label='master'
+    [[ -d .artixlinux ]] || mkdir .artixlinux
+    echo '%YAML 1.2' > $agent
+    echo '---' >> $agent
+    echo '' >> $agent
+    echo "label: $label" >> $agent
+    echo '' >> $agent
+}
+
+commit_jenkins_files(){
+    write_jenkinsfile
+    write_agentyaml
+    git add Jenkinsfile
+    git add .artixlinux
+    git commit -m "add jenkinsfile & .artixlinux/agent.yaml"
 }
