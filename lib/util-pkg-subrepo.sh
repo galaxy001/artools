@@ -22,6 +22,7 @@ subrepo_pull(){
 subrepo_clone(){
     local pkg="$1" org="$2"
     local gitname=$(get_compliant_name "$pkg")
+    msg2 "Getting package repo [%s] from org (%s)" "$pkg" "$org/$gitname"
     git subrepo clone gitea@"${GIT_DOMAIN}":"$org"/"$gitname".git "$pkg"
 }
 

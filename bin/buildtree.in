@@ -23,7 +23,7 @@ import ${LIBDIR}/util-pkg-subrepo.sh
 
 pull_tree_arch(){
     cd ${TREE_DIR_ARCH}
-    for tree in ${TREE_NAMES_ARCH[@]};do
+    for tree in ${tree_names[@]};do
         if [[ -d ${tree} ]];then
             cd ${tree}
             msg "Checking (%s)" "${tree}"
@@ -51,7 +51,7 @@ config_tree(){
 
 pull_tree_artix(){
     cd ${TREE_DIR_ARTIX}
-    for tree in ${TREE_NAMES_ARTIX[@]};do
+    for tree in ${tree_names[@]};do
         if [[ -d ${tree} ]];then
             config_tree "${tree}"
             cd ${tree}
@@ -69,7 +69,7 @@ pull_tree_artix(){
 show_version_table(){
     msg_table_header "%-20s %-20s %-25s %-30s %-30s" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version"
 
-    for tree in ${TREE_NAMES_ARTIX[@]};do
+    for tree in ${tree_names[@]};do
 
         local git=$(find ${TREE_DIR_ARTIX}/$tree/ -mindepth 1 -maxdepth 1 -type d)
 
@@ -136,6 +136,14 @@ show_version_table(){
     done
 }
 
+sync_pkg(){
+    local rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
+    local src="$1" dest="$2" tree="$3"
+
+    info "Sync from archlinux (%s)" "$git_tree_arch"
+    rsync "${rsync_args[@]}" $src/ $dest/
+}
+
 show_deps(){
     local src="$1" repo="$2"
 
@@ -147,7 +155,9 @@ show_deps(){
 
     msg "git tree: %s" "$git_tree_arch"
     msg2 "repo: %s" "$repo"
-    msg2 "Package Name: %s" "$pkg"
+    [[ -n ${pkgbase} ]] && msg2 "pkgbase: %s" "${pkgbase}"
+    msg2 "pkgname: %s" "${pkgname[*]}"
+    [[ -n $pkgdesc ]] && msg2 "pkgdesc: %s" "${pkgdesc}"
     msg2 "Arch Version: %s" "$archver"
     msg2 "arch: %s" "$CARCH"
 
@@ -170,7 +180,7 @@ from_arch(){
     local git_tree_artix=$(find_tree "${TREE_DIR_ARTIX}" "$pkg")
     dest=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg/trunk
 
-    show_deps "${TREE_DIR_ARCH}/$git_tree_arch/$src" "$repo"
+    show_deps "$src" "$repo"
 
     if [[ -d $dest ]];then
         cd ${TREE_DIR_ARTIX}/$git_tree_artix
@@ -179,12 +189,13 @@ from_arch(){
         local artixver=$(get_full_version $pkg)
 
         msg2 "Artix Version: %s" "$artixver"
-        info "Update from archlinux (%s)" "$git_tree_arch"
-        rsync "${rsync_args[@]}" $src/ $dest/
+        sync_pkg "$src" "$dest" "$git_tree_arch"
         patch_pkg "$pkg"
     else
         [[ $git_tree_arch == 'packages' ]] && git_tree_artix=$git_tree_arch
         [[ $git_tree_arch == 'community' ]] && git_tree_artix=$git_tree_arch
+
+        local pkg_path=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg
 
         cd ${TREE_DIR_ARTIX}/$git_tree_artix
 
@@ -196,15 +207,12 @@ from_arch(){
 
         subrepo_clone "$pkg" "$org"
 
-        cd ${TREE_DIR_ARTIX}/$git_tree_artix/$pkg
-
+        cd $pkg_path
         commit_jenkins_files
 
-        cd ${TREE_DIR_ARTIX}/$git_tree_artix
+        dest=$pkg_path/trunk
 
-        info "Import from archlinux (%s)" "$git_tree_arch"
-        rsync "${rsync_args[@]}" $src/ $dest/
-        patch_pkg "$pkg"
+        sync_pkg "$src" "$dest" "$git_tree_arch"
     fi
 }
 
@@ -269,8 +277,7 @@ import=false
 view=false
 
 PACKAGE=''
-
-rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
+tree_names=(packages community)
 
 usage() {
     echo "Usage: ${0##*/} [options]"
