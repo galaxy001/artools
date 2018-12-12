@@ -66,6 +66,26 @@ pull_tree_artix(){
     done
 }
 
+mkrepo(){
+    local pkg="$1" team="$2"
+    local pkg_path=${TREE_DIR_ARTIX}/$team/$pkg
+
+    cd ${TREE_DIR_ARTIX}/$team
+
+    local org=$(get_pkg_org "$pkg")
+
+    create_repo "$pkg" "$org"
+
+    add_repo_to_team "$pkg" "$org" "$team"
+
+    subrepo_clone "$pkg" "$org"
+
+    prepare_dir "$pkg_path/trunk"
+
+    cd $pkg_path
+    commit_jenkins_files
+}
+
 show_version_table(){
     msg_table_header "%-20s %-20s %-25s %-30s %-30s" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version"
 
@@ -240,6 +260,7 @@ display_settings(){
 
     msg "OPTIONS:"
     msg2 "PACKAGE: %s" "${PACKAGE}"
+    ${createnew} && msg2 "TEAM: %s" "${TEAM}"
 
     msg "ARGS:"
     msg2 "sync: %s" "${sync}"
@@ -252,6 +273,7 @@ display_settings(){
     msg2 "unstable: %s" "${unstable}"
     msg2 "import: %s" "${import}"
     msg2 "view: %s" "${view}"
+    msg2 "createnew: %s" "${createnew}"
 
     msg "PATHS:"
     msg2 "TREE_DIR_ARTIX: %s" "${TREE_DIR_ARTIX}"
@@ -275,13 +297,16 @@ downgrades=false
 artix=false
 import=false
 view=false
+createnew=false
 
 PACKAGE=''
+TEAM=packages
 tree_names=(packages community)
 
 usage() {
     echo "Usage: ${0##*/} [options]"
     echo '    -p <pkg>      Package name'
+    echo '    -t <team>     Team name (only with -m)'
     echo "    -s            Clone or pull repos"
     echo "    -z            Don't clone or pull arch repos"
     echo '    -c            Compare packages'
@@ -291,6 +316,7 @@ usage() {
     echo "    -y            Don't inlcude staging packages"
     echo '    -x            Include unstable kde and gnome'
     echo '    -i            Import a package from arch repos'
+    echo '    -m            Make new remote subrepo and clone it'
     echo "    -w            Don't write Jenkinsfile and agent.yaml on import"
     echo '    -v            View package depends'
     echo '    -q            Query settings'
@@ -302,11 +328,12 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:csudayizxvqh'
+opts='p:t:csudayimzxvqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         p) PACKAGE="$OPTARG" ;;
+        t) TEAM="$OPTARG" ;;
         s) sync=true ;;
         z) sync_arch=false ;;
         c) compare=true ;;
@@ -315,6 +342,7 @@ while getopts "${opts}" arg; do
         a) artix=true ;;
         y) staging=false ;;
         i) import=true ;;
+        m) createnew=true ;;
         v) view=true ;;
         x) unstable=true ;;
         q) pretend=true ;;
@@ -337,3 +365,5 @@ ${view} && view_build "${PACKAGE}"
 ${compare} && show_version_table
 
 ${import} && from_arch "${PACKAGE}"
+
+${createnew} && mkrepo "${PACKAGE}" "${TEAM}"
