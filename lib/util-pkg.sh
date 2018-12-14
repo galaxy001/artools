@@ -125,6 +125,16 @@ get_pkg_org(){
     esac
 }
 
+pkgver_equal() {
+    if [[ $1 = *-* && $2 = *-* ]]; then
+        # if both versions have a pkgrel, then they must be an exact match
+        [[ $1 = "$2" ]]
+    else
+        # otherwise, trim any pkgrel and compare the bare version.
+        [[ ${1%%-*} = "${2%%-*}" ]]
+    fi
+}
+
 find_cached_package() {
     local searchdirs=("$PKGDEST" "$PWD") results=()
     local targetname=$1 targetver=$2 targetarch=$3
