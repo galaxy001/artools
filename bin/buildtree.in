@@ -300,13 +300,15 @@ view=false
 createnew=false
 
 PACKAGE=''
-TEAM=packages
+
 tree_names=(packages community)
+TEAM=${tree_names[0]}
 
 usage() {
     echo "Usage: ${0##*/} [options]"
     echo '    -p <pkg>      Package name'
     echo '    -t <team>     Team name (only with -m)'
+    echo "                  [default: ${TEAM}]"
     echo "    -s            Clone or pull repos"
     echo "    -z            Don't clone or pull arch repos"
     echo '    -c            Compare packages'
@@ -317,7 +319,6 @@ usage() {
     echo '    -x            Include unstable kde and gnome'
     echo '    -i            Import a package from arch repos'
     echo '    -m            Make new remote subrepo and clone it'
-    echo "    -w            Don't write Jenkinsfile and agent.yaml on import"
     echo '    -v            View package depends'
     echo '    -q            Query settings'
     echo '    -h            This help'

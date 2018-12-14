@@ -1,0 +1,47 @@
+#!/bin/bash
+
+VERSION=@version@
+
+. /usr/share/makepkg/util.sh
+
+. /etc/makepkg.conf
+
+. "$1"/PKGBUILD
+
+[[ ${arch[0]} == any ]] && CARCH=any
+version=$(get_full_version "$1")
+
+NL=$'\n'
+
+Yaml="%YAML 1.2"$NL
+Yaml+="---"$NL
+
+Yaml+="pkgname:"$NL
+for n in ${pkgname[@]};do
+    Yaml+="  - $n"$NL
+done
+
+Yaml+="epoch: ${epoch}"$NL
+
+Yaml+="pkgver: ${pkgver}"$NL
+
+Yaml+="pkgrel: ${pkgrel}"$NL
+Yaml+="arch: $CARCH"$NL
+Yaml+="depends:"$NL
+for d in ${depends[@]};do
+    Yaml+="  - $d"$NL
+done
+
+Yaml+="makedepends:"$NL
+for m in ${makedepends[@]};do
+    Yaml+="  - $m"$NL
+done
+
+Yaml+="checkdepends:"$NL
+for c in ${checkdepends[@]};do
+    Yaml+="  - $c"$NL
+done
+
+Yaml+="version: ${version}"$NL
+
+printf '%s' "${Yaml}"

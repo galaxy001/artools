@@ -104,13 +104,13 @@ build(){
     fi
 
     if ${iso_only}; then
-        [[ ! -d ${work_dir} ]] && die "Create images: buildiso -p %s -x" "${PROFILE}"
+        [[ ! -d ${work_dir} ]] && die "Create images: %s -p %s -x" "${cmd}" "${PROFILE}"
         compress_images
         exit 1
     fi
     if ${images_only}; then
         prepare_images
-        warning "Continue compress: buildiso -p %s -zc ..." "${PROFILE}"
+        warning "Continue compress: %s -p %s -zc ..." "${cmd}" "${PROFILE}"
         exit 1
     else
         prepare_images
@@ -137,7 +137,7 @@ cmd=${0##*/}
 REPOSITORY=${cmd##*-}
 
 usage() {
-    echo "Usage: ${0##*/} [options]"
+    echo "Usage: ${cmd} [options]"
     echo "    -p <profile>       Profile [default: ${PROFILE}]"
     echo '    -r <dir>           Chroots directory'
     echo "                       [default: ${CHROOTS_ISO}]"
