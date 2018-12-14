@@ -1,15 +1,32 @@
 #!/bin/bash
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
 VERSION=@version@
 
-. /usr/share/makepkg/util.sh
+#!/bin/bash
 
-. /etc/makepkg.conf
+VERSION=0.10.4.r2.gd0e3c4e
 
-. "$1"/PKGBUILD
+if [[ -f "$1"/PKGBUILD ]]; then
+    LIBRARY=${LIBRARY:-'/usr/share/makepkg'}
 
-[[ ${arch[0]} == any ]] && CARCH=any
-version=$(get_full_version "$1")
+    for lib in "$LIBRARY"/*.sh; do
+        source "$lib"
+    done
+    . /etc/makepkg.conf
+
+    . "$1"/PKGBUILD
+
+    pkgfiles=$(print_all_package_names)
+fi
 
 NL=$'\n'
 
@@ -17,31 +34,9 @@ Yaml="%YAML 1.2"$NL
 Yaml+="---"$NL
 
 Yaml+="pkgname:"$NL
-for n in ${pkgname[@]};do
-    Yaml+="  - $n"$NL
+for n in ${pkgfiles[@]};do
+    Yaml+="  - ${n##*/}"$NL
 done
-
-Yaml+="epoch: ${epoch}"$NL
-
-Yaml+="pkgver: ${pkgver}"$NL
-
-Yaml+="pkgrel: ${pkgrel}"$NL
-Yaml+="arch: $CARCH"$NL
-Yaml+="depends:"$NL
-for d in ${depends[@]};do
-    Yaml+="  - $d"$NL
-done
-
-Yaml+="makedepends:"$NL
-for m in ${makedepends[@]};do
-    Yaml+="  - $m"$NL
-done
-
-Yaml+="checkdepends:"$NL
-for c in ${checkdepends[@]};do
-    Yaml+="  - $c"$NL
-done
-
-Yaml+="version: ${version}"$NL
 
 printf '%s' "${Yaml}"
+
