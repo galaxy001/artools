@@ -41,7 +41,7 @@ BIN_PKG = \
 	bin/buildtree \
 	bin/deploypkg \
 	bin/commitpkg \
-	pkg2yaml
+	bin/pkg2yaml
 
 LIBS_PKG = \
 	$(wildcard lib/util-pkg*.sh)
