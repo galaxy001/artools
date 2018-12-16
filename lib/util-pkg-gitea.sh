@@ -34,6 +34,19 @@ delete_repo(){
         -H  "accept: application/json"
 }
 
+get_pkg_org(){
+    local pkg="$1" org= sub=
+    case ${pkg} in
+#         ruby-*) org=${pkg:0:6}; sub="${org:5}"; echo "packagesRuby" ;;
+        perl-*) org=${pkg:0:6}; sub="${org:5}"; echo "packagesPerl" ;;
+        python-*) org=${pkg:0:8}; sub="${org:7}"; echo "packagesPython" ;;
+        python2-*) org=${pkg:0:9}; sub="${org:8}"; echo "packagesPython" ;;
+        lib32*) org=${pkg:0:7}; sub="${org:6}"; echo "packagesL" ;; #"packages${sub^^}" ;;
+#         lib*) org=${pkg:0:4}; sub="${org:3}"; echo "packagesLib${sub^^}" ;;
+        *) org=${pkg:0:1}; echo "packages${org^^}" ;;
+    esac
+}
+
 load_team_id(){
     local org="$1" tree="$2" id=0
 
