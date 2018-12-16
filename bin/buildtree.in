@@ -105,7 +105,7 @@ show_version_table(){
                 source $pkgbuild 2>/dev/null
                 local artixver=$(get_full_version $pkg)
 
-                local archpath=${TREE_DIR_ARCH}/$tree/$pkg
+                local archpath=$(get_import_path "$pkg")
                 local archrepo=$(find_repo "$archpath" "${unstable}" "${staging}")
                 local archshow=${archrepo%-*}
                 pkgbuild=$archpath/repos/$archrepo/PKGBUILD

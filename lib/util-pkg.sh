@@ -95,6 +95,14 @@ find_repo(){
     echo $repo
 }
 
+get_import_path(){
+    local pkg="$1" import_path=
+    for tree in ${tree_names[@]};do
+        [[ -d ${TREE_DIR_ARCH}/$tree/$pkg ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg
+    done
+    echo $import_path
+}
+
 clone_tree(){
     local timer=$(get_timer) host_tree="$1"
     git clone $host_tree.git
