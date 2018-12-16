@@ -62,7 +62,9 @@ COMMITPKG_SYMS = \
 	community-stagingpkg \
 	multilibpkg \
 	multilib-testingpkg \
-	multilib-stagingpkg
+	multilib-stagingpkg \
+	kde-unstablepkg \
+	gnome-unstablepkg
 
 BUILDPKG_SYMS = \
 	buildpkg-system \
@@ -74,7 +76,9 @@ BUILDPKG_SYMS = \
 	buildpkg-galaxy-goblins \
 	buildpkg-lib32 \
 	buildpkg-lib32-gremlins \
-	buildpkg-lib32-goblins
+	buildpkg-lib32-goblins \
+	buildpkg-kde-wobble \
+	buildpkg-gnome-wobble
 
 DEPLOYPKG_SYMS = \
 	deploypkg-system \
@@ -86,7 +90,9 @@ DEPLOYPKG_SYMS = \
 	deploypkg-galaxy-goblins \
 	deploypkg-lib32 \
 	deploypkg-lib32-gremlins \
-	deploypkg-lib32-goblins
+	deploypkg-lib32-goblins \
+	deploypkg-kde-wobble \
+	deploypkg-gnome-wobble
 
 BIN_ISO = \
 	bin/buildiso \
