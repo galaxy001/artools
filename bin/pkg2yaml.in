@@ -11,8 +11,6 @@
 
 VERSION=@version@
 
-#!/bin/bash
-
 VERSION=0.10.4.r2.gd0e3c4e
 
 if [[ -f "$1"/PKGBUILD ]]; then
@@ -25,7 +23,7 @@ if [[ -f "$1"/PKGBUILD ]]; then
 
     . "$1"/PKGBUILD
 
-    pkgfiles=$(print_all_package_names)
+    pkgfile=$(print_all_package_names)
 fi
 
 NL=$'\n'
@@ -33,10 +31,14 @@ NL=$'\n'
 Yaml="%YAML 1.2"$NL
 Yaml+="---"$NL
 
+Yaml+="pkgfile:"$NL
+for f in ${pkgfile[@]};do
+    Yaml+="  - ${f##*/}"$NL
+done
+
 Yaml+="pkgname:"$NL
-for n in ${pkgfiles[@]};do
+for n in ${pkgname[@]};do
     Yaml+="  - ${n##*/}"$NL
 done
 
 printf '%s' "${Yaml}"
-

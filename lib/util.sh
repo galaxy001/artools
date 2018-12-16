@@ -155,23 +155,13 @@ load_user_info(){
     prepare_dir "${AT_USERCONFDIR}"
 }
 
-show_version(){
-    msg "ARTOOLS"
-    msg2 "VERSION: %s" "${VERSION}"
-}
-
-show_config(){
-    if [[ -f ${AT_USERCONFDIR}/artools.conf ]]; then
-        msg2 "config: %s" "~/.config/artools/artools.conf"
-    else
-        msg2 "config: %s" "${ARTOOLS_CONF}"
-    fi
-}
-
+# orig_argv=("$0" "$@")
 check_root() {
+    local keepenv=$1
+
     (( EUID == 0 )) && return
     if type -P sudo >/dev/null; then
-        exec sudo -- "${orig_argv[@]}"
+        exec sudo --preserve-env=$keepenv -- "${orig_argv[@]}"
     else
         exec su root -c "$(printf ' %q' "${orig_argv[@]}")"
     fi

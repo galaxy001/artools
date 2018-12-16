@@ -11,122 +11,66 @@
 
 VERSION=@version@
 
-shopt -s nullglob
-
-LIBDIR='@libdir@'
-DATADIR='@datadir@'
-SYSCONFDIR='@sysconfdir@'
-
-[[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
-import ${LIBDIR}/util.sh
-import ${LIBDIR}/util-chroot.sh
-
-show_pkg(){
-    source PKGBUILD
-    for n in ${pkgname[@]}; do
-        msg2 "%s" "$n"
-    done
-}
-
-display_settings(){
-    show_version
-    show_config
-
-    msg "OPTIONS:"
-    msg2 "CHROOTS_PKG: %s" "${CHROOTS_PKG}"
-    msg2 "REPOSITORY: %s" "${REPOSITORY}"
-
-    msg "ARGS:"
-    msg2 "create_first: %s" "${create_first}"
-    msg2 "makepkg_args: %s" "${makepkg_args[*]}"
-    msg2 "mkchrootpkg_args: %s" "${mkchrootpkg_args[*]}"
-
-    msg "BUILD:"
-    show_pkg
-}
+[[ -r @libdir@/util-msg.sh ]] && source @libdir@/util-msg.sh
+import @libdir@/util.sh
+import @libdir@/util-chroot.sh
 
 load_user_info
 
-load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+load_config "${AT_USERCONFDIR}/artools.conf" || load_config "@sysconfdir@/artools.conf"
 
 create_first=false
-pretend=false
 
-mkchroot_args=()
 mkchrootpkg_args=(-c -n)
 
-REPOSITORY='default'
+cmd=${0##*/}
+repo=${cmd#*-}
+base_devel=('base-devel')
 
-prepare_build(){
-    local pac_file= mp_file='makepkg.conf'
+case ${repo} in
+    system|world|galaxy) repo='default' ;;
+    lib32*) base_devel+=('multilib-devel') ;;
+    galaxy-gremlins|galaxy-goblins) repo=${repo#*-} ;;
+esac
 
-    base_devel=('base-devel')
+pacman_conf="/usr/share/artools/pacman-${repo}.conf"
+[[ -f $AT_USERCONFDIR/pacman-${repo}.conf ]] && pacman_conf="$AT_USERCONFDIR/pacman-${repo}.conf"
 
-    case ${REPOSITORY} in
-        'system'|'world'|'galaxy') REPOSITORY='default' ;;
-        lib32*) base_devel+=('multilib-devel') ;;
-        galaxy-gremlins|galaxy-goblins) REPOSITORY=${REPOSITORY#*-} ;;
-    esac
-    local pac_file="pacman-${REPOSITORY}.conf"
-
-    local pacman_conf="${DATADIR}/$pac_file"
-    [[ -f $AT_USERCONFDIR/$pac_file ]] && pacman_conf="$AT_USERCONFDIR/$pac_file"
-
-    work_dir="${CHROOTS_PKG}/${REPOSITORY}-${ARCH}"
-
-    local makepkg_conf="${DATADIR}/$mp_file"
-    [[ -f $AT_USERCONFDIR/$mp_file ]] && makepkg_conf="$AT_USERCONFDIR/$mp_file"
-
-    mkchroot_args+=(-C "${pacman_conf}" -M "${makepkg_conf}" "${work_dir}/root")
-
-    mkchrootpkg_args+=(-r "${work_dir}" "${makepkg_args[@]}")
-}
-
-build(){
-    local timer_start=$(get_timer)
-
-    exec mkchrootpkg "${mkchrootpkg_args[@]}"
-    show_elapsed_time "${FUNCNAME}" "${timer_start}"
-}
+makepkg_conf="/usr/share/artools/makepkg.conf"
+[[ -f $AT_USERCONFDIR/makepkg.conf ]] && makepkg_conf="$AT_USERCONFDIR/makepkg.conf"
 
 usage() {
-    echo "Usage: ${0##*/} [options] -- [makepkg_args]"
-    echo "    -r <dir>           Repository [default: ${REPOSITORY}]"
-    echo '    -c                 Create root chroot'
-    echo '    -q                 Query settings and pretend build'
+    echo "Usage: ${0##*/} [options] -- [mkchrootpkg_args]"
+    echo "    -r <dir>           Create chroots in this directory"
+    echo '    -c                 Recreate the chroot before building'
     echo '    -h                 This help'
     echo ''
-    echo "Default makepkg_args args: ${makepkg_args[*]}"
+    echo "Default mkchrootpkg_args args: ${mkchrootpkg_args[*]}"
     echo ''
     exit $1
 }
 
 orig_argv=("$0" "$@")
 
-opts='r:cqh'
+opts='hc:r'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        r) REPOSITORY="$OPTARG" ;;
+        r) CHROOTS_PKG="$OPTARG" ;;
         c) create_first=true ;;
-        q) pretend=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '%s'" "${arg}"; usage 1 ;;
     esac
 done
 
-makepkg_args+=("${@:$OPTIND}")
+check_root SOURCE_DATE_EPOCH
 
-check_root
+mkchrootpkg_args+=("${@:$OPTIND}")
 
-prepare_build
+if ${create_first} || [[ ! -d "${CHROOTS_PKG}/${repo}-${ARCH}" ]];then
+    msg "Creating chroot for [%s] (%s)..." "${repo}" "${ARCH}"
 
-${pretend} && display_settings && exit
-
-if ${create_first} || [[ ! -d ${work_dir}/root ]];then
-    msg "Creating chroot for [%s] (%s)..." "${REPOSITORY}" "${ARCH}"
-
-    for copy in "${work_dir}"/*; do
+    for copy in "${CHROOTS_PKG}/${repo}-${ARCH}"/*; do
         [[ -d $copy ]] || continue
         msg2 "Deleting chroot copy '%s'..." "$(basename "${copy}")"
 
@@ -137,14 +81,30 @@ if ${create_first} || [[ ! -d ${work_dir}/root ]];then
     done
     lock_close 9
 
-    rm -rf --one-file-system "${work_dir}"
-    mkdir -p "${work_dir}"
+    rm -rf --one-file-system "${CHROOTS_PKG}/${repo}-${ARCH}"
+    mkdir -p "${CHROOTS_PKG}/${repo}-${ARCH}"
     setarch "${ARCH}" mkchroot \
-        "${mkchroot_args[@]}"  "${base_devel[@]}" || abort
+        -C "${pacman_conf}" \
+        -M "${makepkg_conf}" \
+        "${CHROOTS_PKG}/${repo}-${ARCH}/root" \
+        "${base_devel[@]}" || abort
 else
-    lock 9 "${work_dir}/root.lock" "Locking clean chroot"
-    chroot-run "${mkchroot_args[@]}" \
+    lock 9 "${CHROOTS_PKG}/${repo}-${ARCH}/root.lock" "Locking clean chroot"
+    chroot-run \
+        -C "${pacman_conf}" \
+        -M "${makepkg_conf}" \
+        "${CHROOTS_PKG}/${repo}-${ARCH}/root" \
         pacman -Syu --noconfirm || abort
 fi
 
-build
+# Always build official packages reproducibly
+if [[ ! -v SOURCE_DATE_EPOCH ]]; then
+    export SOURCE_DATE_EPOCH=$(date +%s)
+fi
+
+timer_start=$(get_timer)
+
+msg "Building in chroot for [%s] (%s)..." "${repo}" "${ARCH}"
+exec mkchrootpkg -r "${CHROOTS_PKG}/${repo}-${ARCH}" "${mkchrootpkg_args[@]}"
+
+show_elapsed_time "${FUNCNAME}" "${timer_start}"

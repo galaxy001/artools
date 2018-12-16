@@ -9,20 +9,31 @@
 # GNU General Public License for more details.
 
 is_btrfs() {
-	[[ -e "$1" && "$(stat -f -c %T "$1")" == btrfs ]]
+    [[ -e "$1" && "$(stat -f -c %T "$1")" == btrfs ]]
+}
+
+is_subvolume() {
+    [[ -e "$1" && "$(stat -f -c %T "$1")" == btrfs && "$(stat -c %i "$1")" == 256 ]]
+}
+
+is_same_fs() {
+    [[ "$(stat -c %d "$1")" == "$(stat -c %d "$1")" ]]
 }
 
 subvolume_delete_recursive() {
     local subvol
 
-    is_btrfs "$1" || return 0
+    is_subvolume "$1" || return 0
 
     while IFS= read -d $'\0' -r subvol; do
-        if ! btrfs subvolume delete "$subvol" &>/dev/null; then
-            error "Unable to delete subvolume %s" "$subvol"
+        if ! subvolume_delete_recursive "$subvol"; then
             return 1
         fi
-    done < <(find "$1" -xdev -depth -inum 256 -print0)
+    done < <(find "$1" -mindepth 1 -xdev -depth -inum 256 -print0)
+    if ! btrfs subvolume delete "$1" &>/dev/null; then
+        error "Unable to delete subvolume %s" "$subvol"
+        return 1
+    fi
 
     return 0
 }

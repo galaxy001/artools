@@ -11,27 +11,26 @@
 
 VERSION=@version@
 
-LIBDIR='@libdir@'
-SYSCONFDIR='@sysconfdir@'
-
-[[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
-import ${LIBDIR}/util.sh
-import ${LIBDIR}/util-pkg.sh
+[[ -r @libdir@/util-msg.sh ]] && source @libdir@/util-msg.sh
+import @libdir@/util.sh
+import @libdir@/util-pkg.sh
 
 update_repo(){
     local repo="$1" pkgfile ver ext=db.tar.xz
     local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
+
     source PKGBUILD
+
     for name in ${pkgname[@]};do
-        [[ $arch == any ]] && CARCH=any
+        pkgarch=$(get_pkg_arch "$name")
         ver=$(get_full_version "$name")
-        if pkgfile=$(find_cached_package "$name" "$ver" "$CARCH");then
+        if pkgfile=$(find_cached_package "$name" "$ver" "$pkgarch");then
             local pkg=${pkgfile##*/}
             info "Found: %s" "$pkg"
             if ${add_pkg};then
                 local action='add'
                 packages+=("$pkg")
-                checkpkg "${pkgfile}"
+#                 checkpkg "${pkgfile}" || return 2
                 if ${sign_pkg};then
                     [[ -e ${pkgfile}.sig ]] && rm ${pkgfile}.sig
                     signfile ${pkgfile}
@@ -50,55 +49,37 @@ update_repo(){
     return 0
 }
 
-display_settings(){
-    show_version
-    show_config
-
-    msg "OPTIONS:"
-    msg2 "REPOSITORY: %s" "${REPOSITORY}"
-
-    msg "ARGS:"
-    msg2 "add_pkg: %s" "${add_pkg}"
-    msg2 "del_pkg: %s" "${del_pkg}"
-    msg2 "sign_pkg: %s" "${sign_pkg}"
-}
-
 load_user_info
 
-load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+load_config "${AT_USERCONFDIR}/artools.conf" || load_config "@sysconfdir@/artools.conf"
 load_vars "${PAC_USERCONFDIR}/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
 load_vars /etc/makepkg.conf
 
-pretend=false
 add_pkg=false
 del_pkg=false
-REPOSITORY=
 sign_pkg=false
 
+cmd=${0##*/}
+dest_repo=${cmd#*-}
+
 usage() {
-    echo "Usage: ${0##*/} [options]"
-    echo "    -d                 Destination repository [default:${REPOSITORY}]"
+    echo "Usage: ${cmd} [options]"
     echo '    -a                 Add package(s) to repository'
     echo '    -r                 Remove package(s) from repository'
     echo '    -s                 Sign package(s)'
-    echo '    -q                 Query settings and pretend upload'
     echo '    -h                 This help'
     echo ''
     echo ''
     exit $1
 }
 
-orig_argv=("$0" "$@")
-
-opts='d:arsqh'
+opts='arsh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        d) REPOSITORY="$OPTARG" ;;
         a) add_pkg=true; del_pkg=false ;;
         r) del_pkg=true; add_pkg=false ;;
         s) sign_pkg=true ;;
-        q) pretend=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -108,6 +89,4 @@ shift $(($OPTIND - 1))
 
 prepare_dir "${REPOS_ROOT}"
 
-${pretend} && display_settings && exit 1
-
-update_repo "${REPOSITORY}"
+update_repo "${dest_repo}"

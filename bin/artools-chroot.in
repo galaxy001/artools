@@ -50,29 +50,15 @@ select_os(){
     fi
 }
 
-display_settings(){
-    show_version
-    show_config
-
-    msg "ARGS:"
-    msg2 "automount: %s" "${automount}"
-    msg2 "run_args: %s" "${run_args[*]}"
-
-    msg "PATHS:"
-    msg2 "chrootdir: %s" "${chrootdir}"
-}
-
 load_user_info
 
 load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
 
 automount=false
-pretend=false
 
 usage() {
     echo "usage: ${0##*/} -a [or] ${0##*/} chroot-dir [command]"
     echo '    -a             Automount detected linux system'
-    echo '    -q             Query settings and pretend'
     echo '    -h             Print this help message'
     echo ''
     echo "    If 'command' is unspecified, ${0##*/} will launch /bin/sh."
@@ -86,12 +72,11 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts=':haq'
+opts=':ha'
 
 while getopts ${opts} arg; do
     case "${arg}" in
         a) automount=true ;;
-        q) pretend=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument ${arg}"; usage 1 ;;
     esac
@@ -104,8 +89,6 @@ if ${automount};then
     chrootdir=/mnt
     run_args=/bin/bash
 
-    ${pretend} && display_settings && exit 1
-
     select_os "${chrootdir}"
 else
     chrootdir=$1
@@ -113,8 +96,6 @@ else
     run_args="$@"
 
     [[ -d ${chrootdir} ]] || die "Can't create chroot on non-directory %s" "${chrootdir}"
-
-    ${pretend} && display_settings && exit 1
 
     chroot_api_mount "${chrootdir}" || die "failed to setup API filesystems in chroot %s" "${chrootdir}"
     chroot_add_resolv_conf "${chrootdir}"

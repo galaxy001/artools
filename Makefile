@@ -1,6 +1,6 @@
-VERSION=0.10
+VERSION=0.11
 
-CHROOT_VERSION=0.8
+CHROOT_VERSION=0.9
 
 TOOLS = artools
 PREFIX ?= /usr/local
@@ -64,11 +64,35 @@ COMMITPKG_SYMS = \
 	multilib-testingpkg \
 	multilib-stagingpkg
 
+BUILDPKG_SYMS = \
+	buildpkg-system \
+	buildpkg-world \
+	buildpkg-gremlins \
+	buildpkg-goblins \
+	buildpkg-galaxy \
+	buildpkg-galaxy-gremlins \
+	buildpkg-galaxy-goblins \
+	buildpkg-lib32 \
+	buildpkg-lib32-gremlins \
+	buildpkg-lib32-goblins
+
+DEPLOYPKG_SYMS = \
+	deploypkg-system \
+	deploypkg-world \
+	deploypkg-gremlins \
+	deploypkg-goblins \
+	deploypkg-galaxy \
+	deploypkg-galaxy-gremlins \
+	deploypkg-galaxy-goblins \
+	deploypkg-lib32 \
+	deploypkg-lib32-gremlins \
+	deploypkg-lib32-goblins
+
 BIN_ISO = \
 	bin/buildiso \
 	bin/deployiso
 
-BIN_ISO_SYMS = \
+BUILDISO_SYMS = \
 	buildiso-gremlins \
 	buildiso-goblins
 
@@ -126,6 +150,8 @@ install_pkg:
 	$(LN) find-libdeps $(DESTDIR)$(BINDIR)/find-libprovides
 
 	for l in $(COMMITPKG_SYMS); do $(LN) commitpkg $(DESTDIR)$(BINDIR)/$$l; done
+	for l in $(BUILDPKG_SYMS); do $(LN) buildpkg $(DESTDIR)$(BINDIR)/$$l; done
+	for l in $(DEPLOYPKG_SYMS); do $(LN) deploypkg $(DESTDIR)$(BINDIR)/$$l; done
 
 	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)
 	install $(FILEMODE) $(LIBS_PKG) $(DESTDIR)$(LIBDIR)/$(TOOLS)
@@ -142,7 +168,7 @@ install_iso: install_cpio
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
 	install $(MODE) $(BIN_ISO) $(DESTDIR)$(BINDIR)
 
-	for l in $(BIN_ISO_SYMS); do $(LN) buildiso $(DESTDIR)$(BINDIR)/$$l; done
+	for l in $(BUILDISO_SYMS); do $(LN) buildiso $(DESTDIR)$(BINDIR)/$$l; done
 
 	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)
 	install $(FILEMODE) $(LIBS_ISO) $(DESTDIR)$(LIBDIR)/$(TOOLS)

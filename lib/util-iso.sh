@@ -105,7 +105,7 @@ run_safe() {
     restoretrap=$(trap -p ERR)
     trap 'error_function $func' ERR
 
-    if ${verbose};then
+    if ${log};then
         run_log "$func"
     else
         "$func"
@@ -316,7 +316,6 @@ make_sfs() {
         msg2 "Creating ext4 image of %s ..." "${size}"
         truncate -s ${size} "${src}.img"
         local ext4_args=()
-        ${verbose} && ext4_args+=(-q)
         ext4_args+=(-O ^has_journal,^resize_inode -E lazy_itable_init=0 -m 0)
         mkfs.ext4 ${ext4_args[@]} -F "${src}.img" &>/dev/null
         tune2fs -c 0 -i 0 "${src}.img" &> /dev/null
@@ -340,11 +339,9 @@ make_sfs() {
     local highcomp="-b 256K -Xbcj x86" comp='xz'
 
     mksfs_args+=(-comp ${comp} ${highcomp})
-    if ${verbose};then
-        mksquashfs "${mksfs_args[@]}" >/dev/null
-    else
-        mksquashfs "${mksfs_args[@]}"
-    fi
+
+    mksquashfs "${mksfs_args[@]}"
+
     make_checksum "${dest}" "${name}"
     ${persist} && rm "${src}.img"
 

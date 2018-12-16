@@ -49,34 +49,11 @@ prepare_build(){
     prepare_dir "${iso_root}"
 }
 
-show_profile(){
-    msg2 "iso_file: %s" "${iso_file}"
-    if ${verbose};then
-        msg2 "AUTOLOGIN: %s" "${AUTOLOGIN}"
-        msg2 "HOST_NAME: %s" "${HOST_NAME}"
-        msg2 "USER_NAME: %s" "${USER_NAME}"
-        msg2 "PASSWORD: %s" "${PASSWORD}"
-        msg2 "ADDGROUPS: %s" "${ADDGROUPS}"
-        msg2 "SERVICES_LIVE: %s" "${SERVICES_LIVE[*]}"
-        msg2 "SERVICES: %s" "${SERVICES[*]}"
-    fi
-}
-
 display_settings(){
-    show_version
-    show_config
-
     msg "OPTIONS:"
     msg2 "PROFILE: %s" "${PROFILE}"
     msg2 "INITSYS: %s" "${INITSYS}"
     [[ -n ${GPG_KEY} ]] && msg2 "GPG_KEY: %s" "${GPG_KEY}"
-    msg2 "REPOSITORY: %s" "${REPOSITORY}"
-
-    msg "ARGS:"
-    msg2 "clean_first: %s" "${clean_first}"
-    msg2 "images_only: %s" "${images_only}"
-    msg2 "iso_only: %s" "${iso_only}"
-    msg2 "persist: %s" "${persist}"
 
     msg "ISO SETTINGS:"
     msg2 "ISO_VERSION: %s" "${ISO_VERSION}"
@@ -128,7 +105,7 @@ clean_first=true
 pretend=false
 images_only=false
 iso_only=false
-verbose=false
+log=false
 persist=false
 
 mkchroot_args=()
@@ -152,7 +129,7 @@ usage() {
     echo '    -x                 Build images only'
     echo '    -z                 Generate iso only'
     echo '                       Requires pre built images (-x)'
-    echo '    -v                 Verbose output to log file, show profile detail (-q)'
+    echo '    -l                 Log to file'
     echo '    -q                 Query settings and pretend build'
     echo '    -h                 This help'
     echo ''
@@ -162,7 +139,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:r:t:i:g:czxmvqh'
+opts='p:r:t:i:g:czxmlqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -175,7 +152,7 @@ while getopts "${opts}" arg; do
         x) images_only=true ;;
         z) iso_only=true ;;
         m) persist=true ;;
-        v) verbose=true ;;
+        l) log=true ;;
         q) pretend=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;

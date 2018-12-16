@@ -33,31 +33,10 @@ sync_dir(){
     show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }
 
-display_settings(){
-    show_version
-    show_config
-
-    msg "OPTIONS:"
-    msg2 "PROFILE: %s" "${PROFILE}"
-    msg2 "UPLIMIT: %s kB/s" "${UPLIMIT}"
-
-    msg "ARGS:"
-    msg2 "update: %s" "${update}"
-    msg2 "verbose: %s" "${verbose}"
-
-    msg "REMOTE:"
-    msg2 "ACCOUNT: %s" "${ACCOUNT}"
-
-    msg "UPLOAD:"
-    msg2 "SRC_DIR: ${SRC_DIR}"
-    msg2 "DEST_DIR: ${DEST_DIR}"
-}
-
 load_user_info
 
 load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
 
-pretend=false
 update=false
 verbose=false
 
@@ -68,7 +47,6 @@ usage() {
     echo "    -p                 Source folder to upload [default: ${PROFILE}]"
     echo "    -l                 Limit bandwidth in kB/s [default:${UPLIMIT}]"
     echo '    -u                 Update remote directory'
-    echo '    -q                 Query settings and pretend upload'
     echo '    -v                 Verbose output'
     echo '    -h                 This help'
     echo ''
@@ -76,7 +54,7 @@ usage() {
     exit $1
 }
 
-opts='p:l:uvqh'
+opts='p:l:uvh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -84,7 +62,6 @@ while getopts "${opts}" arg; do
         l) UPLIMIT="$OPTARG" ;;
         u) update=true; rsync_args+=(-u) ;;
         v) verbose=true; rsync_args+=(-v --stats) ;;
-        q) pretend=true; rsync_args+=(-n) ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -97,7 +74,5 @@ timer_start=$(get_timer)
 rsync_args+=(--bwlimit=${UPLIMIT})
 
 prepare_transfer
-
-${pretend} && display_settings #&& exit 1
 
 sync_dir

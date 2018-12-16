@@ -129,20 +129,6 @@ symlink_commit_pkg(){
     fi
 }
 
-display_settings(){
-    show_version
-    show_config
-
-    msg "OPTIONS:"
-    msg2 "REPO_SRC: %s" "${REPO_SRC}"
-    msg2 "REPO_DEST: %s" "${REPO_DEST}"
-    msg2 "PACKAGE: %s" "${PACKAGE}"
-
-    msg "ARGS:"
-    msg2 "remove: %s" "${remove}"
-    msg2 "push: %s" "${push}"
-}
-
 load_user_info
 
 load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
@@ -153,7 +139,6 @@ REPO_SRC='trunk'
 PACKAGE=''
 remove=false
 push=false
-pretend=false
 
 cmd=${0##*/}
 REPO_DEST=${cmd%pkg}
@@ -164,7 +149,6 @@ usage() {
     echo '    -p <pkg>           Package name'
     echo '    -r                 Delete from repo (commitpkg only)'
     echo '    -u                 Push'
-    echo '    -q                 Query settings and pretend'
     echo '    -h                 This help'
     echo ''
     echo ''
@@ -173,7 +157,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:s:urqh'
+opts='p:s:urh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -181,15 +165,12 @@ while getopts "${opts}" arg; do
         p) PACKAGE="$OPTARG" ;;
         r) remove=true ;;
         u) push=true ;;
-        q) pretend=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
 done
 
 shift $(($OPTIND - 1))
-
-${pretend} && display_settings && exit 1
 
 if $(is_valid_repo "${REPO_SRC}");then
     if [[ "${cmd}" == 'commitpkg' ]];then

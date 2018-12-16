@@ -254,39 +254,12 @@ sync_repos(){
     pull_tree_artix
 }
 
-display_settings(){
-    show_version
-    show_config
-
-    msg "OPTIONS:"
-    msg2 "PACKAGE: %s" "${PACKAGE}"
-    ${createnew} && msg2 "TEAM: %s" "${TEAM}"
-
-    msg "ARGS:"
-    msg2 "sync: %s" "${sync}"
-    msg2 "sync_arch: %s" "${sync_arch}"
-    msg2 "compare: %s" "${compare}"
-    msg2 "upgrades: %s" "${upgrades}"
-    msg2 "downgrades: %s" "${downgrades}"
-    msg2 "artix: %s" "${artix}"
-    msg2 "staging: %s" "${staging}"
-    msg2 "unstable: %s" "${unstable}"
-    msg2 "import: %s" "${import}"
-    msg2 "view: %s" "${view}"
-    msg2 "createnew: %s" "${createnew}"
-
-    msg "PATHS:"
-    msg2 "TREE_DIR_ARTIX: %s" "${TREE_DIR_ARTIX}"
-    msg2 "TREE_DIR_ARCH: %s" "${TREE_DIR_ARCH}"
-}
-
 load_user_info
 
 load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
 load_vars "${PAC_USERCONFDIR}/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
 load_vars /etc/makepkg.conf
 
-pretend=false
 sync=false
 sync_arch=true
 compare=false
@@ -320,7 +293,6 @@ usage() {
     echo '    -i            Import a package from arch repos'
     echo '    -m            Make new remote subrepo and clone it'
     echo '    -v            View package depends'
-    echo '    -q            Query settings'
     echo '    -h            This help'
     echo ''
     echo ''
@@ -329,7 +301,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:t:csudayimzxvqh'
+opts='p:t:csudayimzxvh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -346,7 +318,6 @@ while getopts "${opts}" arg; do
         m) createnew=true ;;
         v) view=true ;;
         x) unstable=true ;;
-        q) pretend=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -356,8 +327,6 @@ shift $(($OPTIND - 1))
 
 prepare_dir "${TREE_DIR_ARTIX}"
 prepare_dir "${TREE_DIR_ARCH}"
-
-${pretend} && display_settings && exit 1
 
 ${sync} && sync_repos
 

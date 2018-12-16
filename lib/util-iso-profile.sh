@@ -26,6 +26,17 @@ init_profile(){
     [[ -d "$profdir/$prof/live-overlay" ]] && LIVE_OVERLAY="$profdir/$prof/live-overlay"
 }
 
+show_profile(){
+    msg2 "iso_file: %s" "${iso_file}"
+    msg2 "AUTOLOGIN: %s" "${AUTOLOGIN}"
+    msg2 "HOST_NAME: %s" "${HOST_NAME}"
+    msg2 "USER_NAME: %s" "${USER_NAME}"
+    msg2 "PASSWORD: %s" "${PASSWORD}"
+    msg2 "ADDGROUPS: %s" "${ADDGROUPS}"
+    msg2 "SERVICES_LIVE: %s" "${SERVICES_LIVE[*]}"
+    msg2 "SERVICES: %s" "${SERVICES[*]}"
+}
+
 load_profile(){
     local prof="$1"
     local profdir="${DATADIR}/iso-profiles"
