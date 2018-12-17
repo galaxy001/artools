@@ -11,9 +11,13 @@
 
 VERSION=@version@
 
-[[ -r @libdir@/util-msg.sh ]] && source @libdir@/util-msg.sh
-import @libdir@/util.sh
-import @libdir@/util-pkg.sh
+LIBDIR='@libdir@'
+SYSCONFDIR='@sysconfdir@'
+DATADIR='@datadir@'
+
+[[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
+import ${LIBDIR}/util.sh
+import ${LIBDIR}/util-pkg.sh
 
 update_repo(){
     local repo="$1" pkgfile ver ext=db.tar.xz
@@ -51,7 +55,7 @@ update_repo(){
 
 load_user_info
 
-load_config "${AT_USERCONFDIR}/artools.conf" || load_config "@sysconfdir@/artools.conf"
+load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
 load_vars "${PAC_USERCONFDIR}/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
 load_vars /etc/makepkg.conf
 

@@ -11,13 +11,17 @@
 
 VERSION=@version@
 
-[[ -r @libdir@/util-msg.sh ]] && source @libdir@/util-msg.sh
-import @libdir@/util.sh
-import @libdir@/util-chroot.sh
+LIBDIR='@libdir@'
+SYSCONFDIR='@sysconfdir@'
+DATADIR='@datadir@'
+
+[[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
+import ${LIBDIR}/util.sh
+import ${LIBDIR}/util-chroot.sh
 
 load_user_info
 
-load_config "${AT_USERCONFDIR}/artools.conf" || load_config "@sysconfdir@/artools.conf"
+load_config "${AT_USERCONFDIR}/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
 
 create_first=false
 
@@ -33,10 +37,10 @@ case ${repo} in
     galaxy-gremlins|galaxy-goblins) repo=${repo#*-} ;;
 esac
 
-pacman_conf="/usr/share/artools/pacman-${repo}.conf"
+pacman_conf="${DATADIR}/pacman-${repo}.conf"
 [[ -f $AT_USERCONFDIR/pacman-${repo}.conf ]] && pacman_conf="$AT_USERCONFDIR/pacman-${repo}.conf"
 
-makepkg_conf="/usr/share/artools/makepkg.conf"
+makepkg_conf="${DATADIR}/makepkg.conf"
 [[ -f $AT_USERCONFDIR/makepkg.conf ]] && makepkg_conf="$AT_USERCONFDIR/makepkg.conf"
 
 usage() {
