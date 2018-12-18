@@ -28,7 +28,7 @@ subrepo_clone(){
 
 write_jenkinsfile(){
     local jenkins=Jenkinsfile
-    echo '@Library(["PackagePipeline", "RepoPackage"]) import org.artixlinux.RepoPackage' > $jenkins
+    echo "@Library('artix-ci') import org.artixlinux.RepoPackage" > $jenkins
     echo '' >> $jenkins
     echo 'PackagePipeline(new RepoPackage(this))' >> $jenkins
     echo '' >> $jenkins
