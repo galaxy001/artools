@@ -82,7 +82,7 @@ find_tree(){
 }
 
 find_repo(){
-    local pkg="$1" unst="$2" stag="$3" repo=
+    local pkg="$1" stag="$2" unst="$3" repo=
     local repos=(core extra testing community community-testing multilib multilib-testing)
 
     $stag && repos+=(staging community-staging multilib-staging)
