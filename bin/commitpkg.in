@@ -61,14 +61,12 @@ commit_pkg(){
         cd ${TREE_DIR_ARTIX}/${git_tree}
 
         if ${push};then
-            msg2 "Check (%s)" "${git_tree}"
-            git pull origin master
+            mainrepo_pull "${git_tree}"
 
-            msg2 "Update (%s)" "${PACKAGE}"
             subrepo_push "${PACKAGE}"
+            subrepo_clean "${PACKAGE}"
 #             sleep 1
-            msg2 "Update (%s)" "${git_tree}"
-            git push origin master
+            mainrepo_push "${git_tree}"
         fi
         git prune
     else
@@ -114,14 +112,12 @@ symlink_commit_pkg(){
         cd ${TREE_DIR_ARTIX}/${git_tree}
 
         if ${push};then
-            msg2 "Check (%s)" "${git_tree}"
-            git pull origin master
+            mainrepo_pull "${git_tree}"
 
-            msg2 "Update (%s)" "${PACKAGE}"
             subrepo_push "${PACKAGE}"
+            subrepo_clean "${PACKAGE}"
 #             sleep 1
-            msg2 "Update (%s)" "${git_tree}"
-            git push origin master
+            mainrepo_push "${git_tree}"
         fi
         git prune
     else

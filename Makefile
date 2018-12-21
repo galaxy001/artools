@@ -41,6 +41,7 @@ BIN_PKG = \
 	bin/buildtree \
 	bin/deploypkg \
 	bin/commitpkg \
+	bin/comparepkg \
 	bin/pkg2yaml
 
 LIBS_PKG = \
