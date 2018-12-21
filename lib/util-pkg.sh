@@ -83,9 +83,9 @@ find_tree(){
 
 find_repo(){
     local pkg="$1" unst="$2" stag="$3" repo=
-    local repos=(core extra testing community community-testing mulitilib multilib-testing)
+    local repos=(core extra testing community community-testing multilib multilib-testing)
 
-    $stag && repos+=(staging community-staging mulitilib-staging)
+    $stag && repos+=(staging community-staging multilib-staging)
     $unst && repos+=(gnome-unstable kde-unstable)
 
     for r in ${repos[@]};do
