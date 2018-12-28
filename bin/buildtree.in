@@ -89,7 +89,7 @@ sync_pkg(){
     local rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
     local src="$1" dest="$2" tree="$3"
 
-    info "Sync from archlinux (%s)" "$git_tree_arch"
+    info "Sync from archlinux (%s)" "$tree"
     rsync "${rsync_args[@]}" $src/ $dest/
 }
 
@@ -141,8 +141,7 @@ from_arch(){
         sync_pkg "$src" "$dest" "$git_tree_arch"
         patch_pkg "$pkg"
     else
-        [[ $git_tree_arch == 'packages' ]] && git_tree_artix=$git_tree_arch
-        [[ $git_tree_arch == 'community' ]] && git_tree_artix=$git_tree_arch
+        git_tree_artix=$git_tree_arch
 
         local pkg_path=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg
 
@@ -158,9 +157,9 @@ from_arch(){
 
         commit_jenkins_files "$pkg"
 
-#         dest=$pkg_path/trunk
+        prepare_dir "$pkg_path/trunk"
 
-        sync_pkg "$src" "$dest" "$git_tree_arch"
+        sync_pkg "$src" "$dest" "$git_tree_artix"
     fi
 }
 
@@ -211,7 +210,7 @@ usage() {
     echo "    -z            Don't clone or pull arch repos"
     echo '    -i            Import a package from arch repos'
     echo '    -m            Make new remote subrepo and clone it'
-    echo '    -C            Configure subrepo url'
+    echo '    -c            Configure subrepo url'
     echo '    -v            View package depends'
     echo '    -h            This help'
     echo ''
