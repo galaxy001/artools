@@ -143,7 +143,7 @@ from_arch(){
     else
         git_tree_artix=$git_tree_arch
 
-        local pkg_path=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg
+        dest=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg/trunk
 
         cd ${TREE_DIR_ARTIX}/$git_tree_artix
 
@@ -157,7 +157,7 @@ from_arch(){
 
         commit_jenkins_files "$pkg"
 
-        prepare_dir "$pkg_path/trunk"
+        prepare_dir "$dest"
 
         sync_pkg "$src" "$dest" "$git_tree_artix"
     fi
