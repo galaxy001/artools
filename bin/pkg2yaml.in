@@ -11,7 +11,105 @@
 
 VERSION=@version@
 
-VERSION=0.10.4.r2.gd0e3c4e
+write_attr() {
+    # $1: attr name
+    # $2: attr values
+
+    local attrname=$1 attrvalues=("${@:2}")
+
+    # normalize whitespace, strip leading and trailing
+    attrvalues=("${attrvalues[@]//+([[:space:]])/ }")
+    attrvalues=("${attrvalues[@]#[[:space:]]}")
+    attrvalues=("${attrvalues[@]%[[:space:]]}")
+
+    case $attrname in
+        depends|makedepends|checkdepends|provides)
+            Yaml+="    $attrname:"$NL
+            for v in ${attrvalues[@]};do
+                Yaml+="      - $v"$NL
+            done
+        ;;
+        *)
+            for v in ${attrvalues[@]};do
+                Yaml+="  $attrname: ${v}"$NL
+            done
+        ;;
+    esac
+
+}
+
+extract_info() {
+    # $1: pkgname
+    # $2: attr name
+    # $3: multivalued
+
+    local pkgname=$1 attrname=$2 isarray=$3 outvalue=
+
+    if get_pkgbuild_attribute "$pkgname" "$attrname" "$isarray" 'outvalue'; then
+        write_attr "$attrname" "${outvalue[@]}"
+    fi
+}
+
+write_details() {
+    local attr package_arch a
+    local multivalued_arch_attrs=(provides depends makedepends checkdepends)
+
+    for attr in "${singlevalued[@]}"; do
+        extract_info "$1" "$attr" 0
+    done
+
+    for attr in "${multivalued[@]}"; do
+        extract_info "$1" "$attr" 1
+    done
+
+    get_pkgbuild_attribute "$1" 'arch' 1 'package_arch'
+    for a in "${package_arch[@]}"; do
+        # 'any' is special. there's no support for, e.g. depends_any.
+        [[ $a = any ]] && continue
+
+        for attr in "${multivalued_arch_attrs[@]}"; do
+            extract_info "$1" "${attr}_$a" 1
+        done
+    done
+}
+
+write_pkginfo_global() {
+    local singlevalued=(pkgver pkgrel epoch)
+    local multivalued=(arch groups provides depends makedepends checkdepends)
+
+    write_details ''
+}
+
+write_pkginfo() {
+    local singlevalued=()
+    local multivalued=(arch groups provides depends checkdepends)
+
+    write_details "$1"
+}
+
+write_yaml(){
+    Yaml+="---"$NL
+
+    Yaml+=$NL
+
+    Yaml+="pkgfile:"$NL
+    for f in ${pkgfile[@]};do
+        Yaml+="  - ${f##*/}"$NL
+    done
+    Yaml+=$NL
+
+    Yaml+="pkgbase: ${pkgbase:-$pkgname}"$NL
+    write_pkginfo_global
+    Yaml+=$NL
+
+    Yaml+="pkgname:"$NL
+    for pkg in "${pkgname[@]}"; do
+        Yaml+="  - $pkg"$NL
+        write_pkginfo "$pkg"
+    done
+
+    printf '%s' "${Yaml}"
+}
 
 if [[ -f "$1"/PKGBUILD ]]; then
     LIBRARY=${LIBRARY:-'/usr/share/makepkg'}
@@ -24,21 +122,8 @@ if [[ -f "$1"/PKGBUILD ]]; then
     . "$1"/PKGBUILD
 
     pkgfile=$(print_all_package_names)
+
+    NL=$'\n'
+    Yaml="%YAML 1.2"$NL
+    write_yaml
 fi
-
-NL=$'\n'
-
-Yaml="%YAML 1.2"$NL
-Yaml+="---"$NL
-
-Yaml+="pkgfile:"$NL
-for f in ${pkgfile[@]};do
-    Yaml+="  - ${f##*/}"$NL
-done
-
-Yaml+="pkgname:"$NL
-for n in ${pkgname[@]};do
-    Yaml+="  - ${n##*/}"$NL
-done
-
-printf '%s' "${Yaml}"
