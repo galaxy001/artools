@@ -9,6 +9,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+get_local_head(){
+    echo $(git log --pretty=%H ...refs/heads/$1^ | head -n 1)
+}
+
+get_remote_head(){
+    echo $(git ls-remote origin -h refs/heads/$1 | cut -f1)
+}
+
 subrepo_push(){
     local pkg="$1"
     msg2 "Update (%s)" "$pkg"
@@ -41,14 +49,30 @@ subrepo_clone(){
     git subrepo clone gitea@"${GIT_DOMAIN}":"$org"/"$gitname".git "$pkg"
 }
 
-mainrepo_pull(){
-    local tree="$1"
-    msg2 "Check (%s)" "${tree}"
-    git push origin master
+clone_tree(){
+    local timer=$(get_timer) url="$1" tree="$2"
+
+    msg "Cloning (%s) ..." "$tree"
+
+    git clone $url/$tree.git
+    show_elapsed_time "${FUNCNAME}" "${timer}"
 }
 
+pull_tree(){
+    local branch="master" tree="$1"
+    local local_head=$(get_local_head "$branch")
+    local remote_head=$(get_remote_head "$branch")
 
-mainrepo_push(){
+    msg2 "Checking (%s)" "${tree}"
+    if [[ "${local_head}" == "${remote_head}" ]]; then
+        msg2 "remote changes: no"
+    else
+        msg2 "remote changes: yes"
+        git pull origin "$branch"
+    fi
+}
+
+push_tree(){
     local tree="$1"
     msg2 "Update (%s)" "${tree}"
     git push origin master
@@ -87,4 +111,36 @@ commit_jenkins_files(){
     write_agentyaml "$pkg"
 
     git commit -m "add jenkinsfile & .artixlinux/agent.yaml"
+}
+
+config_tree(){
+    local tree="$1"
+    cd $tree
+        git config --bool pull.rebase true
+        git config commit.gpgsign true
+        if [[ -n "${GPGKEY}" ]];then
+            git config user.signingkey "${GPGKEY}"
+        else
+            warning "No GPGKEY configured in makepkg.conf!"
+        fi
+    cd ..
+}
+
+subrepo_new(){
+    local pkg="$1" team="$2"
+    local dest=${TREE_DIR_ARTIX}/$team/$pkg/trunk
+
+    cd ${TREE_DIR_ARTIX}/$team
+
+    local org=$(get_pkg_org "$pkg")
+
+    create_repo "$pkg" "$org"
+
+    add_repo_to_team "$pkg" "$org" "$team"
+
+    subrepo_clone "$pkg" "$org"
+
+    prepare_dir "$dest"
+
+    commit_jenkins_files "$pkg"
 }

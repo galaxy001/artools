@@ -26,27 +26,12 @@ pull_tree_arch(){
     for tree in ${tree_names[@]};do
         if [[ -d ${tree} ]];then
             cd ${tree}
-            msg "Checking (%s)" "${tree}"
-            pull_tree
+            pull_tree "${tree}"
             cd ..
         else
-            msg "Cloning (%s) ..." "$tree"
-            clone_tree "${HOST_TREE_ARCH}/${tree}"
+            clone_tree "${HOST_TREE_ARCH}" "${tree}"
         fi
     done
-}
-
-config_tree(){
-    local tree="$1"
-    cd $tree
-        git config --bool pull.rebase true
-        git config commit.gpgsign true
-        if [[ -n "${GPGKEY}" ]];then
-            git config user.signingkey "${GPGKEY}"
-        else
-            warning "No GPGKEY configured in makepkg.conf!"
-        fi
-    cd ..
 }
 
 pull_tree_artix(){
@@ -55,41 +40,19 @@ pull_tree_artix(){
         if [[ -d ${tree} ]];then
             config_tree "${tree}"
             cd ${tree}
-            msg "Checking (%s)" "${tree}"
-            pull_tree
+            pull_tree "${tree}"
             cd ..
         else
-            msg "Cloning (%s) ..." "$tree"
-            clone_tree "${HOST_TREE_ARTIX}/${tree}"
+            clone_tree "${HOST_TREE_ARTIX}" "${tree}"
             config_tree "${tree}"
         fi
     done
 }
 
-mkrepo(){
-    local pkg="$1" team="$2"
-    local pkg_path=${TREE_DIR_ARTIX}/$team/$pkg
-
-    cd ${TREE_DIR_ARTIX}/$team
-
-    local org=$(get_pkg_org "$pkg")
-
-    create_repo "$pkg" "$org"
-
-    add_repo_to_team "$pkg" "$org" "$team"
-
-    subrepo_clone "$pkg" "$org"
-
-    prepare_dir "$pkg_path/trunk"
-
-    commit_jenkins_files "$pkg"
-}
-
 sync_pkg(){
     local rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
-    local src="$1" dest="$2" tree="$3"
+    local src="$1" dest="$2"
 
-    info "Sync from archlinux (%s)" "$tree"
     rsync "${rsync_args[@]}" $src/ $dest/
 }
 
@@ -126,41 +89,24 @@ from_arch(){
 
     src=$package/repos/$repo
 
-    local git_tree_artix=$(find_tree "${TREE_DIR_ARTIX}" "$pkg")
-    dest=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg/trunk
+    dest=${TREE_DIR_ARTIX}/$git_tree_arch/$pkg/trunk
 
     show_deps "$src" "$repo"
 
     if [[ -d $dest ]];then
-        cd ${TREE_DIR_ARTIX}/$git_tree_artix
+        cd ${TREE_DIR_ARTIX}/$git_tree_arch
 
         source $dest/PKGBUILD 2>/dev/null
         local artixver=$(get_full_version $pkg)
 
         msg2 "Artix Version: %s" "$artixver"
-        sync_pkg "$src" "$dest" "$git_tree_arch"
-        patch_pkg "$pkg"
     else
-        git_tree_artix=$git_tree_arch
-
-        dest=${TREE_DIR_ARTIX}/$git_tree_artix/$pkg/trunk
-
-        cd ${TREE_DIR_ARTIX}/$git_tree_artix
-
-        local org=$(get_pkg_org "$pkg")
-
-        create_repo "$pkg" "$org"
-
-        add_repo_to_team "$pkg" "$org" "$git_tree_artix"
-
-        subrepo_clone "$pkg" "$org"
-
-        commit_jenkins_files "$pkg"
-
-        prepare_dir "$dest"
-
-        sync_pkg "$src" "$dest" "$git_tree_artix"
+        subrepo_new "$pkg" "$git_tree_arch"
     fi
+
+    info "Sync from archlinux (%s)" "$git_tree_arch"
+    sync_pkg "$src" "$dest"
+    patch_pkg "$pkg"
 }
 
 view_build(){
@@ -209,7 +155,7 @@ usage() {
     echo "    -s            Clone or pull repos"
     echo "    -z            Don't clone or pull arch repos"
     echo '    -i            Import a package from arch repos'
-    echo '    -m            Make new remote subrepo and clone it'
+    echo '    -n            Make new remote subrepo and clone it'
     echo '    -c            Configure subrepo url'
     echo '    -v            View package depends'
     echo '    -h            This help'
@@ -249,6 +195,6 @@ ${view} && view_build "${PACKAGE}"
 
 ${import} && from_arch "${PACKAGE}"
 
-${createnew} && mkrepo "${PACKAGE}" "${TEAM}"
+${createnew} && subrepo_new "${PACKAGE}" "${TEAM}"
 
 ${conf} && subrepo_config "${PACKAGE}" "${SUBORG}"

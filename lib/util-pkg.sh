@@ -9,14 +9,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-get_local_head(){
-    echo $(git log --pretty=%H ...refs/heads/$1^ | head -n 1)
-}
-
-get_remote_head(){
-    echo $(git ls-remote origin -h refs/heads/$1 | cut -f1)
-}
-
 patch_pkg(){
     local pkg="$1"
     case $pkg in
@@ -101,24 +93,6 @@ get_import_path(){
         [[ -d ${TREE_DIR_ARCH}/$tree/$pkg ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg
     done
     echo $import_path
-}
-
-clone_tree(){
-    local timer=$(get_timer) host_tree="$1"
-    git clone $host_tree.git
-    show_elapsed_time "${FUNCNAME}" "${timer}"
-}
-
-pull_tree(){
-    local branch="master"
-    local local_head=$(get_local_head "$branch")
-    local remote_head=$(get_remote_head "$branch")
-    if [[ "${local_head}" == "${remote_head}" ]]; then
-        msg2 "remote changes: no"
-    else
-        msg2 "remote changes: yes"
-        git pull origin "$branch"
-    fi
 }
 
 pkgver_equal() {

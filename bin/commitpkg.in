@@ -61,12 +61,12 @@ commit_pkg(){
         cd ${TREE_DIR_ARTIX}/${git_tree}
 
         if ${push};then
-            mainrepo_pull "${git_tree}"
+            pull_tree "${git_tree}"
 
             subrepo_push "${PACKAGE}"
             subrepo_clean "${PACKAGE}"
 #             sleep 1
-            mainrepo_push "${git_tree}"
+            push_tree "${git_tree}"
         fi
         git prune
     else
@@ -112,12 +112,12 @@ symlink_commit_pkg(){
         cd ${TREE_DIR_ARTIX}/${git_tree}
 
         if ${push};then
-            mainrepo_pull "${git_tree}"
+            pull_tree "${git_tree}"
 
             subrepo_push "${PACKAGE}"
             subrepo_clean "${PACKAGE}"
 #             sleep 1
-            mainrepo_push "${git_tree}"
+            push_tree "${git_tree}"
         fi
         git prune
     else
