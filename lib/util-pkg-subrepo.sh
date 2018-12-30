@@ -10,11 +10,11 @@
 # GNU General Public License for more details.
 
 get_local_head(){
-    echo $(git log --pretty=%H ...refs/heads/$1^ | head -n 1)
+    echo $(git log --pretty=%H ...refs/heads/master^ | head -n 1)
 }
 
 get_remote_head(){
-    echo $(git ls-remote origin -h refs/heads/$1 | cut -f1)
+    echo $(git ls-remote origin -h refs/heads/master | cut -f1)
 }
 
 subrepo_push(){
