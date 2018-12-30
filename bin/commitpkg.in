@@ -38,6 +38,8 @@ commit_pkg(){
         local ver=$(get_full_version "${PACKAGE}")
         local commit_msg=""
 
+        local head=$(get_local_head)
+
         if ${remove};then
             local action='remove'
             if [[ "${REPO_SRC}" == 'trunk' ]];then
@@ -61,7 +63,7 @@ commit_pkg(){
         cd ${TREE_DIR_ARTIX}/${git_tree}
 
         if ${push};then
-            pull_tree "${git_tree}"
+            pull_tree "${git_tree}" "$head"
 
             subrepo_push "${PACKAGE}"
             subrepo_clean "${PACKAGE}"
@@ -82,6 +84,8 @@ symlink_commit_pkg(){
         source trunk/PKGBUILD
         [[ $arch == 'any' ]] && CARCH=any
         local ver=$(get_full_version "${PACKAGE}")
+
+        local head=$(get_local_head)
 
         if [[ ${REPO_SRC} == 'trunk' ]];then
             local action='add'
@@ -112,7 +116,7 @@ symlink_commit_pkg(){
         cd ${TREE_DIR_ARTIX}/${git_tree}
 
         if ${push};then
-            pull_tree "${git_tree}"
+            pull_tree "${git_tree}" "$head"
 
             subrepo_push "${PACKAGE}"
             subrepo_clean "${PACKAGE}"

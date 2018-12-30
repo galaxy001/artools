@@ -58,23 +58,31 @@ clone_tree(){
     show_elapsed_time "${FUNCNAME}" "${timer}"
 }
 
-pull_tree(){
-    local branch="master" tree="$1"
-    local local_head=$(get_local_head "$branch")
-    local remote_head=$(get_remote_head "$branch")
-
-    msg2 "Checking (%s)" "${tree}"
-    if [[ "${local_head}" == "${remote_head}" ]]; then
+has_changes(){
+    local head_l="$1" head_r="$2"
+    if [[ "$head_l" == "$head_r" ]]; then
         msg2 "remote changes: no"
+        return 1
     else
         msg2 "remote changes: yes"
-        git pull origin "$branch"
+        return 0
+    fi
+}
+
+pull_tree(){
+    local tree="$1"
+    local local_head=${2:-$(get_local_head)}
+    local remote_head=$(get_remote_head)
+
+    msg "Checking (%s)" "${tree}"
+    if $(has_changes "${local_head}" "${remote_head}");then
+        git pull origin master
     fi
 }
 
 push_tree(){
     local tree="$1"
-    msg2 "Update (%s)" "${tree}"
+    msg "Update (%s)" "${tree}"
     git push origin master
 }
 
