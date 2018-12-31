@@ -129,7 +129,7 @@ write_yaml(){
     Yaml+=$NL
 
     Yaml+="pkgbase:"$NL
-    Yaml+="  name: ${pkgbase:-$pkgname}"$NL
+    Yaml+="  pkgname: ${pkgbase:-$pkgname}"$NL
     write_pkginfo_global
     Yaml+=$NL
 
