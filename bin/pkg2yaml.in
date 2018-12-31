@@ -11,7 +11,7 @@
 
 VERSION=@version@
 
-write_attr() {
+write_attr_pkg() {
     # $1: attr name
     # $2: attr values
 
@@ -23,10 +23,37 @@ write_attr() {
     attrvalues=("${attrvalues[@]%[[:space:]]}")
 
     case $attrname in
-        depends|makedepends|checkdepends|provides)
+        makedepends|checkdepends|depends|provides|arch)
             Yaml+="    $attrname:"$NL
             for v in ${attrvalues[@]};do
                 Yaml+="      - $v"$NL
+            done
+        ;;
+        *)
+            for v in ${attrvalues[@]};do
+                Yaml+="  $attrname: ${v}"$NL
+            done
+        ;;
+    esac
+
+}
+
+write_attr_base() {
+    # $1: attr name
+    # $2: attr values
+
+    local attrname=$1 attrvalues=("${@:2}")
+
+    # normalize whitespace, strip leading and trailing
+    attrvalues=("${attrvalues[@]//+([[:space:]])/ }")
+    attrvalues=("${attrvalues[@]#[[:space:]]}")
+    attrvalues=("${attrvalues[@]%[[:space:]]}")
+
+    case $attrname in
+        makedepends|checkdepends|depends|provides|arch)
+            Yaml+="  $attrname:"$NL
+            for v in ${attrvalues[@]};do
+                Yaml+="    - $v"$NL
             done
         ;;
         *)
@@ -46,7 +73,8 @@ extract_info() {
     local pkgname=$1 attrname=$2 isarray=$3 outvalue=
 
     if get_pkgbuild_attribute "$pkgname" "$attrname" "$isarray" 'outvalue'; then
-        write_attr "$attrname" "${outvalue[@]}"
+        [[ -z $pkgname ]] && write_attr_base "$attrname" "${outvalue[@]}"
+        [[ -n $pkgname ]] && write_attr_pkg "$attrname" "${outvalue[@]}"
     fi
 }
 
@@ -75,14 +103,14 @@ write_details() {
 
 write_pkginfo_global() {
     local singlevalued=(pkgver pkgrel epoch)
-    local multivalued=(arch groups provides depends makedepends checkdepends)
+    local multivalued=(arch provides depends makedepends checkdepends)
 
     write_details ''
 }
 
 write_pkginfo() {
     local singlevalued=()
-    local multivalued=(arch groups provides depends checkdepends)
+    local multivalued=(arch provides depends checkdepends)
 
     write_details "$1"
 }
@@ -98,7 +126,7 @@ write_yaml(){
     done
     Yaml+=$NL
 
-    Yaml+="pkgbase: ${pkgbase:-$pkgname}"$NL
+    Yaml+="pkgbase:"$NL
     write_pkginfo_global
     Yaml+=$NL
 
