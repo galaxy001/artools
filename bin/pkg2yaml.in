@@ -116,6 +116,8 @@ write_pkginfo() {
 }
 
 write_yaml(){
+    NL=$'\n'
+    Yaml="%YAML 1.2"$NL
     Yaml+="---"$NL
 
     Yaml+=$NL
@@ -127,6 +129,7 @@ write_yaml(){
     Yaml+=$NL
 
     Yaml+="pkgbase:"$NL
+    Yaml+="  name: ${pkgbase:-$pkgname}"$NL
     write_pkginfo_global
     Yaml+=$NL
 
@@ -151,7 +154,5 @@ if [[ -f "$1"/PKGBUILD ]]; then
 
     pkgfile=$(print_all_package_names)
 
-    NL=$'\n'
-    Yaml="%YAML 1.2"$NL
     write_yaml
 fi
