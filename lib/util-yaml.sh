@@ -13,7 +13,7 @@ write_yaml_header(){
 }
 
 write_empty_line(){
-    printf '\n'
+    printf '\n%s\n' ' '
 }
 
 write_yaml_map(){

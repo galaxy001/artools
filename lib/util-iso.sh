@@ -258,6 +258,7 @@ clean_up_image(){
 
 write_users_conf(){
     local yaml=$(write_yaml_header)
+    yaml+=$(write_empty_line)
     yaml+=$(write_yaml_map 0 'defaultGroups')
     local IFS=','
     for g in ${ADDGROUPS[@]};do
@@ -281,6 +282,7 @@ write_users_conf(){
 
 write_servicescfg_conf(){
     local yaml=$(write_yaml_header)
+    yaml+=$(write_empty_line)
     case "${INITSYS}" in
         'runit')
             yaml+=$(write_yaml_map 0 'svDir' '/etc/runit/sv')
