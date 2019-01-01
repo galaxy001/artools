@@ -11,8 +11,8 @@
 
 import ${LIBDIR}/util-chroot.sh
 import ${LIBDIR}/util-iso-grub.sh
-import ${LIBDIR}/util-iso-yaml.sh
 import ${LIBDIR}/util-iso-profile.sh
+import ${LIBDIR}/util-yaml.sh
 
 track_img() {
     info "mount: [%s]" "$2"
@@ -256,13 +256,75 @@ clean_up_image(){
     fi
 }
 
+write_users_conf(){
+    local yaml=$(write_yaml_header)
+    yaml+=$(write_yaml_map 0 'defaultGroups')
+    local IFS=','
+    for g in ${ADDGROUPS[@]};do
+        yaml+=$(write_yaml_seq 2 "$g")
+    done
+    unset IFS
+    yaml+=$(write_yaml_map 0 'autologinGroup' 'autologin')
+    yaml+=$(write_yaml_map 0 'doAutologin' 'false')
+    yaml+=$(write_yaml_map 0 'sudoersGroup' 'wheel')
+    yaml+=$(write_yaml_map 0 'setRootPassword' 'true')
+    yaml+=$(write_yaml_map 0 'availableShells' '/bin/bash, /bin/zsh')
+#     yaml+=$(write_yaml_map 0 'passwordRequirements')
+#     yaml+=$(write_yaml_map 2 'minLength' '-1')
+#     yaml+=$(write_yaml_map 2 'maxLength' '-1')
+#     yaml+=$(write_yaml_map 2 'libpwquality')
+#     yaml+=$(write_yaml_seq 4 "minlen=8")
+#     yaml+=$(write_yaml_seq 4 "minclass=80")
+    yaml+=$(write_empty_line)
+    printf '%s' "${yaml}"
+}
+
+write_servicescfg_conf(){
+    local yaml=$(write_yaml_header)
+    case "${INITSYS}" in
+        'runit')
+            yaml+=$(write_yaml_map 0 'svDir' '/etc/runit/sv')
+            yaml+=$(write_yaml_map 0 'runsvDir' '/etc/runit/runsvdir')
+            yaml+=$(write_yaml_map 0 'services')
+            yaml+=$(write_yaml_map 2 'enabled')
+            for svc in ${SERVICES[@]};do
+                yaml+=$(write_yaml_seq_map 4 'name' "$svc")
+                yaml+=$(write_yaml_map 6 'runlevel' 'default')
+            done
+        ;;
+        'openrc')
+            yaml+=$(write_yaml_map 0 'initdDir' '/etc/init.d')
+            yaml+=$(write_yaml_map 0 'runlevelsDir' '/etc/runlevels')
+            yaml+=$(write_yaml_map 0 'services')
+            for svc in ${SERVICES[@]};do
+                yaml+=$(write_yaml_seq_map 2 'name' "$svc")
+                yaml+=$(write_yaml_map 4 'runlevel' 'default')
+            done
+        ;;
+    esac
+    yaml+=$(write_empty_line)
+    printf '%s' "${yaml}"
+}
+
+configure_calamares(){
+    local mods="$1/etc/calamares/modules"
+    if [[ -d "$mods" ]];then
+        info "Configuring [Calamares]"
+        write_users_conf > "$mods"/users.conf
+        write_servicescfg_conf > "$mods"/services-"${INITSYS}".conf
+        sed -e "s|openrc|${INITSYS}|" -i "$mods"/postcfg.conf
+        sed -e "s|services-openrc|services-${INITSYS}|" -i "$1"/etc/calamares/settings.conf
+        info "Done configuring [Calamares]"
+    fi
+}
+
 configure_live_image(){
     local fs="$1"
     msg "Configuring [livefs]"
     configure_hosts "$fs"
     configure_system "$fs"
     configure_services "$fs"
-    configure_calamares "$fs" "${INITSYS}"
+    configure_calamares "$fs"
     write_live_session_conf "$fs"
     msg "Done configuring [livefs]"
 }

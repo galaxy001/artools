@@ -26,7 +26,8 @@ LIBS_BASE = \
 	lib/util-msg.sh \
 	lib/util-mount.sh \
 	lib/util-chroot.sh \
-	lib/util-fstab.sh
+	lib/util-fstab.sh \
+	lib/util-yaml.sh
 
 SHARED_BASE = \
 	$(wildcard data/pacman*.conf)

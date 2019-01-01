@@ -11,38 +11,21 @@
 
 VERSION=@version@
 
-write_attr_pkg() {
-    # $1: attr name
-    # $2: attr values
+LIBDIR='@libdir@'
 
-    local attrname=$1 attrvalues=("${@:2}")
+[[ -r ${LIBDIR}/util-msg.sh ]] && source ${LIBDIR}/util-msg.sh
+import ${LIBDIR}/util-yaml.sh
 
-    # normalize whitespace, strip leading and trailing
-    attrvalues=("${attrvalues[@]//+([[:space:]])/ }")
-    attrvalues=("${attrvalues[@]#[[:space:]]}")
-    attrvalues=("${attrvalues[@]%[[:space:]]}")
+LIBRARY=${LIBRARY:-'/usr/share/makepkg'}
 
-    case $attrname in
-        makedepends|checkdepends|depends|provides|arch)
-            Yaml+="    $attrname:"$NL
-            for v in ${attrvalues[@]};do
-                Yaml+="      - $v"$NL
-            done
-        ;;
-        *)
-            for v in ${attrvalues[@]};do
-                Yaml+="  $attrname: ${v}"$NL
-            done
-        ;;
-    esac
+for lib in "$LIBRARY"/*.sh; do
+    source "$lib"
+done
+source /etc/makepkg.conf
 
-}
-
-write_attr_base() {
-    # $1: attr name
-    # $2: attr values
-
-    local attrname=$1 attrvalues=("${@:2}")
+write_attr(){
+    local ident1="$1" ident2="$2" ident3="$3"
+    local attrname=$4 attrvalues=("${@:5}")
 
     # normalize whitespace, strip leading and trailing
     attrvalues=("${attrvalues[@]//+([[:space:]])/ }")
@@ -51,36 +34,39 @@ write_attr_base() {
 
     case $attrname in
         makedepends|checkdepends|depends|provides|arch)
-            Yaml+="  $attrname:"$NL
+            Yaml+=$(write_yaml_map $ident1 "$attrname")
             for v in ${attrvalues[@]};do
-                Yaml+="    - $v"$NL
+                Yaml+=$(write_yaml_seq $ident2 "$v")
             done
         ;;
         *)
             for v in ${attrvalues[@]};do
-                Yaml+="  $attrname: ${v}"$NL
+                Yaml+=$(write_yaml_map $ident3 "$attrname" "$v")
             done
         ;;
     esac
-
 }
 
 extract_info() {
-    # $1: pkgname
-    # $2: attr name
-    # $3: multivalued
-
     local pkgname=$1 attrname=$2 isarray=$3 outvalue=
 
     if get_pkgbuild_attribute "$pkgname" "$attrname" "$isarray" 'outvalue'; then
-        [[ -z $pkgname ]] && write_attr_base "$attrname" "${outvalue[@]}"
-        [[ -n $pkgname ]] && write_attr_pkg "$attrname" "${outvalue[@]}"
+        [[ -z $pkgname ]] && write_attr 2 4 2 "$attrname" "${outvalue[@]}"
+        [[ -n $pkgname ]] && write_attr 4 6 2 "$attrname" "${outvalue[@]}"
     fi
 }
 
 write_details() {
     local attr package_arch a
     local multivalued_arch_attrs=(provides depends makedepends checkdepends)
+
+    local singlevalued=()
+    local multivalued=(arch provides depends checkdepends)
+
+    if [[ -z "$1" ]];then
+        singlevalued=(pkgver pkgrel epoch)
+        multivalued=(arch provides depends makedepends checkdepends)
+    fi
 
     for attr in "${singlevalued[@]}"; do
         extract_info "$1" "$attr" 0
@@ -101,58 +87,62 @@ write_details() {
     done
 }
 
-write_pkginfo_global() {
-    local singlevalued=(pkgver pkgrel epoch)
-    local multivalued=(arch provides depends makedepends checkdepends)
+write_pkg_yaml(){
+    local pkgfile=$(print_all_package_names)
 
-    write_details ''
-}
+    Yaml=$(write_yaml_header)
 
-write_pkginfo() {
-    local singlevalued=()
-    local multivalued=(arch provides depends checkdepends)
+    Yaml+=$(write_empty_line)
 
-    write_details "$1"
-}
+    Yaml+=$(write_yaml_map 0 "pkgbase")
+    Yaml+=$(write_yaml_map 2 "pkgname" "${pkgbase:-$pkgname}")
+    ${details} && write_details ''
 
-write_yaml(){
-    NL=$'\n'
-    Yaml="%YAML 1.2"$NL
-    Yaml+="---"$NL
+    Yaml+=$(write_empty_line)
 
-    Yaml+=$NL
-
-    Yaml+="pkgfile:"$NL
-    for f in ${pkgfile[@]};do
-        Yaml+="  - ${f##*/}"$NL
-    done
-    Yaml+=$NL
-
-    Yaml+="pkgbase:"$NL
-    Yaml+="  pkgname: ${pkgbase:-$pkgname}"$NL
-    write_pkginfo_global
-    Yaml+=$NL
-
-    Yaml+="pkgname:"$NL
+    Yaml+=$(write_yaml_map 0 "pkgname")
     for pkg in "${pkgname[@]}"; do
-        Yaml+="  - $pkg"$NL
-        write_pkginfo "$pkg"
+        Yaml+=$(write_yaml_seq 2 "$pkg")
+        ${details} && write_details "$pkg"
     done
+
+    Yaml+=$(write_empty_line)
+
+    Yaml+=$(write_yaml_map 0 "pkgfile")
+    for f in ${pkgfile[@]};do
+        Yaml+=$(write_yaml_seq 2 "${f##*/}")
+    done
+
+    Yaml+=$(write_empty_line)
 
     printf '%s' "${Yaml}"
 }
 
-if [[ -f "$1"/PKGBUILD ]]; then
-    LIBRARY=${LIBRARY:-'/usr/share/makepkg'}
+usage() {
+    echo "Usage: ${0##*/} [options]"
+    echo "    -d            Don't include details"
+    echo '    -h            This help'
+    echo ''
+    exit $1
+}
 
-    for lib in "$LIBRARY"/*.sh; do
-        source "$lib"
-    done
-    . /etc/makepkg.conf
+details=true
 
-    . "$1"/PKGBUILD
+opts='dh'
 
-    pkgfile=$(print_all_package_names)
+while getopts "${opts}" arg; do
+    case "${arg}" in
+        d) details=false ;;
+        h|?) usage 0 ;;
+        *) echo "invalid argument '${arg}'"; usage 1 ;;
+    esac
+done
 
-    write_yaml
-fi
+shift $(( $OPTIND - 1 ))
+
+[[ -f "$1"/PKGBUILD ]] || die "%s/PKGBUILD does not exist!" "$1"
+PACKAGE=$1/PKGBUILD; shift
+
+source "$PACKAGE"
+
+write_pkg_yaml
