@@ -100,9 +100,9 @@ write_pkg_yaml(){
 
     Yaml+=$(write_empty_line)
 
-    Yaml+=$(write_yaml_map 0 "pkgname")
+    Yaml+=$(write_yaml_map 0 "package")
     for pkg in "${pkgname[@]}"; do
-        Yaml+=$(write_yaml_seq 2 "$pkg")
+        Yaml+=$(write_yaml_seq_map 2 "pkgname" "$pkg")
         ${details} && write_details "$pkg"
     done
 
