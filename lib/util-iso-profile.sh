@@ -82,8 +82,8 @@ load_profile(){
 }
 
 write_live_session_conf(){
-    local path=$1
-    [[ ! -d $path ]] && mkdir -p "$path"
+    local path=$1/etc/artools
+    prepare_dir "$path"
     local conf=$path/live.conf
     msg2 "Writing %s" "${conf##*/}"
     echo '# live session configuration' > ${conf}
