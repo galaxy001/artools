@@ -327,7 +327,7 @@ configure_live_image(){
     configure_system "$fs"
     configure_services "$fs"
     configure_calamares "$fs"
-    write_live_session_conf "$fs"
+    write_live_session_conf "$fs${SYSCONFDIR}"
     msg "Done configuring [livefs]"
 }
 

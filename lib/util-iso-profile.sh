@@ -60,7 +60,7 @@ load_profile(){
     [[ -z ${PASSWORD} ]] && PASSWORD="artix"
 
     if [[ -z ${ADDGROUPS} ]];then
-        ADDGROUPS="video,power,storage,optical,network,lp,scanner,wheel,users,log"
+        ADDGROUPS="video,power,cdrom,network,lp,scanner,wheel,users,log"
     fi
 
     if [[ -z ${SERVICES[@]} ]];then
@@ -82,7 +82,7 @@ load_profile(){
 }
 
 write_live_session_conf(){
-    local path=$1${SYSCONFDIR}
+    local path=$1
     [[ ! -d $path ]] && mkdir -p "$path"
     local conf=$path/live.conf
     msg2 "Writing %s" "${conf##*/}"
@@ -92,7 +92,7 @@ write_live_session_conf(){
     echo "AUTOLOGIN=${AUTOLOGIN}" >> ${conf}
     echo '' >> ${conf}
     echo '# live user name' >> ${conf}
-    echo "USERNAME=${USERNAME}" >> ${conf}
+    echo "USER_NAME=${USER_NAME}" >> ${conf}
     echo '' >> ${conf}
     echo '# live password' >> ${conf}
     echo "PASSWORD=${PASSWORD}" >> ${conf}
