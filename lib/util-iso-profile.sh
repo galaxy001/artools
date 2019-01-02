@@ -82,23 +82,14 @@ load_profile(){
 }
 
 write_live_session_conf(){
-    local path=$1/etc/artools
-    prepare_dir "$path"
-    local conf=$path/live.conf
-    msg2 "Writing %s" "${conf##*/}"
-    echo '# live session configuration' > ${conf}
-    echo '' >> ${conf}
-    echo '# autologin' >> ${conf}
-    echo "AUTOLOGIN=${AUTOLOGIN}" >> ${conf}
-    echo '' >> ${conf}
-    echo '# live user name' >> ${conf}
-    echo "USER_NAME=${USER_NAME}" >> ${conf}
-    echo '' >> ${conf}
-    echo '# live password' >> ${conf}
-    echo "PASSWORD=${PASSWORD}" >> ${conf}
-    echo '' >> ${conf}
-    echo '# live group membership' >> ${conf}
-    echo "ADDGROUPS='${ADDGROUPS}'" >> ${conf}
+    msg2 "Writing live.conf"
+    local conf=''
+    conf+=$(printf '%s\n' '# live session configuration')
+    conf+=$(printf "\nAUTOLOGIN=%s\n" "${AUTOLOGIN}")
+    conf+=$(printf "\nUSER_NAME=%s\n" "${USER_NAME}")
+    conf+=$(printf "\nPASSWORD=%s\n" "${PASSWORD}")
+    conf+=$(printf "\nADDGROUPS='%s'\n" "${ADDGROUPS}")
+    printf '%s' "$conf"
 }
 
 load_pkgs(){

@@ -327,7 +327,8 @@ configure_live_image(){
     configure_system "$fs"
     configure_services "$fs"
     configure_calamares "$fs"
-    write_live_session_conf "$fs"
+    [[ ! -d "$fs/etc/artools" ]] && mkdir -p "$fs/etc/artools"
+    write_live_session_conf > "$fs/etc/artools/live.conf"
     msg "Done configuring [livefs]"
 }
 
