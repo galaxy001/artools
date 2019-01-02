@@ -9,7 +9,7 @@
 # GNU General Public License for more details.
 
 write_yaml_header(){
-    printf '%s\n%s' "%YAML 1.2" '---'
+    printf '%s' '---'
 }
 
 write_empty_line(){
