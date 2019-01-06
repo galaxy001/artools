@@ -1,0 +1,92 @@
+#!/bin/bash
+#
+# Copyright (C) 2018-19 artoo@artixlinux.org
+# Copyright (C) 2018 Artix Linux Developers
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+. @libdir@/artools/util-base.sh
+. @libdir@/artools/util-pkg.sh
+
+update_repo(){
+    local repo="$1" pkgfile ver ext=db.tar.xz
+    local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
+
+    . PKGBUILD
+
+    for name in ${pkgname[@]};do
+        pkgarch=$(get_pkg_arch "$name")
+        ver=$(get_full_version "$name")
+        if pkgfile=$(find_cached_package "$name" "$ver" "$pkgarch");then
+            local pkg=${pkgfile##*/}
+            info "Found: %s" "$pkg"
+            if ${add_pkg};then
+                local action='add'
+                packages+=("$pkg")
+#                 checkpkg "${pkgfile}" || return 2
+                if ${sign_pkg};then
+                    [[ -e ${pkgfile}.sig ]] && rm ${pkgfile}.sig
+                    signfile ${pkgfile}
+                fi
+                ln -sf ${pkgfile}{,.sig} $repo_path/
+            elif ${del_pkg};then
+                local action='remove'
+                packages+=("$name")
+                [[ -e $repo_path/$pkg ]] && rm $repo_path/$pkg
+                [[ -e $repo_path/$pkg.sig ]] && rm $repo_path/$pkg.sig
+            fi
+        fi
+    done
+    cd $repo_path
+    [[ -n $action ]] && repo-$action -R $repo.$ext ${packages[@]}
+    return 0
+}
+
+load_user_info
+
+load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+load_vars "${USERCONFDIR}/pacman/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
+load_vars /etc/makepkg.conf
+
+add_pkg=false
+del_pkg=false
+sign_pkg=false
+
+cmd=${0##*/}
+dest_repo=${cmd#*-}
+
+usage() {
+    echo "Usage: ${cmd} [options]"
+    echo '    -a                 Add package(s) to repository'
+    echo '    -r                 Remove package(s) from repository'
+    echo '    -s                 Sign package(s)'
+    echo '    -h                 This help'
+    echo ''
+    echo ''
+    exit $1
+}
+
+opts='arsh'
+
+while getopts "${opts}" arg; do
+    case "${arg}" in
+        a) add_pkg=true; del_pkg=false ;;
+        r) del_pkg=true; add_pkg=false ;;
+        s) sign_pkg=true ;;
+        h|?) usage 0 ;;
+        *) echo "invalid argument '${arg}'"; usage 1 ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+prepare_dir "${REPOS_ROOT}"
+
+update_repo "${dest_repo}"

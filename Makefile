@@ -1,60 +1,48 @@
-VERSION=0.11
+VERSION=0.12
 
 CHROOT_VERSION=0.9
 
 TOOLS = artools
-PREFIX ?= /usr/local
+PREFIX ?= /usr
 SYSCONFDIR = /etc
 BINDIR = $(PREFIX)/bin
 LIBDIR = $(PREFIX)/lib
 DATADIR = $(PREFIX)/share
 CPIODIR = $(SYSCONFDIR)/initcpio
 
-SYSCONF = \
+CONF = \
 	data/artools.conf
 
-BIN_BASE = \
-	bin/mkchroot \
-	bin/basestrap \
-	bin/artools-chroot \
-	bin/fstabgen \
-	bin/signfile \
-	bin/chroot-run
+BASE_BIN = \
+	bin/base/signfile \
+	bin/base/chroot-run \
+	bin/base/mkchroot \
+	bin/base/basestrap \
+	bin/base/artools-chroot \
+	bin/base/fstabgen
 
-LIBS_BASE = \
-	lib/util.sh \
-	lib/util-msg.sh \
-	lib/util-mount.sh \
-	lib/util-chroot.sh \
-	lib/util-fstab.sh \
-	lib/util-yaml.sh
+BASE_LIBS = \
+	$(wildcard lib/base/*.sh)
 
-SHARED_BASE = \
-	$(wildcard data/pacman*.conf)
+BASE_UTIL = lib/util-base.sh
 
-BIN_PKG = \
-	bin/checkpkg \
-	bin/lddd \
-	bin/finddeps \
-	bin/find-libdeps \
-	bin/mkchrootpkg \
-	bin/buildpkg \
-	bin/buildtree \
-	bin/deploypkg \
-	bin/commitpkg \
-	bin/comparepkg \
-	bin/pkg2yaml
+BASE_DATA = \
+	$(wildcard data/base/pacman*.conf)
 
-LIBS_PKG = \
-	$(wildcard lib/util-pkg*.sh)
+PKG_BIN = \
+	bin/pkg/buildpkg \
+	bin/pkg/deploypkg \
+	bin/pkg/commitpkg \
+	bin/pkg/comparepkg \
+	bin/pkg/checkpkg \
+	bin/pkg/mkchrootpkg \
+	bin/pkg/pkg2yaml \
+	bin/pkg/buildtree \
+	bin/pkg/lddd \
+	bin/pkg/finddeps \
+	bin/pkg/find-libdeps
 
-SHARED_PKG = \
-	data/makepkg.conf
-
-PATCHES = \
-	$(wildcard data/patches/*.patch)
-
-COMMITPKG_SYMS = \
+LN_COMMITPKG = \
 	extrapkg \
 	corepkg \
 	testingpkg \
@@ -68,7 +56,7 @@ COMMITPKG_SYMS = \
 	kde-unstablepkg \
 	gnome-unstablepkg
 
-BUILDPKG_SYMS = \
+LN_BUILDPKG = \
 	buildpkg-system \
 	buildpkg-world \
 	buildpkg-gremlins \
@@ -82,7 +70,7 @@ BUILDPKG_SYMS = \
 	buildpkg-kde-wobble \
 	buildpkg-gnome-wobble
 
-DEPLOYPKG_SYMS = \
+LN_DEPLOYPKG = \
 	deploypkg-system \
 	deploypkg-world \
 	deploypkg-gremlins \
@@ -96,39 +84,59 @@ DEPLOYPKG_SYMS = \
 	deploypkg-kde-wobble \
 	deploypkg-gnome-wobble
 
-BIN_ISO = \
-	bin/buildiso \
-	bin/deployiso
+PKG_LIBS = \
+	$(wildcard lib/pkg/*)
 
-BUILDISO_SYMS = \
+PKG_UTIL = lib/util-pkg.sh
+
+PKG_DATA = \
+	data/pkg/makepkg.conf
+
+PATCHES = \
+	$(wildcard data/patches/*.patch)
+
+ISO_BIN = \
+	bin/iso/buildiso \
+	bin/iso/deployiso
+
+LN_BUILDISO = \
 	buildiso-gremlins \
 	buildiso-goblins
 
-LIBS_ISO = \
-	$(wildcard lib/util-iso*.sh)
+ISO_LIBS = \
+	$(wildcard lib/iso/*.sh)
 
-SHARED_ISO = \
-	data/mkinitcpio.conf
+ISO_UTIL = lib/util-iso.sh
+
+ISO_DATA = \
+	data/iso/mkinitcpio.conf
 
 DIRMODE = -dm0755
 FILEMODE = -m0644
 MODE =  -m0755
-
 LN = ln -sf
 RM = rm -f
 M4 = m4 -P
 CHMODAW = chmod a-w
 CHMODX = chmod +x
 
-all: $(BIN_BASE) $(BIN_PKG) $(BIN_ISO)
+BIN = $(BASE_BIN) $(PKG_BIN) $(ISO_BIN)
+UTIL = $(BASE_UTIL) $(PKG_UTIL) $(ISO_UTIL)
 
-EDIT = sed -e "s|@datadir[@]|$(DATADIR)/$(TOOLS)|g" \
-	-e "s|@sysconfdir[@]|$(SYSCONFDIR)/$(TOOLS)|g" \
-	-e "s|@libdir[@]|$(LIBDIR)/$(TOOLS)|g" \
-	-e "s|@version@|$(VERSION)|" \
+all: $(BIN) $(UTIL)
+
+EDIT = sed -e "s|@datadir[@]|$(DATADIR)|g" \
+	-e "s|@sysconfdir[@]|$(SYSCONFDIR)|g" \
+	-e "s|@libdir[@]|$(LIBDIR)|g" \
 	-e "s|@chroot_version@|$(CHROOT_VERSION)|"
 
-%: %.in Makefile
+$(UTIL): %: %.in Makefile
+	@echo "GEN $@"
+	@$(RM) "$@"
+	@$(M4) $@.in | $(EDIT) >$@
+	@$(CHMODAW) "$@"
+
+$(BIN): %: %.in Makefile
 	@echo "GEN $@"
 	@$(RM) "$@"
 	@$(M4) $@.in | $(EDIT) >$@
@@ -136,36 +144,38 @@ EDIT = sed -e "s|@datadir[@]|$(DATADIR)/$(TOOLS)|g" \
 	@$(CHMODX) "$@"
 
 clean:
-	$(RM) $(BIN_BASE) $(BIN_PKG) $(BIN_ISO)
+	$(RM) $(BIN) $(UTIL)
 
 install_base:
 	install $(DIRMODE) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
-	install $(FILEMODE) $(SYSCONF) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
+	install $(FILEMODE) $(CONF) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
 
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
-	install $(MODE) $(BIN_BASE) $(DESTDIR)$(BINDIR)
+	install $(MODE) $(BASE_BIN) $(DESTDIR)$(BINDIR)
 
-	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)
-	install $(FILEMODE) $(LIBS_BASE) $(DESTDIR)$(LIBDIR)/$(TOOLS)
+	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)/base
+	install $(FILEMODE) $(BASE_UTIL) $(DESTDIR)$(LIBDIR)/$(TOOLS)
+	install $(FILEMODE) $(BASE_LIBS) $(DESTDIR)$(LIBDIR)/$(TOOLS)/base
 
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)
-	install $(FILEMODE) $(SHARED_BASE) $(DESTDIR)$(DATADIR)/$(TOOLS)
+	install $(FILEMODE) $(BASE_DATA) $(DESTDIR)$(DATADIR)/$(TOOLS)
 
 install_pkg:
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
-	install $(MODE) $(BIN_PKG) $(DESTDIR)$(BINDIR)
+	install $(MODE) $(PKG_BIN) $(DESTDIR)$(BINDIR)
 
 	$(LN) find-libdeps $(DESTDIR)$(BINDIR)/find-libprovides
 
-	for l in $(COMMITPKG_SYMS); do $(LN) commitpkg $(DESTDIR)$(BINDIR)/$$l; done
-	for l in $(BUILDPKG_SYMS); do $(LN) buildpkg $(DESTDIR)$(BINDIR)/$$l; done
-	for l in $(DEPLOYPKG_SYMS); do $(LN) deploypkg $(DESTDIR)$(BINDIR)/$$l; done
+	for l in $(LN_COMMITPKG); do $(LN) commitpkg $(DESTDIR)$(BINDIR)/$$l; done
+	for l in $(LN_BUILDPKG); do $(LN) buildpkg $(DESTDIR)$(BINDIR)/$$l; done
+	for l in $(LN_DEPLOYPKG); do $(LN) deploypkg $(DESTDIR)$(BINDIR)/$$l; done
 
-	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)
-	install $(FILEMODE) $(LIBS_PKG) $(DESTDIR)$(LIBDIR)/$(TOOLS)
+	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)/pkg
+	install $(FILEMODE) $(PKG_UTIL) $(DESTDIR)$(LIBDIR)/$(TOOLS)
+	install $(FILEMODE) $(PKG_LIBS) $(DESTDIR)$(LIBDIR)/$(TOOLS)/pkg
 
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)
-	install $(FILEMODE) $(SHARED_PKG) $(DESTDIR)$(DATADIR)/$(TOOLS)
+	install $(FILEMODE) $(PKG_DATA) $(DESTDIR)$(DATADIR)/$(TOOLS)
 
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)/patches
 	install $(FILEMODE) $(PATCHES) $(DESTDIR)$(DATADIR)/$(TOOLS)/patches
@@ -174,16 +184,17 @@ install_cpio:
 
 install_iso: install_cpio
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
-	install $(MODE) $(BIN_ISO) $(DESTDIR)$(BINDIR)
+	install $(MODE) $(ISO_BIN) $(DESTDIR)$(BINDIR)
 
-	for l in $(BUILDISO_SYMS); do $(LN) buildiso $(DESTDIR)$(BINDIR)/$$l; done
+	for l in $(LN_BUILDISO); do $(LN) buildiso $(DESTDIR)$(BINDIR)/$$l; done
 
-	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)
-	install $(FILEMODE) $(LIBS_ISO) $(DESTDIR)$(LIBDIR)/$(TOOLS)
+	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)/iso
+	install $(FILEMODE) $(ISO_UTIL) $(DESTDIR)$(LIBDIR)/$(TOOLS)
+	install $(FILEMODE) $(ISO_LIBS) $(DESTDIR)$(LIBDIR)/$(TOOLS)/iso
 
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)
-	install $(FILEMODE) $(SHARED_ISO) $(DESTDIR)$(DATADIR)/$(TOOLS)
+	install $(FILEMODE) $(ISO_DATA) $(DESTDIR)$(DATADIR)/$(TOOLS)
 
 install: install_base install_pkg install_iso
 
-.PHONY: all clean install
+.PHONY: all clean install install_base install_pkg install_iso

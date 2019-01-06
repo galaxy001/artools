@@ -1,0 +1,194 @@
+#!/bin/bash
+#
+# Copyright (C) 2018-19 artoo@artixlinux.org
+# Copyright (C) 2018 Artix Linux Developers
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+. @libdir@/artools/util-base.sh
+. @libdir@/artools/util-pkg.sh
+
+pull_tree_arch(){
+    cd ${TREE_DIR_ARCH}
+    for tree in ${tree_names[@]};do
+        if [[ -d ${tree} ]];then
+            cd ${tree}
+            pull_tree "${tree}"
+            cd ..
+        else
+            clone_tree "${HOST_TREE_ARCH}" "${tree}"
+        fi
+    done
+}
+
+pull_tree_artix(){
+    cd ${TREE_DIR_ARTIX}
+    for tree in ${tree_names[@]};do
+        if [[ -d ${tree} ]];then
+            config_tree "${tree}"
+            cd ${tree}
+            pull_tree "${tree}"
+            cd ..
+        else
+            clone_tree "${HOST_TREE_ARTIX}" "${tree}"
+            config_tree "${tree}"
+        fi
+    done
+}
+
+sync_pkg(){
+    local rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
+    local src="$1" dest="$2"
+
+    rsync "${rsync_args[@]}" $src/ $dest/
+}
+
+show_deps(){
+    local src="$1" repo="$2"
+
+    . $src/PKGBUILD 2>/dev/null
+
+    [[ $arch == 'any' ]] && CARCH=any
+
+    local archver=$(get_full_version $pkg)
+
+    msg "git tree: %s" "$git_tree_arch"
+    msg2 "repo: %s" "$repo"
+    [[ -n ${pkgbase} ]] && msg2 "pkgbase: %s" "${pkgbase}"
+    msg2 "pkgname: %s" "${pkgname[*]}"
+    [[ -n $pkgdesc ]] && msg2 "pkgdesc: %s" "${pkgdesc}"
+    msg2 "Arch Version: %s" "$archver"
+    msg2 "arch: %s" "$CARCH"
+
+    [[ -n ${makedepends[@]} ]] && msg2 "makedepends: %s" "${makedepends[*]}"
+    [[ -n ${checkdepends[@]} ]] && msg2 "checkdepends: %s" "${checkdepends[*]}"
+    [[ -n ${depends[@]} ]] && msg2 "depends: %s" "${depends[*]}"
+    [[ -n ${optdepends[@]} ]] && msg2 "optdepends: %s" "${optdepends[@]}"
+}
+
+from_arch(){
+    local pkg="$1" src= dest=
+    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "$pkg")
+    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "$pkg"
+
+    local package=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
+    local repo=$(find_repo "$package")
+
+    src=$package/repos/$repo
+
+    dest=${TREE_DIR_ARTIX}/$git_tree_arch/$pkg/trunk
+
+    show_deps "$src" "$repo"
+
+    if [[ -d $dest ]];then
+        cd ${TREE_DIR_ARTIX}/$git_tree_arch
+
+        . $dest/PKGBUILD 2>/dev/null
+        local artixver=$(get_full_version $pkg)
+
+        msg2 "Artix Version: %s" "$artixver"
+    else
+        subrepo_new "$pkg" "$git_tree_arch"
+    fi
+
+    info "Sync from archlinux (%s)" "$git_tree_arch"
+    sync_pkg "$src" "$dest"
+    patch_pkg "$pkg"
+}
+
+view_build(){
+    local pkg="$1" src=
+    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "$pkg")
+    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "$pkg"
+
+    local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
+    local repo=$(find_repo "$pkg_path")
+
+    src=$pkg_path/repos/$repo
+
+    show_deps "$src" "$repo"
+}
+
+sync_repos(){
+    ${sync_arch} && pull_tree_arch
+    pull_tree_artix
+}
+
+load_user_info
+
+load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+load_vars "${USERCONFDIR}/pacman/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
+load_vars /etc/makepkg.conf
+
+sync=false
+sync_arch=true
+import=false
+view=false
+createnew=false
+conf=false
+
+PACKAGE=''
+
+tree_names=(packages community)
+TEAM=${tree_names[0]}
+SUBORG=''
+
+usage() {
+    echo "Usage: ${0##*/} [options]"
+    echo '    -p <pkg>      Package name'
+    echo '    -t <team>     Team name (only with -n)'
+    echo "                  [default: ${TEAM}]"
+    echo '    -o <org>      Org of subrepo (only with -c)'
+    echo "    -s            Clone or pull repos"
+    echo "    -z            Don't clone or pull arch repos"
+    echo '    -i            Import a package from arch repos'
+    echo '    -n            Make new remote subrepo and clone it'
+    echo '    -c            Configure subrepo url'
+    echo '    -v            View package depends'
+    echo '    -h            This help'
+    echo ''
+    echo ''
+    exit $1
+}
+
+orig_argv=("$0" "$@")
+
+opts='p:t:o:csinzvh'
+
+while getopts "${opts}" arg; do
+    case "${arg}" in
+        p) PACKAGE="$OPTARG" ;;
+        t) TEAM="$OPTARG" ;;
+        o) SUBORG="$OPTARG" ;;
+        s) sync=true ;;
+        z) sync_arch=false ;;
+        i) import=true ;;
+        n) createnew=true ;;
+        v) view=true ;;
+        c) conf=true ;;
+        h|?) usage 0 ;;
+        *) echo "invalid argument '${arg}'"; usage 1 ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+prepare_dir "${TREE_DIR_ARTIX}"
+prepare_dir "${TREE_DIR_ARCH}"
+
+${sync} && sync_repos
+
+${view} && view_build "${PACKAGE}"
+
+${import} && from_arch "${PACKAGE}"
+
+${createnew} && subrepo_new "${PACKAGE}" "${TEAM}"
+
+${conf} && subrepo_config "${PACKAGE}" "${SUBORG}"

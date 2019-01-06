@@ -1,0 +1,116 @@
+#!/bin/bash
+#
+# Copyright (C) 2018-19 artoo@artixlinux.org
+# Copyright (C) 2018 Artix Linux Developers
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+#
+# Assumptions:
+#  1) User has partitioned, formatted, and mounted partitions on /mnt
+#  2) Network is functional
+#  3) Arguments passed to the script are valid pacman targets
+#  4) A valid mirror appears in /etc/pacman.d/mirrorlist
+#
+
+shopt -s extglob
+
+. @libdir@/artools/util-base.sh
+
+copy_mirrorlist(){
+    cp -a /etc/pacman.d/mirrorlist "$1/etc/pacman.d/"
+}
+
+copy_keyring(){
+    if [[ -d /etc/pacman.d/gnupg ]] && [[ ! -d $1/etc/pacman.d/gnupg ]]; then
+        cp -a /etc/pacman.d/gnupg "$1/etc/pacman.d/"
+    fi
+}
+
+create_min_fs(){
+    msg "Creating install root at %s" "$1"
+    mkdir -m 0755 -p $1/var/{cache/pacman/pkg,lib/pacman,log} $1/{dev,etc}
+    mkdir -m 1777 -p $1/{tmp,run}
+    mkdir -m 0555 -p $1/{sys,proc}
+}
+
+newroot=/mnt
+
+hostcache=false
+copykeyring=true
+copymirrorlist=true
+directory=false
+interactive=false
+
+usage() {
+    echo "usage: ${0##*/} [options] root [packages...]"
+    echo " -C <config>      Use an alternate config file for pacman"
+    echo " -c               Use the package cache on the host, rather than the target"
+    echo " -G               Avoid copying the host's pacman keyring to the target"
+    echo " -i               Avoid auto-confirmation of package selections"
+    echo " -M               Avoid copying the host's mirrorlist to the target"
+    echo " -h               Print this help message"
+    echo ''
+    echo ' basestrap installs packages to the specified new root directory.'
+    echo ' If no packages are given, basestrap defaults to the "base" group.'
+    echo ''
+    echo ''
+    exit $1
+}
+
+orig_argv=("$0" "$@")
+
+opts=':C:cGiM'
+
+while getopts ${opts} arg; do
+    case "${arg}" in
+        C) pacman_conf=$OPTARG ;;
+        c) hostcache=true ;;
+        i) interactive=true ;;
+        G) copykeyring=false ;;
+        M) copymirrorlist=false ;;
+        :) echo "invalid argument ${arg}:$OPTARG"; usage 1;;
+        ?) usage 0 ;;
+    esac
+done
+shift $(( OPTIND - 1 ))
+
+check_root
+
+(( $# )) || die "No root directory specified"
+newroot=$1; shift
+pacman_args=("${@:-base}")
+
+${hostcache} || pacman_args+=(--cachedir="$newroot/var/cache/pacman/pkg")
+
+${interactive} || pacman_args+=(--noconfirm)
+
+[[ -n $pacman_conf ]] && pacman_args+=(--config="$pacman_conf")
+
+[[ -d $newroot ]] || die "%s is not a directory" "$newroot"
+
+# create obligatory directories
+create_min_fs "$newroot"
+
+# mount API filesystems
+chroot_api_mount "$newroot" || die "failed to setup API filesystems in new root"
+
+msg2 'Installing packages to %s' "$newroot"
+if ! pacman -r "$newroot" -Sy "${pacman_args[@]}"; then
+    die 'Failed to install packages to new root'
+fi
+
+if ${copykeyring};then
+    copy_keyring "$newroot"
+fi
+
+if ${copymirrorlist};then
+    copy_mirrorlist "$newroot"
+fi

@@ -1,0 +1,178 @@
+#!/bin/bash
+#
+# Copyright (C) 2018-19 artoo@artixlinux.org
+# Copyright (C) 2018 Artix Linux Developers
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+. @libdir@/artools/util-base.sh
+. @libdir@/artools/util-pkg.sh
+
+is_valid_repo(){
+    local src="$1"
+    case $src in
+        core|extra|community|multilib|testing|staging|community-testing|community-staging|multilib-testing|multilib-staging|trunk) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+commit_pkg(){
+    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    if [[ -n ${git_tree} ]];then
+        cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
+
+        . trunk/PKGBUILD
+        [[ $arch == 'any' ]] && CARCH=any
+        local ver=$(get_full_version "${PACKAGE}")
+        local commit_msg=""
+
+        local head=$(get_local_head)
+
+        if ${remove};then
+            local action='remove'
+            if [[ "${REPO_SRC}" == 'trunk' ]];then
+                local pkg=${PACKAGE}
+                git rm -r trunk
+            else
+                local pkg="${PACKAGE}-$ver"
+                git rm -r repos/"${REPO_SRC}-$CARCH"
+            fi
+            commit_msg="[${REPO_SRC}] '$pkg' ${action}"
+            msg "Action: %s" "$commit_msg"
+        else
+            local action='modify'
+            commit_msg="[${REPO_SRC}] '${PACKAGE}-$ver' ${action}"
+            msg "Action: %s" "$commit_msg"
+            git add .
+
+        fi
+        git commit -m "$commit_msg"
+
+        cd ${TREE_DIR_ARTIX}/${git_tree}
+
+        if ${push};then
+            pull_tree "${git_tree}" "$head"
+
+            subrepo_push "${PACKAGE}"
+            subrepo_clean "${PACKAGE}"
+#             sleep 1
+            push_tree "${git_tree}"
+        fi
+        git prune
+    else
+        error "Package '%s' does not exist!" "${PACKAGE}"
+    fi
+}
+
+symlink_commit_pkg(){
+    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    if [[ -n ${git_tree} ]];then
+        cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
+
+        . trunk/PKGBUILD
+        [[ $arch == 'any' ]] && CARCH=any
+        local ver=$(get_full_version "${PACKAGE}")
+
+        local head=$(get_local_head)
+
+        if [[ ${REPO_SRC} == 'trunk' ]];then
+            local action='add'
+            local dest="${REPO_DEST}-$CARCH"
+
+            [[ -d repos/$dest ]] && git rm -r repos/$dest
+            [[ ! -d repos ]] && mkdir repos
+            [[ ! -d repos/$dest ]] && mkdir repos/$dest
+
+            cp trunk/* repos/$dest/
+        else
+            local action='move'
+            local src="${REPO_SRC}-$CARCH" dest="${REPO_DEST}-$CARCH"
+
+            [[ -d repos/$dest ]] && git rm -r repos/$dest
+            [[ ! -d repos ]] && mkdir repos
+            [[ ! -d repos/$dest ]] && mkdir repos/$dest
+
+            cp repos/$src/* repos/$dest/
+            git rm -r repos/$src
+        fi
+        local commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$ver' ${action}"
+        msg "Action: %s" "$commit_msg"
+
+        git add .
+        git commit -m "$commit_msg"
+
+        cd ${TREE_DIR_ARTIX}/${git_tree}
+
+        if ${push};then
+            pull_tree "${git_tree}" "$head"
+
+            subrepo_push "${PACKAGE}"
+            subrepo_clean "${PACKAGE}"
+#             sleep 1
+            push_tree "${git_tree}"
+        fi
+        git prune
+    else
+        error "Package '%s' does not exist!" "${PACKAGE}"
+    fi
+}
+
+load_user_info
+
+load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+load_vars "${USERCONFDIR}/pacman/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
+load_vars /etc/makepkg.conf
+
+REPO_SRC='trunk'
+PACKAGE=''
+remove=false
+push=false
+
+cmd=${0##*/}
+REPO_DEST=${cmd%pkg}
+
+usage() {
+    echo "Usage: ${0##*/} [options]"
+    echo "    -s <name>          Source repository [default:${REPO_SRC}]"
+    echo '    -p <pkg>           Package name'
+    echo '    -r                 Delete from repo (commitpkg only)'
+    echo '    -u                 Push'
+    echo '    -h                 This help'
+    echo ''
+    echo ''
+    exit $1
+}
+
+orig_argv=("$0" "$@")
+
+opts='p:s:urh'
+
+while getopts "${opts}" arg; do
+    case "${arg}" in
+        s) REPO_SRC="$OPTARG" ;;
+        p) PACKAGE="$OPTARG" ;;
+        r) remove=true ;;
+        u) push=true ;;
+        h|?) usage 0 ;;
+        *) echo "invalid argument '${arg}'"; usage 1 ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+if $(is_valid_repo "${REPO_SRC}");then
+    if [[ "${cmd}" == 'commitpkg' ]];then
+        commit_pkg
+    else
+        symlink_commit_pkg
+    fi
+else
+    error "source repository '%s' is not valid!" "${REPO_SRC}"
+fi

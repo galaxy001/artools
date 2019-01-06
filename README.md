@@ -4,7 +4,7 @@ artools
 #### Make flags
 
 
-* PREFIX=/usr/local (default if defined)
+* PREFIX=/usr
 * SYSCONFDIR=/etc
 
 #### Dependencies
