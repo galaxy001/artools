@@ -139,12 +139,11 @@ write_servicescfg_conf(){
 configure_calamares(){
     local mods="$1/etc/calamares/modules"
     if [[ -d "$mods" ]];then
-        info "Configuring [Calamares]"
+        msg2 "Configuring Calamares"
         write_users_conf > "$mods"/users.conf
         write_servicescfg_conf > "$mods"/services-"${INITSYS}".conf
         sed -e "s|openrc|${INITSYS}|" -i "$mods"/postcfg.conf
         sed -e "s|services-openrc|services-${INITSYS}|" -i "$1"/etc/calamares/settings.conf
-        info "Done configuring [Calamares]"
     fi
 }
 

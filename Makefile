@@ -125,21 +125,23 @@ UTIL = $(BASE_UTIL) $(PKG_UTIL) $(ISO_UTIL)
 
 all: $(BIN) $(UTIL)
 
-EDIT = sed -e "s|@datadir[@]|$(DATADIR)|g" \
+EDIT_UTIL = sed -e "s|@datadir[@]|$(DATADIR)|g" \
 	-e "s|@sysconfdir[@]|$(SYSCONFDIR)|g" \
 	-e "s|@libdir[@]|$(LIBDIR)|g" \
 	-e "s|@chroot_version@|$(CHROOT_VERSION)|"
 
+EDIT_BIN = sed -e "s|@libdir[@]|$(LIBDIR)|g"
+
 $(UTIL): %: %.in Makefile
 	@echo "GEN $@"
 	@$(RM) "$@"
-	@$(M4) $@.in | $(EDIT) >$@
+	@$(M4) $@.in | $(EDIT_UTIL) >$@
 	@$(CHMODAW) "$@"
 
 $(BIN): %: %.in Makefile
 	@echo "GEN $@"
 	@$(RM) "$@"
-	@$(M4) $@.in | $(EDIT) >$@
+	@$(M4) $@.in | $(EDIT_BIN) >$@
 	@$(CHMODAW) "$@"
 	@$(CHMODX) "$@"
 

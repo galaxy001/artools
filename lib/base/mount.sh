@@ -96,7 +96,8 @@ chroot_setup(){
     chroot_mount udev "$1/dev" -t devtmpfs -o mode=0755,nosuid &&
     chroot_mount devpts "$1/dev/pts" -t devpts -o mode=0620,gid=5,nosuid,noexec &&
     chroot_mount shm "$1/dev/shm" -t tmpfs -o mode=1777,nosuid,nodev &&
-    chroot_mount run "$1/run" -t tmpfs -o nosuid,nodev,mode=0755 &&
+#     chroot_mount run "$1/run" -t tmpfs -o nosuid,nodev,mode=0755 &&
+    chroot_add_mount /run "$1/run" --bind &&
     chroot_mount tmp "$1/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
 }
 

@@ -15,6 +15,7 @@
 declare -A pseudofs_types=([anon_inodefs]=1
                         [autofs]=1
                         [bdev]=1
+                        [bpf]=1
                         [binfmt_misc]=1
                         [cgroup]=1
                         [cgroup2]=1
@@ -25,6 +26,7 @@ declare -A pseudofs_types=([anon_inodefs]=1
                         [devpts]=1
                         [devtmpfs]=1
                         [dlmfs]=1
+                        [efivarfs]=1
                         [fuse.gvfs-fuse-daemon]=1
                         [fusectl]=1
                         [hugetlbfs]=1
