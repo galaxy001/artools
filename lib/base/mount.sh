@@ -88,17 +88,18 @@ chroot_mount_conditional() {
 }
 
 chroot_setup(){
-    chroot_mount_conditional "! mountpoint -q '$1'" "$1" "$1" --bind &&
-    chroot_mount proc "$1/proc" -t proc -o nosuid,noexec,nodev &&
-    chroot_mount sys "$1/sys" -t sysfs -o nosuid,noexec,nodev,ro &&
-    ignore_error chroot_mount_conditional "[[ -d '$1/sys/firmware/efi/efivars' ]]" \
-        efivarfs "$1/sys/firmware/efi/efivars" -t efivarfs -o nosuid,noexec,nodev &&
-    chroot_mount udev "$1/dev" -t devtmpfs -o mode=0755,nosuid &&
-    chroot_mount devpts "$1/dev/pts" -t devpts -o mode=0620,gid=5,nosuid,noexec &&
-    chroot_mount shm "$1/dev/shm" -t tmpfs -o mode=1777,nosuid,nodev &&
-#     chroot_mount run "$1/run" -t tmpfs -o nosuid,nodev,mode=0755 &&
-    chroot_mount /run "$1/run" --bind &&
-    chroot_mount tmp "$1/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
+    local mnt="$1" os="$2" run_args='-t tmpfs -o nosuid,nodev,mode=0755'
+    $os && run_args='--bind'
+    chroot_mount_conditional "! mountpoint -q '$mnt'" "$mnt" "$mnt" --bind &&
+    chroot_mount proc "$mnt/proc" -t proc -o nosuid,noexec,nodev &&
+    chroot_mount sys "$mnt/sys" -t sysfs -o nosuid,noexec,nodev,ro &&
+    ignore_error chroot_mount_conditional "[[ -d '$mnt/sys/firmware/efi/efivars' ]]" \
+        efivarfs "$mnt/sys/firmware/efi/efivars" -t efivarfs -o nosuid,noexec,nodev &&
+    chroot_mount udev "$mnt/dev" -t devtmpfs -o mode=0755,nosuid &&
+    chroot_mount devpts "$mnt/dev/pts" -t devpts -o mode=0620,gid=5,nosuid,noexec &&
+    chroot_mount shm "$mnt/dev/shm" -t tmpfs -o mode=1777,nosuid,nodev &&
+    chroot_mount /run "$mnt/run" "${run_args}" &&
+    chroot_mount tmp "$mnt/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
 }
 
 mount_os(){
@@ -120,14 +121,14 @@ mount_os(){
         esac
     done
 
-    chroot_setup "$1"
+    chroot_setup "$1" true
     chroot_add_resolv_conf "$1"
 }
 
 chroot_api_mount() {
     CHROOT_ACTIVE_MOUNTS=()
     trap_setup chroot_api_umount
-    chroot_setup "$1"
+    chroot_setup "$1" false
 }
 
 chroot_api_umount() {
