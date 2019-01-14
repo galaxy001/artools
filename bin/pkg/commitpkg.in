@@ -57,14 +57,13 @@ commit_pkg(){
 
         cd ${TREE_DIR_ARTIX}/${git_tree}
 
-        if ${push};then
-            pull_tree "${git_tree}" "$head"
+        ${push} && pull_tree "${git_tree}" "$head"
 
-            subrepo_push "${PACKAGE}"
-            subrepo_clean "${PACKAGE}"
-#             sleep 1
-            push_tree "${git_tree}"
-        fi
+        subrepo_push "${PACKAGE}"
+        subrepo_clean "${PACKAGE}"
+
+        ${push} && push_tree "${git_tree}"
+
         git prune
     else
         error "Package '%s' does not exist!" "${PACKAGE}"
@@ -95,6 +94,7 @@ symlink_commit_pkg(){
             local action='move'
             local src="${REPO_SRC}-$CARCH" dest="${REPO_DEST}-$CARCH"
 
+            [[ ! -f repos/$src/PKGBUILD ]] && die "%s does not exist!" "repos/$src/PKGBUILD"
             [[ -d repos/$dest ]] && git rm -r repos/$dest
             [[ ! -d repos ]] && mkdir repos
             [[ ! -d repos/$dest ]] && mkdir repos/$dest
@@ -110,14 +110,13 @@ symlink_commit_pkg(){
 
         cd ${TREE_DIR_ARTIX}/${git_tree}
 
-        if ${push};then
-            pull_tree "${git_tree}" "$head"
+        ${push} && pull_tree "${git_tree}" "$head"
 
-            subrepo_push "${PACKAGE}"
-            subrepo_clean "${PACKAGE}"
-#             sleep 1
-            push_tree "${git_tree}"
-        fi
+        subrepo_push "${PACKAGE}"
+        subrepo_clean "${PACKAGE}"
+
+        ${push} && push_tree "${git_tree}"
+
         git prune
     else
         error "Package '%s' does not exist!" "${PACKAGE}"
