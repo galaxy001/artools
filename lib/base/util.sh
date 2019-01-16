@@ -78,7 +78,7 @@ init_artools_pkg(){
 
     TREE_DIR_ARCH=${TREE_DIR_ARCH:-"${WORKSPACE_DIR}/archlinux"}
 
-    HOST_TREE_ARCH=${HOST_TREE_ARCH:-'git://projects.archlinux.org/svntogit'}
+    HOST_TREE_ARCH=${HOST_TREE_ARCH:-'git://git.archlinux.org/svntogit'}
 
     CHROOTS_PKG="${CHROOTS_DIR}/buildpkg"
 
