@@ -1,0 +1,16 @@
+linux
+nvidia
+acpi_call
+bbswitch
+broadcom-wl
+tp_smapi
+r8168
+virtualbox-modules-artix
+linux-lts
+nvidia-lts
+acpi_call-lts
+bbswitch-lts
+broadcom-wl-lts
+tp_smapi-lts
+r8168-lts
+linux-firmware

@@ -74,9 +74,28 @@ init_artools_pkg(){
 
     TREE_DIR_ARTIX=${TREE_DIR_ARTIX:-"${WORKSPACE_DIR}/artixlinux"}
 
+    [[ -z ${TREE_NAMES_ARTIX[@]} ]] && \
+    TREE_NAMES_ARTIX=(
+        packages
+        community
+        packages-kernel
+        packages-openrc
+        packages-runit
+        packages-xorg
+        packages-python
+        packages-perl
+        packages-qt5
+        packages-ruby
+#         packages-desktop
+#         packages-kde
+#         packages-gnome
+    )
+
     HOST_TREE_ARTIX=${HOST_TREE_ARTIX:-"gitea@${GIT_DOMAIN}:artixlinux"}
 
     TREE_DIR_ARCH=${TREE_DIR_ARCH:-"${WORKSPACE_DIR}/archlinux"}
+
+    TREE_NAMES_ARCH=(packages community)
 
     HOST_TREE_ARCH=${HOST_TREE_ARCH:-'git://git.archlinux.org/svntogit'}
 

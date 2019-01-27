@@ -18,7 +18,7 @@
 show_version_table(){
     msg_table_header "%-20s %-20s %-25s %-30s %-30s" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version"
 
-    for tree in ${tree_names[@]};do
+    for tree in ${TREE_NAMES_ARTIX[@]};do
 
         local git=$(find ${TREE_DIR_ARTIX}/$tree/ -mindepth 1 -maxdepth 1 -type d)
 
@@ -98,8 +98,6 @@ staging=true
 upgrades=false
 downgrades=false
 move=false
-
-tree_names=(packages community)
 
 usage() {
     echo "Usage: ${0##*/} [options]"

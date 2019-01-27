@@ -15,25 +15,20 @@
 . @libdir@/artools/util-base.sh
 . @libdir@/artools/util-pkg.sh
 
-is_valid_repo(){
-    local src="$1"
-    case $src in
-        core|extra|community|multilib|testing|staging|community-testing|community-staging|multilib-testing|multilib-staging|trunk) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
 commit_pkg(){
     local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
     if [[ -n ${git_tree} ]];then
+
+        cd ${TREE_DIR_ARTIX}/${git_tree}
+
+        local head=$(get_local_head)
+
         cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
 
         . trunk/PKGBUILD
         [[ $arch == 'any' ]] && CARCH=any
         local ver=$(get_full_version "${PACKAGE}")
         local commit_msg=""
-
-        local head=$(get_local_head)
 
         if ${remove};then
             local action='remove'
@@ -59,6 +54,7 @@ commit_pkg(){
 
         ${push} && pull_tree "${git_tree}" "$head"
 
+        subrepo_pull "${PACKAGE}"
         subrepo_push "${PACKAGE}"
         subrepo_clean "${PACKAGE}"
 
@@ -73,13 +69,16 @@ commit_pkg(){
 symlink_commit_pkg(){
     local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
     if [[ -n ${git_tree} ]];then
+
+        cd ${TREE_DIR_ARTIX}/${git_tree}
+
+        local head=$(get_local_head)
+
         cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
 
         . trunk/PKGBUILD
         [[ $arch == 'any' ]] && CARCH=any
         local ver=$(get_full_version "${PACKAGE}")
-
-        local head=$(get_local_head)
 
         if [[ ${REPO_SRC} == 'trunk' ]];then
             local action='add'
@@ -112,6 +111,7 @@ symlink_commit_pkg(){
 
         ${push} && pull_tree "${git_tree}" "$head"
 
+        subrepo_pull "${PACKAGE}"
         subrepo_push "${PACKAGE}"
         subrepo_clean "${PACKAGE}"
 

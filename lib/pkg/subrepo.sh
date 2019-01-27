@@ -23,7 +23,7 @@ get_remote_head(){
 get_pkg_org(){
     local pkg="$1" org= sub=
     case ${pkg} in
-#         ruby-*) org=${pkg:0:6}; sub="${org:5}"; echo "packagesRuby" ;;
+        ruby-*) org=${pkg:0:6}; sub="${org:5}"; echo "packagesRuby" ;;
         perl-*) org=${pkg:0:6}; sub="${org:5}"; echo "packagesPerl" ;;
         python-*) org=${pkg:0:8}; sub="${org:7}"; echo "packagesPython" ;;
         python2-*) org=${pkg:0:9}; sub="${org:8}"; echo "packagesPython" ;;
@@ -35,7 +35,7 @@ get_pkg_org(){
 
 subrepo_push(){
     local pkg="$1"
-    msg2 "Update (%s)" "$pkg"
+    msg2 "Push (%s)" "$pkg"
     git subrepo push "$pkg"
 }
 
@@ -55,13 +55,14 @@ subrepo_clean(){
 
 subrepo_pull(){
     local pkg="$1"
+    msg2 "Pull (%s)" "$pkg"
     git subrepo pull "$pkg"
 }
 
 subrepo_clone(){
     local pkg="$1" org="$2"
     local gitname=$(get_compliant_name "$pkg")
-    msg2 "Getting package repo [%s] from org (%s)" "$pkg" "$org/$gitname"
+    msg2 "Clone [%s] from (%s)" "$pkg" "$org/$gitname"
     git subrepo clone gitea@"${GIT_DOMAIN}":"$org"/"$gitname".git "$pkg"
 }
 
@@ -151,10 +152,10 @@ config_tree(){
 }
 
 subrepo_new(){
-    local pkg="$1" team="$2"
-    local dest=${TREE_DIR_ARTIX}/$team/$pkg/trunk
+    local pkg="$1" tree="$2" team="${3:-$2}"
+    local dest=${TREE_DIR_ARTIX}/$tree/$pkg/trunk
 
-    cd ${TREE_DIR_ARTIX}/$team
+    cd ${TREE_DIR_ARTIX}/$tree
 
     local org=$(get_pkg_org "$pkg")
 

@@ -90,9 +90,41 @@ find_repo(){
     echo $repo
 }
 
+get_cases(){
+    local pkglist="${DATADIR}/pkglists/$1.list"
+    local _space="s| ||g" _clean=':a;N;$!ba;s/\n/ /g' _com_rm="s|#.*||g"
+
+    local pkgs=($(sed "$_com_rm" "$pkglist" | sed "$_space" | sed "$_clean"))
+
+    local cases=
+    for p in ${pkgs[@]};do
+        cases=${p:+}${p:-|}${p}
+    done
+    echo $cases
+}
+
+get_artix_tree(){
+    local pkg="$1" artix_tree="${2:-$3}" tree
+    case $pkg in
+        $(get_cases kernel)) tree=packages-kernel ;;
+        python-*|python2-*) tree=packages-python ;;
+        perl-*) tree=packages-perl ;;
+        ruby-*) tree=packages-ruby ;;
+        xorg*|xf86*|$(get_cases xorg)) tree=packages-xorg ;;
+        *-openrc) tree=packages-openrc ;;
+        *-runit) tree=packages-runit ;;
+        qt5-*) tree=packages-qt5 ;;
+#         $(get_cases freedesktop)) tree=packages-desktop ;;
+#         $(get_cases kde)) tree=packages-kde ;;
+#         $(get_cases gnome)) tree=packages-gnome ;;
+        *) tree=$artix_tree
+    esac
+    echo $tree
+}
+
 get_import_path(){
     local pkg="$1" import_path=
-    for tree in ${tree_names[@]};do
+    for tree in ${TREE_NAMES_ARCH[@]};do
         [[ -d ${TREE_DIR_ARCH}/$tree/$pkg ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg
     done
     echo $import_path
@@ -106,6 +138,14 @@ pkgver_equal() {
         # otherwise, trim any pkgrel and compare the bare version.
         [[ ${1%%-*} = "${2%%-*}" ]]
     fi
+}
+
+is_valid_repo(){
+    local src="$1"
+    case $src in
+        core|extra|community|multilib|testing|staging|community-testing|community-staging|multilib-testing|multilib-staging|trunk) return 0 ;;
+        *) return 1 ;;
+    esac
 }
 
 find_cached_package() {
