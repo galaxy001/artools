@@ -23,6 +23,8 @@ create_repo(){
         -H "accept: application/json" \
         -H "content-type: application/json" \
         -d "$json"
+
+    echo
 }
 
 delete_repo(){

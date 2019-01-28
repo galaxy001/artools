@@ -140,20 +140,20 @@ conf=false
 
 PACKAGE=''
 
-TEAM=${TREE_NAMES[0]}
-SUBORG=''
+TEAM=${TREE_NAMES_ARTIX[0]}
+GROUP=${TREE_NAMES_ARTIX[0]}
 
 usage() {
     echo "Usage: ${0##*/} [options]"
     echo '    -p <pkg>      Package name'
     echo '    -t <team>     Team name (only with -n)'
     echo "                  [default: ${TEAM}]"
-    echo '    -o <org>      Org of subrepo (only with -c)'
+    echo '    -g <group>    Group name, the superrepo (only with -n)'
+    echo "                  [default: ${GROUP}]"
     echo "    -s            Clone or pull repos"
     echo "    -z            Don't clone or pull arch repos"
     echo '    -i            Import a package from arch repos'
     echo '    -n            Make new remote subrepo and clone it'
-    echo '    -c            Configure subrepo url'
     echo '    -v            View package depends'
     echo '    -h            This help'
     echo ''
@@ -163,19 +163,18 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:t:o:csinzvh'
+opts='p:t:g:sinzvh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         p) PACKAGE="$OPTARG" ;;
         t) TEAM="$OPTARG" ;;
-        o) SUBORG="$OPTARG" ;;
+        g) GROUP="$OPTARG" ;;
         s) sync=true ;;
         z) sync_arch=false ;;
         i) import=true ;;
         n) createnew=true ;;
         v) view=true ;;
-        c) conf=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -192,6 +191,4 @@ ${view} && view_build "${PACKAGE}"
 
 ${import} && from_arch "${PACKAGE}"
 
-${createnew} && subrepo_new "${PACKAGE}" "${TEAM}"
-
-${conf} && subrepo_config "${PACKAGE}" "${SUBORG}"
+${createnew} && subrepo_new "${PACKAGE}" "${GROUP}" "${TEAM}"

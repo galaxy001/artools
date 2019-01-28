@@ -39,14 +39,6 @@ subrepo_push(){
     git subrepo push "$pkg"
 }
 
-subrepo_config(){
-    local pkg="$1" org="$2"
-    local gitname=$(get_compliant_name "$pkg")
-    local url=gitea@"${GIT_DOMAIN}":"$org"/"$gitname".git
-    msg2 "Update .gitrepo (%s) [%s]" "$pkg" "$url"
-    git subrepo config "$pkg" remote "$url"
-}
-
 subrepo_clean(){
     local pkg="$1"
     msg2 "Clean (%s)" "$pkg"
