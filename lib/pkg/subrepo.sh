@@ -59,9 +59,9 @@ subrepo_clone(){
 }
 
 clone_tree(){
-    local timer=$(get_timer) url="$1" tree="$2"
+    local timer=$(get_timer) url="$1" tree="$2" os="$3"
 
-    msg "Cloning (%s) ..." "$tree"
+    msg "Cloning (%s) ..." "$tree" "$os"
 
     git clone $url/$tree.git
     show_elapsed_time "${FUNCNAME}" "${timer}"
@@ -79,11 +79,10 @@ has_changes(){
 }
 
 pull_tree(){
-    local tree="$1"
-    local local_head=${2:-$(get_local_head)}
+    local tree="$1" local_head="$2" os="$3"
     local remote_head=$(get_remote_head)
 
-    msg "Checking (%s)" "${tree}"
+    msg "Checking %s (%s)" "${tree}" "$os"
     if $(has_changes "${local_head}" "${remote_head}");then
         git pull origin master
     fi
