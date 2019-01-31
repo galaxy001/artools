@@ -34,10 +34,10 @@ pull_tree_artix(){
         if [[ -d ${tree} ]];then
             config_tree "${tree}"
             cd ${tree}
-            pull_tree "${tree}" "$(get_local_head)" "$(get_osname)"
+            pull_tree "${tree}" "$(get_local_head)"
             cd ..
         else
-            clone_tree "${HOST_TREE_ARTIX}" "${tree}" "$(get_osname)"
+            clone_tree "${HOST_TREE_ARTIX}" "${tree}"
             config_tree "${tree}"
         fi
     done

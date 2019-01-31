@@ -59,7 +59,7 @@ subrepo_clone(){
 }
 
 clone_tree(){
-    local timer=$(get_timer) url="$1" tree="$2" os="$3"
+    local timer=$(get_timer) url="$1" tree="$2" os="${3:-$(get_osname)}"
 
     msg "Cloning (%s) ..." "$tree" "$os"
 
@@ -79,7 +79,7 @@ has_changes(){
 }
 
 pull_tree(){
-    local tree="$1" local_head="$2" os="$3"
+    local tree="$1" local_head="$2" os="${3:-$(get_osname)}"
     local remote_head=$(get_remote_head)
 
     msg "Checking %s (%s)" "${tree}" "$os"
