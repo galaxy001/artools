@@ -117,10 +117,11 @@ msg_row_notify(){
 
 msg_row(){
     local mesg=$1; shift
-    printf "${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
+#     printf "${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
+    printf "${WHITE} ${mesg}${ALL_OFF}\n" "$@" >&2
 }
 
 msg_row_upgrade(){
     local mesg=$1; shift
-    printf "${RED}${RED} ${mesg} ${ALL_OFF}\n" "$@" >&2
+    printf "${RED} ${mesg} ${ALL_OFF}\n" "$@" >&2
 }
