@@ -114,7 +114,7 @@ get_artix_tree(){
         *-openrc) tree=packages-openrc ;;
         *-runit) tree=packages-runit ;;
         qt5-*) tree=packages-qt5 ;;
-        lxqt*||$(get_cases lxqt)) tree=packages-lxqt ;;
+        lxqt*|$(get_cases lxqt)) tree=packages-lxqt ;;
 #         $(get_cases freedesktop)) tree=packages-desktop ;;
 #         $(get_cases kde)) tree=packages-kde ;;
 #         $(get_cases gnome)) tree=packages-gnome ;;
