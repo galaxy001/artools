@@ -1,5 +1,6 @@
 linux
 nvidia
+nvidia-utils
 acpi_call
 bbswitch
 broadcom-wl
