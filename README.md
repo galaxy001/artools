@@ -28,6 +28,7 @@ artools
 - pkg:
   * namcap
   * git-subrepo
+  * jshon
 
 - iso:
   * dosfstools
