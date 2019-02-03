@@ -21,7 +21,12 @@ update_repo(){
 
     . PKGBUILD
 
-    for name in ${pkgname[@]};do
+    local pkgsearch=(${pkgname[@]})
+    if check_option "debug" "y"; then
+        pkgsearch+=("$pkgbase-debug")
+    fi
+
+    for name in ${pkgsearch[@]}; do
         pkgarch=$(get_pkg_arch "$name")
         ver=$(get_full_version "$name")
         if pkgfile=$(find_cached_package "$name" "$ver" "$pkgarch");then
