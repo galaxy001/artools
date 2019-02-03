@@ -59,7 +59,7 @@ show_deps(){
 
     local archver=$(get_full_version $pkg)
 
-    msg "repo: %s" "$repo"
+    msg2 "repo: %s" "$repo"
     [[ -n ${pkgbase} ]] && msg2 "pkgbase: %s" "${pkgbase}"
     msg2 "pkgname: %s" "${pkgname[*]}"
     [[ -n $pkgdesc ]] && msg2 "pkgdesc: %s" "${pkgdesc}"
@@ -87,7 +87,7 @@ from_arch(){
 
     dest=${TREE_DIR_ARTIX}/$tree_dir/$pkg/trunk
 
-    msg "artix tree: %s" "$tree_dir"
+    msg "tree: %s" "$tree_dir"
     show_deps "$src" "$repo"
 
     if [[ -d $dest ]];then
