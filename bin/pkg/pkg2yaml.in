@@ -79,14 +79,14 @@ write_details() {
 }
 
 write_pkg_yaml(){
-    local pkgfile=$(print_all_package_names)
+    local pkgfile=$(makepkg --packagelist)
 
     Yaml=$(write_yaml_header)
 
     Yaml+=$(write_empty_line)
 
     Yaml+=$(write_yaml_map 0 "pkgbase")
-    Yaml+=$(write_yaml_map 2 "pkgname" "${pkgbase:-$pkgname}")
+    Yaml+=$(write_yaml_map 2 "pkgname" "${pkgbase:-${pkgname[0]}}")
     ${details} && write_details ''
 
     Yaml+=$(write_empty_line)

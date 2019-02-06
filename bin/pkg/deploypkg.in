@@ -23,7 +23,8 @@ update_repo(){
 
     local pkgsearch=(${pkgname[@]})
     if check_option "debug" "y"; then
-        pkgsearch+=("$pkgbase-debug")
+        pkgbase=${pkgbase:-${pkgname[@]}}
+        pkgsearch+=("${pkgbase}-debug")
     fi
 
     for name in ${pkgsearch[@]}; do
