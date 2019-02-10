@@ -385,9 +385,11 @@ main() {
         sync_chroot "$chrootdir/root" "$copydir" "$copy"
     fi
 
+    bindmounts_rw+=("${PWD}:/startdir" "${SRCDEST}:/srcdest")
+
     $update_first && chroot-run \
-            -r "${bindmounts_ro[@]}" \
-            -w "${bindmounts_rw[@]}" \
+            -r "${bindmounts_ro[*]}" \
+            -w "${bindmounts_rw[*]}" \
             "$copydir" \
             pacman -Syu --noconfirm
 
@@ -406,8 +408,6 @@ main() {
     download_sources "$copydir" "$makepkg_user"
 
     prepare_chroot "$copydir" "$USER_HOME" "$keepbuilddir" "$run_namcap"
-
-    bindmounts_rw+=("${PWD}:/startdir" "${SRCDEST}:/srcdest")
 
     if chroot-run \
         -r "${bindmounts_ro[*]}" \
