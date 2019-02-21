@@ -123,7 +123,7 @@ init_artools_iso(){
 
     FILE_HOST="download.${DOMAIN}"
 
-    FILE_HOME=${FILE_HOME:-'/srv/iso/iso'}
+    FILE_HOME=${FILE_HOME:-'/srv/iso'}
 
     FILE_PORT=${FILE_PORT:-65432}
 
