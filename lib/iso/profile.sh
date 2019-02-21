@@ -63,7 +63,7 @@ load_profile(){
 
     PASSWORD=${PASSWORD:-'artix'}
 
-    ADDGROUPS=${ADDGROUPS:-"video,power,cdrom,network,lp,scanner,wheel,users,log"}
+    ADDGROUPS=${ADDGROUPS:-"video,power,optical,network,lp,scanner,wheel,users,log"}
 
     if [[ -z ${SERVICES[@]} ]];then
         SERVICES=('acpid' 'bluetooth' 'cronie' 'cupsd' 'syslog-ng' 'NetworkManager')
