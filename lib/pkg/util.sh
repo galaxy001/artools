@@ -98,14 +98,14 @@ get_cases(){
 
     local cases=
     for p in ${pkgs[@]};do
-        cases=${p:+}${p:-|}${p}
+        cases=${cases:-}${cases:+|}${p}
     done
     echo $cases
 }
 
 get_artix_tree(){
     local pkg="$1" artix_tree="${2:-$3}" tree
-    case $pkg in
+    eval "case $pkg in
         $(get_cases kernel)) tree=packages-kernel ;;
         python-*|python2-*) tree=packages-python ;;
         perl-*) tree=packages-perl ;;
@@ -115,12 +115,14 @@ get_artix_tree(){
         *-runit) tree=packages-runit ;;
         qt5-*) tree=packages-qt5 ;;
         lxqt*|$(get_cases lxqt)) tree=packages-lxqt ;;
+        *) tree=$artix_tree
+    esac"
+    echo $tree
+
 #         $(get_cases freedesktop)) tree=packages-desktop ;;
 #         $(get_cases kde)) tree=packages-kde ;;
 #         $(get_cases gnome)) tree=packages-gnome ;;
-        *) tree=$artix_tree
-    esac
-    echo $tree
+    
 }
 
 get_import_path(){
