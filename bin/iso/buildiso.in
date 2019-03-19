@@ -157,12 +157,12 @@ done
 
 shift $(($OPTIND - 1))
 
-${pretend} && display_settings && exit 1
-
 check_root
 
 prepare_traps
 
 prepare_build
+
+${pretend} && display_settings && exit 1
 
 build
