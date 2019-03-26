@@ -71,9 +71,14 @@ else
     cache_dirs=("$cache_dir")
 fi
 
+pacconf_cmd=$(command -v pacman-conf || command -v pacconf)
+host_mirrors=($($pacconf_cmd --repo world Server 2> /dev/null | sed -r 's#(.*/)world/os/.*#\1$repo/os/$arch#'))
+    
 copy_hostconf () {
     cp -a /etc/pacman.d/gnupg "$1/etc/pacman.d"
-
+    
+    printf 'Server = %s\n' "${host_mirrors[@]}" >"$working_dir/etc/pacman.d/mirrorlist"
+    
     [[ -n $pacman_conf ]] && cp $pacman_conf "$1/etc/pacman.conf"
 
     [[ -n $makepkg_conf ]] && cp $makepkg_conf "$1/etc/makepkg.conf"
@@ -103,6 +108,13 @@ chroot_extra_mount() {
 
     for m in ${bindmounts_rw[@]}; do
         chroot_mount "${m%%:*}" "$1${m##*:}" -B
+    done
+    
+    for host_mirror in "${host_mirrors[@]}"; do
+        if [[ $host_mirror == *file://* ]]; then
+            host_mirror_path=$(echo "$host_mirror" | sed -r 's#file://(/.*)/\$repo/os/\$arch#\1#g')
+            chroot_mount "$host_mirror_path" "$1$host_mirror_path" -Br
+        fi
     done
 }
 
