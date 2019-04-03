@@ -83,12 +83,15 @@ write_pkg_yaml(){
     Yaml=$(write_yaml_header)
 
     Yaml+=$(write_empty_line)
-
+    
+    local ver=$(get_full_version)
+    
     pkgbase=${pkgbase:-${pkgname[0]}}
 
     Yaml+=$(write_yaml_map 0 "pkgbase")
     Yaml+=$(write_yaml_map 2 "pkgname" "${pkgbase}")
     ${details} && write_details ''
+    Yaml+=$(write_yaml_map 2 "fullver" "${ver}")
 
     Yaml+=$(write_empty_line)
 
