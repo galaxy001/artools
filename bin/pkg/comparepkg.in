@@ -39,7 +39,7 @@ show_version_table(){
                 local archrepo=$(find_repo "$archpath" "${staging}" "${unstable}")
 
                 local archshow=${archrepo%-*}
-                pkgbuild=$archpath/$archrepo/PKGBUILD
+                pkgbuild=$archpath/repos/$archrepo/PKGBUILD
 
                 if [[ -f $pkgbuild ]];then
                     . $pkgbuild 2>/dev/null

@@ -128,7 +128,7 @@ get_artix_tree(){
 get_import_path(){
     local pkg="$1" import_path=
     for tree in ${TREE_NAMES_ARCH[@]};do
-        [[ -d ${TREE_DIR_ARCH}/$tree/$pkg/repos ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg/repos
+        [[ -d ${TREE_DIR_ARCH}/$tree/$pkg/repos ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg
     done
     echo $import_path
 }
