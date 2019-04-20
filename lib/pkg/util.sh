@@ -122,13 +122,13 @@ get_artix_tree(){
 #         $(get_cases freedesktop)) tree=packages-desktop ;;
 #         $(get_cases kde)) tree=packages-kde ;;
 #         $(get_cases gnome)) tree=packages-gnome ;;
-    
+
 }
 
 get_import_path(){
     local pkg="$1" import_path=
     for tree in ${TREE_NAMES_ARCH[@]};do
-        [[ -d ${TREE_DIR_ARCH}/$tree/$pkg ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg
+        [[ -d ${TREE_DIR_ARCH}/$tree/$pkg/repos ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg/repos
     done
     echo $import_path
 }
