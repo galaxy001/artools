@@ -16,7 +16,7 @@
 . @libdir@/artools/util-pkg.sh
 
 update_repo(){
-    local repo="$1" pkgfile ver ext=db.tar.xz
+    local repo="$1" pkgfile ver ext=db.tar.xz lext=links.tar.xz
     local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
 
     . PKGBUILD
@@ -51,7 +51,11 @@ update_repo(){
         fi
     done
     cd $repo_path
-    [[ -n $action ]] && repo-$action -R $repo.$ext ${packages[@]}
+    if [[ -n $action ]]; then
+        repo-$action -R $repo.$ext ${packages[@]}
+        ${linksdb} && links-$action -n $repo.$lext ${packages[@]}
+    fi
+
     return 0
 }
 
@@ -64,6 +68,7 @@ load_vars /etc/makepkg.conf
 add_pkg=false
 del_pkg=false
 sign_pkg=false
+linksdb=false
 
 cmd=${0##*/}
 dest_repo=${cmd#*-}
@@ -72,6 +77,7 @@ usage() {
     echo "Usage: ${cmd} [options]"
     echo '    -a                 Add package(s) to repository'
     echo '    -r                 Remove package(s) from repository'
+    echo '    -l                 Use links db'
     echo '    -s                 Sign package(s)'
     echo '    -h                 This help'
     echo ''
@@ -79,12 +85,13 @@ usage() {
     exit $1
 }
 
-opts='arsh'
+opts='arlsh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         a) add_pkg=true; del_pkg=false ;;
         r) del_pkg=true; add_pkg=false ;;
+        l) linksdb=true ;;
         s) sign_pkg=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
