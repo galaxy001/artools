@@ -91,6 +91,22 @@ init_artools_pkg(){
 #         packages-gnome
     )
 
+    [[ -z ${REPO_NAMES[@]} ]] && \
+    REPO_NAMES=(
+        goblins
+        gremlins
+        system
+        world
+        galaxy-goblins
+        galaxy-gremlins
+        galaxy
+        lib32-goblins
+        lib32-gremlns
+        lib32
+        gnome-wobble
+        kde-wobble
+    )
+
     HOST_TREE_ARTIX=${HOST_TREE_ARTIX:-"gitea@${GIT_DOMAIN}:artixlinux"}
 
     TREE_DIR_ARCH=${TREE_DIR_ARCH:-"${WORKSPACE_DIR}/archlinux"}
