@@ -40,7 +40,9 @@ PKG_BIN = \
 	bin/pkg/buildtree \
 	bin/pkg/lddd \
 	bin/pkg/finddeps \
-	bin/pkg/find-libdeps
+	bin/pkg/find-libdeps \
+	bin/pkg/mklinksdb \
+	bin/pkg/sogrep
 
 LN_COMMITPKG = \
 	extrapkg \
