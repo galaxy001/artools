@@ -21,7 +21,7 @@
 
 shopt -s extglob
 
-REPO_DB_NAME="links"
+declare -r REPO_DB_NAME="links"
 
 QUIET=0
 ONLYADDNEW=0
@@ -34,7 +34,6 @@ REPO_DB_SUFFIX=
 LOCKFILE=
 CLEAN_LOCK=0
 
-# Import libmakepkg
 . @libdir@/artools/util-base.sh
 
 # ensure we have a sane umask set
@@ -75,7 +74,7 @@ packages to remove can be specified on the command line.\n"
 See %s(8) for more details and descriptions of the available options.\n" $cmd
     printf "\n"
     if [[ $cmd == "links-add" ]] ; then
-        printf -- "Example:  links-add /path/to/repo.links.tar.gz pacman-3.0.0-1-i686.pkg.tar.gz\n"
+        printf -- "Example:  links-add /path/to/repo.links.tar.gz pacman-5.1.3-1-x86_64.pkg.tar.gz\n"
     elif [[ $cmd == "links-remove" ]] ; then
         printf -- "Example:  links-remove /path/to/repo.links.tar.gz kernel26\n"
     fi
@@ -195,12 +194,21 @@ db_write_entry() {
         return 1
     fi
 
+    if [[ -d $tmpdir/${REPO_DB_NAME}/$pkgname-$pkgver ]]; then
+        warning "An entry for '%s' already existed" "$pkgname-$pkgver"
+        if (( ONLYADDNEW )); then
+            return 0
+        fi
+    fi
+
     # remove an existing entry if it exists, ignore failures
     db_remove_entry "$pkgname"
 
-    mkdir "$tmpdir/db/$pkgname-$pkgver"
+    local tmppkg=$tmpdir/pkg/$pkgname-$pkgver
 
-    bsdtar -xof $pkgfile -C $tmpdir/db/$pkgname-$pkgver --include={opt,{,usr/}{lib{,32},{s,}bin}}'/*' 2>/dev/null
+    mkdir "$tmppkg"
+
+    bsdtar -xof $pkgfile -C $tmppkg --include={opt,{,usr/}{lib{,32},{s,}bin}}'/*' 2>/dev/null
 
     pushd "$tmpdir/${REPO_DB_NAME}" >/dev/null
     mkdir "$pkgname-$pkgver"
@@ -209,19 +217,14 @@ db_write_entry() {
     # create links entry
     msg2 "Creating '%s' db entry..." "${REPO_DB_NAME}"
 
-    for f in $(find $tmpdir/db/$pkgname-$pkgver -type f); do
+    local linksentry=$tmpdir/${REPO_DB_NAME}/$pkgname-$pkgver/${REPO_DB_NAME}
+
+    for f in $(find $tmppkg -type f); do
         readelf -d "$f" 2> /dev/null | sed -nr 's/.*Shared library: \[(.*)\].*/\1/p'
-    done | sort -u > $tmpdir/${REPO_DB_NAME}/$pkgname-$pkgver/${REPO_DB_NAME}
+    done | sort -u > $linksentry
 
     popd >/dev/null
     popd >/dev/null
-
-    if [[ -d $tmpdir/db/$pkgname-$pkgver ]]; then
-        warning "An entry for '%s' already existed" "$pkgname-$pkgver"
-        if (( ONLYADDNEW )); then
-            return 0
-        fi
-    fi
 
     return 0
 }
@@ -240,8 +243,8 @@ db_remove_entry() {
         rm -rf "$pkgentry"
 
         # remove entries in "links" database
-        local filesentry=$(echo "$pkgentry" | sed 's/\(.*\)\/db\//\1\/links\//')
-        rm -rf "$filesentry"
+        local linksentry=$(echo "$pkgentry" | sed 's/\(.*\)\/db\//\1\/links\//')
+        rm -rf "$linksentry"
 
         pkgentry=$(find_pkgentry "$pkgname")
     done
@@ -276,7 +279,7 @@ prepare_repo_db() {
         if ! bsdtar -tqf "$dbfile" '*/links' >/dev/null 2>&1; then
             # check empty case
             if [[ -n $(bsdtar -tqf "$dbfile" '*' 2>/dev/null) ]]; then
-                error "Repository file '%s' is not a proper pacman database." "$dbfile"
+                error "Repository file '%s' is not a proper links database." "$dbfile"
                 exit 1
             fi
         fi
@@ -381,23 +384,21 @@ create_db() {
     # $LOCKFILE is already guaranteed to be absolute so this is safe
     dirname=${LOCKFILE%/*}
 
-# 	for repo in "links"; do
-        filename=${REPO_DB_PREFIX}.${REPO_DB_NAME}.${REPO_DB_SUFFIX}
-        # this ensures we create it on the same filesystem, making moves atomic
-        tempname=$dirname/.tmp.$filename
+    filename=${REPO_DB_PREFIX}.${REPO_DB_NAME}.${REPO_DB_SUFFIX}
+    # this ensures we create it on the same filesystem, making moves atomic
+    tempname=$dirname/.tmp.$filename
 
-        pushd "$tmpdir/${REPO_DB_NAME}" >/dev/null
-        if ( shopt -s nullglob; files=(*); (( ${#files[*]} )) ); then
-            bsdtar -c${TAR_OPT}f "$tempname" *
-        else
-            # we have no packages remaining? zip up some emptyness
-            warning "No packages remain, creating empty database."
-            bsdtar -c${TAR_OPT}f "$tempname" -T /dev/null
-        fi
-        popd >/dev/null
+    pushd "$tmpdir/${REPO_DB_NAME}" >/dev/null
+    if ( shopt -s nullglob; files=(*); (( ${#files[*]} )) ); then
+        bsdtar -c${TAR_OPT}f "$tempname" *
+    else
+        # we have no packages remaining? zip up some emptyness
+        warning "No packages remain, creating empty database."
+        bsdtar -c${TAR_OPT}f "$tempname" -T /dev/null
+    fi
+    popd >/dev/null
 
-        create_signature "$tempname"
-# 	done
+    create_signature "$tempname"
 }
 
 trap_exit() {
@@ -421,9 +422,7 @@ clean_up() {
     exit $exit_code
 }
 
-
 # PROGRAM START
-
 case $1 in
     -h|--help) usage; exit 0;;
 esac
@@ -440,7 +439,7 @@ tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/repo-tools.XXXXXXXXXX") || (\
     error "Cannot create temp directory for database building."; \
     exit 1)
 
-for repo in "db" "${REPO_DB_NAME}"; do
+for repo in "pkg" "${REPO_DB_NAME}"; do
     mkdir "$tmpdir/$repo"
 done
 
