@@ -41,7 +41,6 @@ PKG_BIN = \
 	bin/pkg/lddd \
 	bin/pkg/finddeps \
 	bin/pkg/find-libdeps \
-	bin/pkg/mklinksdb \
 	bin/pkg/links-add \
 	bin/pkg/sogrep
 
