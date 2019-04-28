@@ -89,7 +89,7 @@ find_pkgentry() {
 	local pkgname=$1
 	local pkgentry
 
-	for pkgentry in "$tmpdir/db/$pkgname"*; do
+	for pkgentry in "$tmpdir/${REPO_DB_NAME}/$pkgname"*; do
 		name=${pkgentry##*/}
 		if [[ ${name%-*-*} = $pkgname ]]; then
 			echo $pkgentry
@@ -188,7 +188,6 @@ db_write_entry() {
 	while read -r line; do
 		[[ ${line:0:1} = '#' ]] && continue
 		IFS=' =' read -r var val < <(printf '%s\n' "$line")
-
 		# normalize whitespace with an extglob
 		declare "$var=${val//+([[:space:]])/ }"
 
@@ -203,22 +202,20 @@ db_write_entry() {
 	# remove an existing entry if it exists, ignore failures
 	db_remove_entry "$pkgname"
 
-	# create package directory
-	pushd "$tmpdir/db" >/dev/null
+	mkdir -p "$tmpdir/db/$pkgname-$pkgver"
+
+    bsdtar -xof $pkgfile -C $tmpdir/db/$pkgname-$pkgver --include={opt,{,usr/}{lib{,32},{s,}bin}}'/*' 2>/dev/null
+
+	pushd "$tmpdir/${REPO_DB_NAME}" >/dev/null
 	mkdir "$pkgname-$pkgver"
 	pushd "$pkgname-$pkgver" >/dev/null
 
-	# copy updated package entry into "links" database
-	cp -a "$tmpdir/db/$pkgname-$pkgver" "$tmpdir/${REPO_DB_NAME}/$pkgname-$pkgver"
-
 	# create links entry
 	msg2 "Creating '%s' db entry..." "${REPO_DB_NAME}"
-	local files_path="$tmpdir/${REPO_DB_NAME}/$pkgname-$pkgver/${REPO_DB_NAME}"
 
-	bsdtar -xof $pkgfile -C $tmpdir/db/$pkgname-$pkgver --include={opt,{,usr/}{lib{,32},{s,}bin}}'/*' 2>/dev/null
 	for f in $(find $tmpdir/db/$pkgname-$pkgver -type f); do
 		readelf -d "$f" 2> /dev/null | sed -nr 's/.*Shared library: \[(.*)\].*/\1/p'
-	done | sort -u > $files_path
+	done | sort -u > $tmpdir/${REPO_DB_NAME}/$pkgname-$pkgver/${REPO_DB_NAME}
 
 	popd >/dev/null
 	popd >/dev/null
@@ -251,7 +248,7 @@ db_remove_entry() {
 		pkgentry=$(find_pkgentry "$pkgname")
 	done
 	return $notfound
-} # end db_remove_entry
+}
 
 prepare_repo_db() {
 	local repodir dbfile
