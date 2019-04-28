@@ -42,6 +42,7 @@ PKG_BIN = \
 	bin/pkg/finddeps \
 	bin/pkg/find-libdeps \
 	bin/pkg/mklinksdb \
+	bin/pkg/links-add \
 	bin/pkg/sogrep
 
 LN_COMMITPKG = \
@@ -172,6 +173,8 @@ install_pkg:
 	install $(MODE) $(PKG_BIN) $(DESTDIR)$(BINDIR)
 
 	$(LN) find-libdeps $(DESTDIR)$(BINDIR)/find-libprovides
+
+	$(LN) links-add $(DESTDIR)$(BINDIR)/links-remove
 
 	for l in $(LN_COMMITPKG); do $(LN) commitpkg $(DESTDIR)$(BINDIR)/$$l; done
 	for l in $(LN_BUILDPKG); do $(LN) buildpkg $(DESTDIR)$(BINDIR)/$$l; done

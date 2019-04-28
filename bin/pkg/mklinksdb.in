@@ -12,14 +12,16 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-target="/srv/repos"
+. @libdir@/artools/util-base.sh
+. @libdir@/artools/util-pkg.sh
 
-repos=('goblins' 'gremlins' 'system' 'world'
-    'galaxy-goblins' 'galaxy-gremlins' 'galaxy'
-    'lib32-goblins' 'lib32-gremlns' 'lib32'
-    'gnome-wobble' 'kde-wobble')
+load_user_info
 
-arches=('x86_64')
+load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+
+target="${REPOS_ROOT}"
+
+# arches=('x86_64')
 lock='/tmp/links.lck'
 tmp="$(mktemp -d)"
 
@@ -35,22 +37,24 @@ getpkgname() {
     echo ${tmp%-*.pkg.tar.*}
 }
 
+add_pkg_links(){
+# for repo in ${REPO_NAMES[@]}; do
+#     for arch in ${arches[@]}; do
+    local repo="$1" pkg="$1"
 
-for repo in ${repos[@]}; do
-    for arch in ${arches[@]}; do
-        repodir=${repo}/os/${arch}
-        [ ! -f ${target}/$repodir/$repo.db ] && continue
-        echo "$repo/$arch..."
+        repodir=${repo}/os/${ARCH}
+        [ ! -f ${REPOS_ROOT}/$repodir/$repo.db ] && continue
+        msg "$repo/$ARCH..."
         mkdir -p ${tmp}/tmp/${repodir}
 
         # extract old file archive
-        if [ -f ${target}/${repodir}/${repo}.links.tar.gz ]; then
+        if [ -f ${REPOS_ROOT}/${repodir}/${repo}.links.tar.gz ]; then
             mkdir -p ${tmp}/cache/${repodir}
-            bsdtar -xf ${target}/${repodir}/${repo}.links.tar.gz -C ${tmp}/cache/${repodir}
+            bsdtar -xf ${REPOS_ROOT}/${repodir}/${repo}.links.tar.gz -C ${tmp}/cache/${repodir}
         fi
 
         # create file lists
-        for pkg in $(find $target/$repodir -xtype f -name "*-${arch}.pkg.tar.*"); do
+#         for pkg in $(find ${REPOS_ROOT}/$repodir -xtype f -name "*-${ARCH}.pkg.tar.*"); do
             pkgname=$(getpkgname $pkg)
             tmppkgdir=${tmp}/tmp/${repodir}/${pkgname}
             mkdir -p $tmppkgdir
@@ -58,7 +62,7 @@ for repo in ${repos[@]}; do
                 # reuse the cached file
                 mv ${tmp}/cache/${repodir}/${pkgname}/links ${tmppkgdir}/links
             else
-                echo "$repo/$arch: $pkgname"
+                msg "$repo/$ARCH: $pkgname"
                 mkdir -p ${tmppkgdir}/pkg
                 bsdtar -xof $pkg -C ${tmppkgdir}/pkg --include={opt,{,usr/}{lib{,32},{s,}bin}}'/*' 2>/dev/null
                 for f in $(find ${tmppkgdir}/pkg -type f); do
@@ -66,14 +70,17 @@ for repo in ${repos[@]}; do
                 done | sort -u > ${tmppkgdir}/links
                 rm -rf ${tmppkgdir}/pkg
             fi
-        done
+#         done
 
         # create new file archive
-        pkgdir=${target}/${repodir}
+        pkgdir=${REPOS_ROOT}/${repodir}
         mkdir -p $pkgdir
         bsdtar --exclude=*.tar.* -czf ${pkgdir}/${repo}.links.tar.gz -C ${tmp}/tmp/${repodir} .
-    done
-done
+#     done
+# done
 
-rm -rf ${tmp}
-rm -f "${lock}"
+    rm -rf ${tmp}
+    rm -f "${lock}"
+
+}
+
