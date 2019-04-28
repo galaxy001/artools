@@ -21,7 +21,7 @@ is_subvolume() {
 }
 
 is_same_fs() {
-    [[ "$(stat -c %d "$1")" == "$(stat -c %d "$1")" ]]
+    [[ "$(stat -c %d "$1")" == "$(stat -c %d "$2")" ]]
 }
 
 subvolume_delete_recursive() {
