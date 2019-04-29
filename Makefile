@@ -1,4 +1,4 @@
-VERSION=0.12
+VERSION=0.13
 
 CHROOT_VERSION=0.9
 
@@ -40,7 +40,9 @@ PKG_BIN = \
 	bin/pkg/buildtree \
 	bin/pkg/lddd \
 	bin/pkg/finddeps \
-	bin/pkg/find-libdeps
+	bin/pkg/find-libdeps \
+	bin/pkg/links-add \
+	bin/pkg/sogrep
 
 LN_COMMITPKG = \
 	extrapkg \
@@ -170,6 +172,8 @@ install_pkg:
 	install $(MODE) $(PKG_BIN) $(DESTDIR)$(BINDIR)
 
 	$(LN) find-libdeps $(DESTDIR)$(BINDIR)/find-libprovides
+
+	$(LN) links-add $(DESTDIR)$(BINDIR)/links-remove
 
 	for l in $(LN_COMMITPKG); do $(LN) commitpkg $(DESTDIR)$(BINDIR)/$$l; done
 	for l in $(LN_BUILDPKG); do $(LN) buildpkg $(DESTDIR)$(BINDIR)/$$l; done
