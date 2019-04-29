@@ -117,7 +117,7 @@ init_artools_pkg(){
     ARTIX_REPOS=(
         'goblins' 'gremlins' 'system' 'world'
         'galaxy-goblins' 'galaxy-gremlins' 'galaxy'
-        'lib32-goblins' 'lib32-gremlns' 'lib32'
+        'lib32-goblins' 'lib32-gremlins' 'lib32'
         'gnome-wobble' 'kde-wobble'
     )
 }
