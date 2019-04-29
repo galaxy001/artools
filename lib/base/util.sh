@@ -109,9 +109,9 @@ init_artools_pkg(){
 
     DBEXT=${DBEXT:-'xz'}
 
-    LINKSDBEXT="links.tar.$DBEXT"
+    LINKSDBEXT=${LINKSDBEXT:-"links.tar.${DBEXT}"}
 
-    PKGDBEXT="db.tar.$DBEXT"
+    PKGDBEXT=${PKGDBEXT:-"db.tar.${DBEXT}"}
 
     [[ -z ${ARTIX_REPOS[@]} ]] && \
     ARTIX_REPOS=(
