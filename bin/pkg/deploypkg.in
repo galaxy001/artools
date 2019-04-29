@@ -16,7 +16,7 @@
 . @libdir@/artools/util-pkg.sh
 
 update_repo(){
-    local repo="$1" pkgfile ver ext=db.tar.xz lext=links.tar.xz
+    local repo="$1" pkgfile ver
     local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
 
     . PKGBUILD
@@ -52,8 +52,8 @@ update_repo(){
     done
     cd $repo_path
     if [[ -n $action ]]; then
-        repo-$action -R $repo.$ext ${packages[@]}
-        ${linksdb} && links-$action $repo.$lext ${packages[@]}
+        repo-$action -R $repo.${PKGDBEXT} ${packages[@]}
+        ${linksdb} && links-$action $repo.${LINKSDBEXT} ${packages[@]}
     fi
 
     return 0

@@ -106,6 +106,20 @@ init_artools_pkg(){
     SOLINKS_MIRROR=${SOLINKS_MIRROR:-'http://mirror1.artixlinux.org/repos'}
 
     SOCACHE_DIR="${XDG_CACHE_HOME:-$USER_HOME/.cache}/sogrep"
+
+    DBEXT=${DBEXT:-'xz'}
+
+    LINKSDBEXT="links.tar.$DBEXT"
+
+    PKGDBEXT="db.tar.$DBEXT"
+
+    [[ -z ${ARTIX_REPOS[@]} ]] && \
+    ARTIX_REPOS=(
+        'goblins' 'gremlins' 'system' 'world'
+        'galaxy-goblins' 'galaxy-gremlins' 'galaxy'
+        'lib32-goblins' 'lib32-gremlns' 'lib32'
+        'gnome-wobble' 'kde-wobble'
+    )
 }
 
 init_artools_iso(){
