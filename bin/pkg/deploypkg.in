@@ -53,7 +53,7 @@ update_repo(){
     cd $repo_path
     if [[ -n $action ]]; then
         repo-$action -R $repo.$ext ${packages[@]}
-        ${linksdb} && links-$action -n $repo.$lext ${packages[@]}
+        ${linksdb} && links-$action $repo.$lext ${packages[@]}
     fi
 
     return 0
