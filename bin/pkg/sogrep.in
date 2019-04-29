@@ -19,9 +19,12 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-# globals
-: ${SOLINKS_MIRROR:="http://mirror1.artixlinux.org"}
-: ${SOCACHE_DIR:="${XDG_CACHE_HOME:-${HOME}/.cache}/sogrep"}
+. @libdir@/artools/util-base.sh
+. @libdir@/artools/util-pkg.sh
+
+load_user_info
+
+load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
 
 repos=('goblins' 'gremlins' 'system' 'world'
     'galaxy-goblins' 'galaxy-gremlins' 'galaxy'
@@ -34,9 +37,6 @@ arches=('x86_64')
 REFRESH=0
 VERBOSE=0
 
-source /usr/share/makepkg/util/parseopts.sh
-source /usr/share/makepkg/util/util.sh
-
 recache() {
     local repo arch verbosity=-s
 
@@ -46,7 +46,7 @@ recache() {
         for arch in "${arches[@]}"; do
             rm -rf "${SOCACHE_DIR}/${arch}/${repo}"
             mkdir -p "${SOCACHE_DIR}/${arch}/${repo}"
-            curl "$verbosity" "${SOLINKS_MIRROR}/${repo}/os/${arch}/${repo}.links.tar.gz" | bsdtar -xf - -C "${SOCACHE_DIR}/${arch}/${repo}"
+            curl "$verbosity" "${SOLINKS_MIRROR}/${repo}/os/${arch}/${repo}.links.tar.xz" | bsdtar -xf - -C "${SOCACHE_DIR}/${arch}/${repo}"
         done
     done
 }
