@@ -103,23 +103,13 @@ init_artools_pkg(){
 
     REPOS_ROOT=${REPOS_ROOT:-"${WORKSPACE_DIR}/repos"}
 
-    SOLINKS_MIRROR=${SOLINKS_MIRROR:-'http://mirror1.artixlinux.org/repos'}
-
-    SOCACHE_DIR="${XDG_CACHE_HOME:-$USER_HOME/.cache}/sogrep"
+    REPOS_MIRROR=${REPOS_MIRROR:-'http://mirror1.artixlinux.org/repos'}
 
     DBEXT=${DBEXT:-'xz'}
 
     LINKSDBEXT=${LINKSDBEXT:-"links.tar.${DBEXT}"}
 
     PKGDBEXT=${PKGDBEXT:-"db.tar.${DBEXT}"}
-
-    [[ -z ${ARTIX_REPOS[@]} ]] && \
-    ARTIX_REPOS=(
-        'goblins' 'gremlins' 'system' 'world'
-        'galaxy-goblins' 'galaxy-gremlins' 'galaxy'
-        'lib32-goblins' 'lib32-gremlins' 'lib32'
-        'gnome-wobble' 'kde-wobble'
-    )
 }
 
 init_artools_iso(){
@@ -185,6 +175,8 @@ load_user_info(){
 
     USERCONFDIR="${XDG_CONFIG_HOME:-$USER_HOME/.config}"
     prepare_dir "${USERCONFDIR}"
+
+    USERCACHEDIR="${XDG_CACHE_HOME:-$USER_HOME/.cache}/artools"
 }
 
 # orig_argv=("$0" "$@")

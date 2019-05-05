@@ -15,73 +15,162 @@
 . @libdir@/artools/util-base.sh
 . @libdir@/artools/util-pkg.sh
 
+compare(){
+    local pkgpath="$1"
+    local pkg=${pkgpath##*/}
+    local artixrepo=$(find_repo "$package" "${staging}" "${unstable}")
+    local artixshow=${artixrepo%-*}
+    local pkgbuild=$pkgpath/repos/$artixrepo/PKGBUILD
+
+    if [[ -f $pkgbuild ]];then
+
+        . $pkgbuild 2>/dev/null
+        local artixver=$(get_full_version $pkg)
+
+        local archpath=$(get_import_path $pkg)
+
+        local archrepo=$(find_repo "$archpath" "${staging}" "${unstable}")
+
+        local archshow=${archrepo%-*}
+        pkgbuild=$archpath/repos/$archrepo/PKGBUILD
+
+        if [[ -f $pkgbuild ]];then
+            . $pkgbuild 2>/dev/null
+            local archver=$(get_full_version $pkg)
+        fi
+
+        local result=$(vercmp "$artixver" "$archver")
+
+        local repomatch=false
+        [[ "$archrepo" == "$artixrepo" ]] && repomatch=true
+
+        if ${move};then
+
+            if [ $result -gt -1 ];then
+                case $artixrepo in
+                    *testing*|*staging*)
+                        if $repomatch;then
+                            msg_row "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
+                        else
+                            msg_row_notify "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
+                        fi
+                    ;;
+                esac
+            fi
+
+        elif ${upgrades};then
+
+            if [ $result -eq -1 ];then
+                msg_row_upgrade "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
+            fi
+
+        elif ${downgrades};then
+
+            if [ $result -eq 1 ];then
+                if [[ -n $archver ]] && [[ -n $archrepo ]];then
+                    msg_row_downgrade "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
+                fi
+            fi
+
+        fi
+        unset pkgver epoch pkgrel artixver archver pkgbuild archpath
+
+    fi
+}
+
+is_db_entry() {
+    local pkgname="$1" repo="$(arch2artix $2)"
+    if [[ -d ${USERCACHEDIR}/${LINKSDBEXT}/${ARCH}/$repo/$pkgname ]];then
+        return 0
+    fi
+    return 1
+}
+
+check_db(){
+    local pkgpath="$1"
+    local pkg=${pkgpath##*/}
+    local sarch=(any ${ARCH})
+    local arch_repos=$(arch_repos "${staging}" "${unstable}")
+
+    for repo in ${arch_repos[@]};do
+
+        for a in ${sarch[@]};do
+
+            local pkgbuild=$pkgpath/repos/$repo-$a/PKGBUILD
+
+            if [[ -f $pkgbuild ]];then
+
+                . $pkgbuild 2>/dev/null
+                local artixver=$(get_full_version $pkg)
+                local is_entry=false
+
+                for name in ${pkgname[@]};do
+
+                    if is_db_entry "$name-$artixver" "$repo";then
+                        is_entry=true
+                    fi
+                    if ! $is_entry; then
+                        msg_row "%-20s %-35s %-20s %-10s" "$repo" "$name" "$artixver" "$is_entry"
+                    fi
+                done
+                unset artixver is_entry pkgbuild pkgver epoch pkgname pkgbase
+            fi
+        done
+    done
+}
+
+update_db_cache(){
+    msg "Updating database cache"
+    for repo in "${searchrepos[@]}"; do
+        local cachedir=${USERCACHEDIR}/${LINKSDBEXT}/${ARCH}/${repo}
+        rm -rf "$cachedir"
+        mkdir -p "$cachedir"
+        msg2 "%s" "$repo"
+        curl -s "${REPOS_MIRROR}/${repo}/os/${ARCH}/${repo}.${LINKSDBEXT}" \
+            | bsdtar -xf - -C "$cachedir"
+    done
+    msg "Done"
+}
+
+query_db() {
+    msg_table_header "%-20s %-45s %s" "Repo" "Package" "Library"
+    for repo in "${searchrepos[@]}"; do
+        local prefix=
+        local db=${USERCACHEDIR}/${LINKSDBEXT}/${ARCH}/${repo}/
+        if [[ -d ${db} ]]; then
+            while read -rd '' pkg; do
+                read -r match
+                pkg=${pkg#${db}}
+                pkg="${pkg%/*}"
+
+                msg_row "%-20s %-45s %s" "${repo}" "${pkg}" "${match}"
+            done < <(grep -rZ "${library}" "${db}") | sort -u
+        fi
+    done
+    exit 0
+}
+
 show_version_table(){
-    msg_table_header "%-20s %-20s %-25s %-30s %-30s" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version"
+
+    if ${check};then
+        ${sync} && update_db_cache
+        msg_table_header "%-20s %-35s %-20s %-10s" "Repo" "Package" "Version" "Database"
+    elif ${query};then
+        ${sync} && update_db_cache
+        query_db
+    else
+        msg_table_header "%-20s %-20s %-25s %-30s %-30s" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version"
+    fi
 
     for tree in ${TREE_NAMES_ARTIX[@]};do
 
         local git=$(find ${TREE_DIR_ARTIX}/$tree/ -mindepth 1 -maxdepth 1 -type d)
 
         for package in ${git[@]}; do
-
-            local pkg=${package##*/}
-            local artixrepo=$(find_repo "$package" "${staging}" "${unstable}")
-            local artixshow=${artixrepo%-*}
-            local pkgbuild=$package/repos/$artixrepo/PKGBUILD
-
-            if [[ -f $pkgbuild ]];then
-
-                . $pkgbuild 2>/dev/null
-                local artixver=$(get_full_version $pkg)
-
-                local archpath=$(get_import_path $pkg)
-
-                local archrepo=$(find_repo "$archpath" "${staging}" "${unstable}")
-
-                local archshow=${archrepo%-*}
-                pkgbuild=$archpath/repos/$archrepo/PKGBUILD
-
-                if [[ -f $pkgbuild ]];then
-                    . $pkgbuild 2>/dev/null
-                    local archver=$(get_full_version $pkg)
-                fi
-
-                local result=$(vercmp "$artixver" "$archver")
-
-                local repomatch=false
-                [[ "$archrepo" == "$artixrepo" ]] && repomatch=true
-
-                if ${move};then
-
-                    if [ $result -gt -1 ];then
-                        case $artixrepo in
-                            *testing*|*staging*)
-                                if $repomatch;then
-                                    msg_row "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
-                                else
-                                    msg_row_notify "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
-                                fi
-                            ;;
-                        esac
-                    fi
-
-                elif ${upgrades};then
-
-                    if [ $result -eq -1 ];then
-                        msg_row_upgrade "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
-                    fi
-
-                elif ${downgrades};then
-
-                    if [ $result -eq 1 ];then
-                        if [[ -n $archver ]] && [[ -n $archrepo ]];then
-                            msg_row_downgrade "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
-                        fi
-                    fi
-
-                fi
-                unset pkgver epoch pkgrel artixver archver pkgbuild archpath
-
+            if ${check};then
+                check_db "$package"
+            else
+                compare "$package"
             fi
         done
     done
@@ -98,14 +187,31 @@ staging=true
 upgrades=false
 downgrades=false
 move=false
+check=false
+sync=false
+query=false
+
+artix_repos=(
+    'goblins' 'gremlins' 'system' 'world'
+    'galaxy-goblins' 'galaxy-gremlins' 'galaxy'
+    'lib32-goblins' 'lib32-gremlins' 'lib32'
+    'gnome-wobble' 'kde-wobble'
+)
+
+searchrepos=(${artix_repos[@]})
 
 usage() {
-    echo "Usage: ${0##*/} [options]"
+    echo "Usage: ${0##*/} [options] (with -q [libname])"
     echo '    -u            Show upgrade packages'
     echo '    -d            Show downgrade packages'
     echo '    -m            Show packages to move'
     echo "    -x            Don't inlcude staging packages"
     echo '    -y            Include unstable kde and gnome'
+    echo '    -c            Check repos'
+    echo "    -s            Sync repo databases"
+    echo "    -q            Query repo databases for so libs"
+    echo '    -r <repo>     Repo name to query'
+    echo '                  [default: all]'
     echo '    -h            This help'
     echo ''
     echo ''
@@ -114,7 +220,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='udmxyh'
+opts='r:qcsudmxyh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -123,11 +229,17 @@ while getopts "${opts}" arg; do
         m) move=true ;;
         x) staging=false ;;
         y) unstable=true ;;
+        c) check=true ;;
+        s) sync=true ;;
+        q) query=true ;;
+        r) searchrepos=("$OPTARG") ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
 done
 
 shift $(($OPTIND - 1))
+
+library="$1"; shift
 
 show_version_table

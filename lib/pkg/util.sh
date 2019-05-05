@@ -69,6 +69,25 @@ patch_pkg(){
     esac
 }
 
+arch2artix(){
+    local repo="$1" artix=none
+    case "$repo" in
+        core) artix=system ;;
+        extra) artix=world ;;
+        community) artix=galaxy ;;
+        multilib) artix=lib32 ;;
+        staging) artix=goblins ;;
+        testing) artix=gremlins ;;
+        community-staging) artix=galaxy-goblins ;;
+        community-testing) artix=galaxy-gremlins ;;
+        multilib-staging) artix=lib32-goblins ;;
+        multilib-testing) artix=lib32-gremlins ;;
+        kde-unstable) artix=kde-wobble ;;
+        gnome-unstable) artix=gnome-wobble ;;
+    esac
+    echo $artix
+}
+
 find_tree(){
     local tree="$1" pkg="$2"
     local result=$(find $tree -mindepth 2 -maxdepth 2 -type d -name "$pkg")
@@ -76,18 +95,35 @@ find_tree(){
     echo ${result##*/}
 }
 
-find_repo(){
-    local pkg="$1" stag="$2" unst="$3" repo=
+arch_repos(){
+    local stag="$1" unst="$2"
     local repos=(core extra testing community community-testing multilib multilib-testing)
 
     $stag && repos+=(staging community-staging multilib-staging)
     $unst && repos+=(gnome-unstable kde-unstable)
 
-    for r in ${repos[@]};do
+    echo ${repos[@]}
+}
+
+find_repo(){
+    local pkg="$1" stag="$2" unst="$3" repo=
+
+    for r in $(arch_repos "$stag" "$unst");do
         [[ -f $pkg/repos/$r-x86_64/PKGBUILD ]] && repo=$r-x86_64
         [[ -f $pkg/repos/$r-any/PKGBUILD ]] && repo=$r-any
     done
     echo $repo
+}
+
+is_valid_repo(){
+    local src="$1" cases=
+    for r in $(arch_repos true true);do
+        cases=${cases:-}${cases:+|}${r}
+    done
+    eval "case $src in
+        ${cases}|trunk) return 0 ;;
+        *) return 1 ;;
+    esac"
 }
 
 get_cases(){
@@ -141,14 +177,6 @@ pkgver_equal() {
         # otherwise, trim any pkgrel and compare the bare version.
         [[ ${1%%-*} = "${2%%-*}" ]]
     fi
-}
-
-is_valid_repo(){
-    local src="$1"
-    case $src in
-        core|extra|community|multilib|testing|staging|community-testing|community-staging|multilib-testing|multilib-staging|trunk) return 0 ;;
-        *) return 1 ;;
-    esac
 }
 
 find_cached_package() {

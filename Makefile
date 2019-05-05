@@ -34,15 +34,11 @@ PKG_BIN = \
 	bin/pkg/deploypkg \
 	bin/pkg/commitpkg \
 	bin/pkg/comparepkg \
-	bin/pkg/checkpkg \
 	bin/pkg/mkchrootpkg \
 	bin/pkg/pkg2yaml \
 	bin/pkg/buildtree \
 	bin/pkg/lddd \
-	bin/pkg/finddeps \
-	bin/pkg/find-libdeps \
-	bin/pkg/links-add \
-	bin/pkg/sogrep
+	bin/pkg/links-add
 
 LN_COMMITPKG = \
 	extrapkg \
@@ -170,8 +166,6 @@ install_base:
 install_pkg:
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
 	install $(MODE) $(PKG_BIN) $(DESTDIR)$(BINDIR)
-
-	$(LN) find-libdeps $(DESTDIR)$(BINDIR)/find-libprovides
 
 	$(LN) links-add $(DESTDIR)$(BINDIR)/links-remove
 
