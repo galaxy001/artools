@@ -136,6 +136,17 @@ write_servicescfg_conf(){
     printf '%s' "${yaml}"
 }
 
+write_unpackfs_conf(){
+    local yaml=$(write_yaml_header)
+    yaml+=$(write_empty_line)
+    yaml+=$(write_yaml_map 0 'unpack')
+    yaml+=$(write_yaml_seq_map 2 'source' "/run/artix/bootmnt/artix/x86_64/rootfs.sfs")
+    yaml+=$(write_yaml_map 4 'sourcefs' 'squashfs')
+    yaml+=$(write_yaml_map 4 'destination' '')
+    yaml+=$(write_empty_line)
+    printf '%s' "${yaml}"
+}
+
 configure_calamares(){
     local mods="$1/etc/calamares/modules"
     if [[ -d "$mods" ]];then
@@ -144,6 +155,7 @@ configure_calamares(){
         write_servicescfg_conf > "$mods"/services-"${INITSYS}".conf
         sed -e "s|openrc|${INITSYS}|" -i "$mods"/postcfg.conf
         sed -e "s|services-openrc|services-${INITSYS}|" -i "$1"/etc/calamares/settings.conf
+        [[ -z ${DESKTOP_LIST} ]] && write_unpackfs_conf > "$mods"/unpackfs.conf
     fi
 }
 
