@@ -153,9 +153,9 @@ configure_calamares(){
         msg2 "Configuring Calamares"
         write_users_conf > "$mods"/users.conf
         write_servicescfg_conf > "$mods"/services-"${INITSYS}".conf
+        [[ -z ${DESKTOP_LIST} ]] && write_unpackfs_conf > "$mods"/unpackfs.conf
         sed -e "s|openrc|${INITSYS}|" -i "$mods"/postcfg.conf
         sed -e "s|services-openrc|services-${INITSYS}|" -i "$1"/etc/calamares/settings.conf
-        [[ -z ${DESKTOP_LIST} ]] && write_unpackfs_conf > "$mods"/unpackfs.conf
     fi
 }
 
