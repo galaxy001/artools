@@ -78,7 +78,7 @@ from_arch(){
     [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "$pkg"
 
     local package=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
-    local repo=$(find_repo "$package")
+    local repo=$(find_repo "$package" "${staging}" "${unstable}")
 
     src=$package/repos/$repo
 
@@ -114,7 +114,7 @@ view_build(){
     [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "$pkg"
 
     local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
-    local repo=$(find_repo "$pkg_path")
+    local repo=$(find_repo "$pkg_path" "${staging}" "${unstable}")
 
     src=$pkg_path/repos/$repo
 
@@ -139,6 +139,8 @@ import=false
 view=false
 createnew=false
 conf=false
+unstable=false
+staging=true
 
 PACKAGE=''
 
@@ -157,6 +159,8 @@ usage() {
     echo "    -y            Don't clone or pull artix repos"
     echo '    -i            Import a package from arch repos'
     echo '    -n            Make new remote subrepo and clone it'
+    echo '    -u            Include kde & gnome unstable (only with -i)'
+    echo '    -w            Exclude staging (only with -i)'
     echo '    -v            View package depends'
     echo '    -h            This help'
     echo ''
@@ -166,7 +170,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:t:g:sinzyvh'
+opts='p:t:g:uwsinzyvh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -178,6 +182,8 @@ while getopts "${opts}" arg; do
         y) sync_artix=false ;;
         i) import=true ;;
         n) createnew=true ;;
+        w) staging=false ;;
+        u) unstable=true ;;
         v) view=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
