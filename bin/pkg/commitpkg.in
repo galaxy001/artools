@@ -15,6 +15,25 @@
 . @libdir@/artools/util-base.sh
 . @libdir@/artools/util-pkg.sh
 
+get_ver(){
+    local repo="$1" pkg="$2" src=
+    case $repo in
+        trunk) src=$repo/PKGBUILD ;;
+        *) src=repos/$repo/PKGBUILD ;;
+    esac
+    . $src
+    [[ $arch == 'any' ]] && CARCH=any
+    local ver=$(get_full_version "$pkg")
+    echo $ver
+}
+
+prepare_commit(){
+    local dest="$1"
+    [[ -d repos/$dest ]] && git rm -r repos/$dest
+    [[ ! -d repos ]] && mkdir repos
+    [[ ! -d repos/$dest ]] && mkdir repos/$dest
+}
+
 commit_pkg(){
     local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
     if [[ -n ${git_tree} ]];then
@@ -25,9 +44,8 @@ commit_pkg(){
 
         cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
 
-        . trunk/PKGBUILD
-        [[ $arch == 'any' ]] && CARCH=any
-        local ver=$(get_full_version "${PACKAGE}")
+        local version=$(get_ver "${REPO_SRC}" "${PACKAGE}")
+
         local commit_msg=""
 
         if ${remove};then
@@ -36,14 +54,14 @@ commit_pkg(){
                 local pkg=${PACKAGE}
                 git rm -r trunk
             else
-                local pkg="${PACKAGE}-$ver"
+                local pkg="${PACKAGE}-$version"
                 git rm -r repos/"${REPO_SRC}-$CARCH"
             fi
             commit_msg="[${REPO_SRC}] '$pkg' ${action}"
             msg "Action: %s" "$commit_msg"
         else
             local action='modify'
-            commit_msg="[${REPO_SRC}] '${PACKAGE}-$ver' ${action}"
+            commit_msg="[${REPO_SRC}] '${PACKAGE}-$version' ${action}"
             msg "Action: %s" "$commit_msg"
             git add .
 
@@ -76,17 +94,13 @@ symlink_commit_pkg(){
 
         cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
 
-        . trunk/PKGBUILD
-        [[ $arch == 'any' ]] && CARCH=any
-        local ver=$(get_full_version "${PACKAGE}")
+        local version=$(get_ver "${REPO_SRC}" "${PACKAGE}")
 
         if [[ ${REPO_SRC} == 'trunk' ]];then
             local action='add'
             local dest="${REPO_DEST}-$CARCH"
 
-            [[ -d repos/$dest ]] && git rm -r repos/$dest
-            [[ ! -d repos ]] && mkdir repos
-            [[ ! -d repos/$dest ]] && mkdir repos/$dest
+            prepare_commit "$dest"
 
             cp trunk/* repos/$dest/
         else
@@ -94,14 +108,12 @@ symlink_commit_pkg(){
             local src="${REPO_SRC}-$CARCH" dest="${REPO_DEST}-$CARCH"
 
             [[ ! -f repos/$src/PKGBUILD ]] && die "%s does not exist!" "repos/$src/PKGBUILD"
-            [[ -d repos/$dest ]] && git rm -r repos/$dest
-            [[ ! -d repos ]] && mkdir repos
-            [[ ! -d repos/$dest ]] && mkdir repos/$dest
+            prepare_commit "$dest"
 
             cp repos/$src/* repos/$dest/
             git rm -r repos/$src
         fi
-        local commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$ver' ${action}"
+        local commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$version' ${action}"
         msg "Action: %s" "$commit_msg"
 
         git add .
