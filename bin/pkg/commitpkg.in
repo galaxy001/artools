@@ -15,16 +15,13 @@
 . @libdir@/artools/util-base.sh
 . @libdir@/artools/util-pkg.sh
 
-get_ver(){
-    local repo="$1" pkg="$2" src=
-    case $repo in
-        trunk) src=$repo/PKGBUILD ;;
-        *) src=repos/$repo/PKGBUILD ;;
-    esac
-    . $src
-    [[ $arch == 'any' ]] && CARCH=any
-    local ver=$(get_full_version "$pkg")
-    echo $ver
+get_path(){
+    local repo="$1" pkg=trunk/PKGBUILD
+    if [[ $repo != trunk ]]; then
+        [[ -f repos/$repo-${ARCH}/PKGBUILD ]] && pkg=repos/$repo-${ARCH}/PKGBUILD
+        [[ -f repos/$repo-any/PKGBUILD ]] && pkg=repos/$repo-any/PKGBUILD
+    fi
+    echo $pkg
 }
 
 prepare_commit(){
@@ -44,7 +41,12 @@ commit_pkg(){
 
         cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
 
-        local version=$(get_ver "${REPO_SRC}" "${PACKAGE}")
+        local pkgbuild=$(get_path "${REPO_SRC}")
+
+        . $pkgbuild
+        [[ $arch == 'any' ]] && CARCH=any
+
+        local version=$(get_full_version)
 
         local commit_msg=""
 
@@ -94,7 +96,12 @@ symlink_commit_pkg(){
 
         cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
 
-        local version=$(get_ver "${REPO_SRC}" "${PACKAGE}")
+        local pkgbuild=$(get_path "${REPO_SRC}")
+
+        . $pkgbuild
+        [[ $arch == 'any' ]] && CARCH=any
+
+        local version=$(get_full_version)
 
         if [[ ${REPO_SRC} == 'trunk' ]];then
             local action='add'
