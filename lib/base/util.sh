@@ -76,19 +76,22 @@ init_artools_pkg(){
 
     [[ -z ${TREE_NAMES_ARTIX[@]} ]] && \
     TREE_NAMES_ARTIX=(
-        packages
-        community
-        packages-kernel
-        packages-openrc
-        packages-runit
-        packages-xorg
-        packages-python
-        packages-perl
-        packages-qt5
-        packages-ruby
-#         packages-desktop
-#         packages-kde
-#         packages-gnome
+            packages
+            community
+            packages-kernel
+            packages-openrc
+            packages-runit
+            packages-xorg
+            packages-python
+            packages-perl
+            packages-qt5
+            packages-ruby
+            packages-gtk
+            packages-gnome
+            packages-cinnamon
+            packages-lxqt
+            packages-mate
+            packages-kde
     )
 
     HOST_TREE_ARTIX=${HOST_TREE_ARTIX:-"gitea@${GIT_DOMAIN}:artixlinux"}
