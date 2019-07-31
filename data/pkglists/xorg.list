@@ -1,3 +1,5 @@
+xorg*
+xf86*
 libdmx
 libfontenc
 libice

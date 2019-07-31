@@ -1,18 +1,4 @@
-lxqt-about
-lxqt-admin
-lxqt-config
-lxqt-globalkeys
-lxqt-notificationd
-lxqt-openssh-askpass
-lxqt-panel
-lxqt-policykit
-lxqt-powermanagement
-lxqt-qtplugin
-lxqt-runner
-lxqt-session
-lxqt-sudo
-lxqt-themes
-lxqt-build-tools
+lxqt*
 
 compton-conf
 lximage-qt

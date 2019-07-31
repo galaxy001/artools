@@ -143,22 +143,22 @@ get_artix_tree(){
     local pkg="$1" artix_tree="${2:-$3}" tree
     eval "case $pkg in
         $(get_cases kernel)) tree=packages-kernel ;;
-        python-*|python2-*) tree=packages-python ;;
-        perl-*) tree=packages-perl ;;
-        ruby-*) tree=packages-ruby ;;
-        xorg*|xf86*|$(get_cases xorg)) tree=packages-xorg ;;
-        *-openrc) tree=packages-openrc ;;
-        *-runit) tree=packages-runit ;;
-        qt5-*) tree=packages-qt5 ;;
-        lxqt*|$(get_cases lxqt)) tree=packages-lxqt ;;
+        $(get_cases python)) tree=packages-python ;;
+        $(get_cases perl)) tree=packages-perl ;;
+        $(get_cases ruby)) tree=packages-ruby ;;
+        $(get_cases openrc)) tree=packages-openrc ;;
+        $(get_cases runit)) tree=packages-runit ;;
+        $(get_cases xorg)) tree=packages-xorg ;;
+        $(get_cases qt5)) tree=packages-qt5 ;;
+        $(get_cases gtk)) tree=packages-gtk ;;
+        $(get_cases lxqt)) tree=packages-lxqt ;;
+        $(get_cases cinnamon)) tree=packages-cinnamon ;;
+        $(get_cases kde)) tree=packages-kde ;;
+        $(get_cases gnome)) tree=packages-gnome ;;
+        $(get_cases mate)) tree=packages-mate ;;
         *) tree=$artix_tree
     esac"
     echo $tree
-
-#         $(get_cases freedesktop)) tree=packages-desktop ;;
-#         $(get_cases kde)) tree=packages-kde ;;
-#         $(get_cases gnome)) tree=packages-gnome ;;
-
 }
 
 get_import_path(){
