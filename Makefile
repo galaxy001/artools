@@ -85,9 +85,6 @@ LN_DEPLOYPKG = \
 PKG_LIBS = \
 	$(wildcard lib/pkg/*)
 
-PKG_LISTS = \
-	$(wildcard data/pkglists/*.list)
-
 PKG_UTIL = lib/util-pkg.sh
 
 PKG_DATA = \
@@ -183,8 +180,6 @@ install_pkg:
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)/patches
 	install $(FILEMODE) $(PATCHES) $(DESTDIR)$(DATADIR)/$(TOOLS)/patches
 
-	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)/pkglists
-	install $(FILEMODE) $(PKG_LISTS) $(DESTDIR)$(DATADIR)/$(TOOLS)/pkglists
 install_cpio:
 	+make CPIODIR=$(CPIODIR) DESTDIR=$(DESTDIR) -C initcpio install
 
