@@ -85,6 +85,7 @@ init_artools_pkg(){
             packages-python
             packages-perl
             packages-qt5
+            packages-devel
             packages-ruby
             packages-gtk
             packages-gnome

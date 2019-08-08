@@ -152,6 +152,7 @@ get_artix_tree(){
         $(get_cases xorg)) tree=packages-xorg ;;
         $(get_cases qt5)) tree=packages-qt5 ;;
         $(get_cases gtk)) tree=packages-gtk ;;
+        $(get_cases devel)) tree=packages-devel ;;
         $(get_cases lxqt)) tree=packages-lxqt ;;
         $(get_cases cinnamon)) tree=packages-cinnamon ;;
         $(get_cases kde)) tree=packages-kde ;;
