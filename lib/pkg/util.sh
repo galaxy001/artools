@@ -127,7 +127,8 @@ is_valid_repo(){
 }
 
 get_cases(){
-    local pkglist="${DATADIR}/pkglists/$1.list"
+    local pkglist="${SYSCONFDIR}/pkglist.d/$1.list"
+
     local _space="s| ||g" _clean=':a;N;$!ba;s/\n/ /g' _com_rm="s|#.*||g"
 
     local pkgs=($(sed "$_com_rm" "$pkglist" | sed "$_space" | sed "$_clean"))
