@@ -16,7 +16,7 @@
 . @libdir@/artools/util-pkg.sh
 
 compare(){
-    local pkgpath="$1"
+    local pkgpath="$1" group="$2"
     local pkg=${pkgpath##*/}
     local artixrepo=$(find_repo "$package" "${staging}" "${unstable}")
     local artixshow=${artixrepo%-*}
@@ -50,9 +50,9 @@ compare(){
                 case $artixrepo in
                     *testing*|*staging*)
                         if $repomatch;then
-                            msg_row "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
+                            msg_row "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "$group"
                         else
-                            msg_row_notify "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
+                            msg_row_notify "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "$group"
                         fi
                     ;;
                 esac
@@ -61,14 +61,14 @@ compare(){
         elif ${upgrades};then
 
             if [ $result -eq -1 ];then
-                msg_row_upgrade "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
+                msg_row_upgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "$group"
             fi
 
         elif ${downgrades};then
 
             if [ $result -eq 1 ];then
                 if [[ -n $archver ]] && [[ -n $archrepo ]];then
-                    msg_row_downgrade "%-20s %-20s %-25s %-30s %-30s" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver"
+                    msg_row_downgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "$group"
                 fi
             fi
 
@@ -110,7 +110,7 @@ check_db(){
                         is_entry=true
                     fi
                     if ! $is_entry; then
-                        msg_row "%-20s %-35s %-20s %-10s" "$repo" "$name" "$artixver" "$is_entry"
+                        msg_row "${table2}" "$repo" "$name" "$artixver" "$is_entry"
                     fi
                 done
                 unset artixver is_entry pkgbuild pkgver epoch pkgname pkgbase
@@ -133,7 +133,7 @@ update_db_cache(){
 }
 
 query_db() {
-    msg_table_header "%-20s %-45s %s" "Repo" "Package" "Library"
+    msg_table_header "${table3}" "Repo" "Package" "Library"
     for repo in "${searchrepos[@]}"; do
         local prefix=
         local db=${USERCACHEDIR}/${LINKSDBEXT}/${ARCH}/${repo}/
@@ -143,7 +143,7 @@ query_db() {
                 pkg=${pkg#${db}}
                 pkg="${pkg%/*}"
 
-                msg_row "%-20s %-45s %s" "${repo}" "${pkg}" "${match}"
+                msg_row "${table3}" "${repo}" "${pkg}" "${match}"
             done < <(grep -rZ "${library}" "${db}") | sort -u
         fi
     done
@@ -154,12 +154,12 @@ show_version_table(){
 
     if ${check};then
         ${sync} && update_db_cache
-        msg_table_header "%-20s %-35s %-20s %-10s" "Repo" "Package" "Version" "Database"
+        msg_table_header "${table2}" "Repo" "Package" "Version" "Database"
     elif ${query};then
         ${sync} && update_db_cache
         query_db
     else
-        msg_table_header "%-20s %-20s %-25s %-30s %-30s" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version"
+        msg_table_header "${table}" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version" "Group"
     fi
 
     for tree in ${TREE_NAMES_ARTIX[@]};do
@@ -170,7 +170,7 @@ show_version_table(){
             if ${check};then
                 check_db "$package"
             else
-                compare "$package"
+                compare "$package" "$tree"
             fi
         done
     done
@@ -197,6 +197,10 @@ artix_repos=(
     'lib32-goblins' 'lib32-gremlins' 'lib32'
     'gnome-wobble' 'kde-wobble'
 )
+
+readonly table="%-20s %-20s %-25s %-25s %-25s %-20s"
+readonly table2="%-20s %-35s %-20s %-10s"
+readonly table3="%-20s %-45s %s"
 
 searchrepos=(${artix_repos[@]})
 
