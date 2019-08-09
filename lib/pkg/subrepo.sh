@@ -23,14 +23,12 @@ get_remote_head(){
 get_pkg_org(){
     local pkg="$1" org= sub=
     case ${pkg} in
-        ruby-*) org=${pkg:0:6}; sub="${org:5}"; echo "packagesRuby" ;;
-        perl-*) org=${pkg:0:6}; sub="${org:5}"; echo "packagesPerl" ;;
-        python-*) org=${pkg:0:8}; sub="${org:7}"; echo "packagesPython" ;;
-        python2-*) org=${pkg:0:9}; sub="${org:8}"; echo "packagesPython" ;;
-        lib32*) org=${pkg:0:7}; sub="${org:6}"; echo "packagesL" ;; #"packages${sub^^}" ;;
-#         lib*) org=${pkg:0:4}; sub="${org:3}"; echo "packagesLib${sub^^}" ;;
-        *) org=${pkg:0:1}; echo "packages${org^^}" ;;
+        ruby-*) org="packagesRuby" ;;
+        perl-*) org="packagesPerl" ;;
+        python-*|python2-*) org="packagesPython" ;;
+        *) sub=${pkg:0:1}; org="packages${sub^^}" ;;
     esac
+    echo $org
 }
 
 subrepo_push(){
