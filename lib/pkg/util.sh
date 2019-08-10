@@ -149,6 +149,7 @@ get_artix_tree(){
         $(get_cases ruby)) tree=packages-ruby ;;
         $(get_cases openrc)) tree=packages-openrc ;;
         $(get_cases runit)) tree=packages-runit ;;
+        $(get_cases media)) tree=packages-media ;;
         $(get_cases xorg)) tree=packages-xorg ;;
         $(get_cases qt5)) tree=packages-qt5 ;;
         $(get_cases gtk)) tree=packages-gtk ;;
