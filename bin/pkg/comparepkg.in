@@ -50,9 +50,9 @@ compare(){
                 case $artixrepo in
                     *testing*|*staging*)
                         if $repomatch;then
-                            msg_row "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "$group"
+                            msg_row "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
                         else
-                            msg_row_notify "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "$group"
+                            msg_row_notify "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
                         fi
                     ;;
                 esac
@@ -61,14 +61,14 @@ compare(){
         elif ${upgrades};then
 
             if [ $result -eq -1 ];then
-                msg_row_upgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "$group"
+                msg_row_upgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
             fi
 
         elif ${downgrades};then
 
             if [ $result -eq 1 ];then
                 if [[ -n $archver ]] && [[ -n $archrepo ]];then
-                    msg_row_downgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "$group"
+                    msg_row_downgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
                 fi
             fi
 
@@ -198,8 +198,8 @@ artix_repos=(
     'gnome-wobble' 'kde-wobble'
 )
 
-readonly table="%-20s %-20s %-25s %-25s %-25s %-20s"
-readonly table2="%-20s %-35s %-20s %-10s"
+readonly table="%-18s %-18s %-25s %-27s %-27s %-10s"
+readonly table2="%-20s %-35s %-30s %-10s"
 readonly table3="%-20s %-45s %s"
 
 searchrepos=(${artix_repos[@]})
