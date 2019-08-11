@@ -29,8 +29,9 @@ pull_tree_arch(){
 }
 
 pull_tree_artix(){
+    local repos=("$1")
     cd ${TREE_DIR_ARTIX}
-    for tree in ${TREE_NAMES_ARTIX[@]};do
+    for tree in ${repos[@]};do
         if [[ -d ${tree} ]];then
             config_tree "${tree}"
             cd ${tree}
@@ -123,7 +124,13 @@ view_build(){
 
 sync_repos(){
     ${sync_arch} && pull_tree_arch
-    ${sync_artix} && pull_tree_artix
+    if ${sync_artix};then
+        if ${sync_group}; then
+            pull_tree_artix "${GROUP}"
+        else
+            pull_tree_artix "${TREE_NAMES_ARTIX[*]}"
+        fi
+    fi
 }
 
 load_user_info
@@ -141,6 +148,7 @@ createnew=false
 conf=false
 unstable=false
 staging=true
+sync_group=false
 
 PACKAGE=''
 
@@ -152,7 +160,7 @@ usage() {
     echo '    -p <pkg>      Package name'
     echo '    -t <team>     Team name (only with -n)'
     echo "                  [default: ${TEAM}]"
-    echo '    -g <group>    Group name, the superrepo (only with -n)'
+    echo '    -g <group>    Group name, the superrepo (only with -n or -s)'
     echo "                  [default: ${GROUP}]"
     echo "    -s            Clone or pull repos"
     echo "    -z            Don't clone or pull arch repos"
@@ -176,7 +184,7 @@ while getopts "${opts}" arg; do
     case "${arg}" in
         p) PACKAGE="$OPTARG" ;;
         t) TEAM="$OPTARG" ;;
-        g) GROUP="$OPTARG" ;;
+        g) GROUP="$OPTARG"; sync_group=true ;;
         s) sync=true ;;
         z) sync_arch=false ;;
         y) sync_artix=false ;;
