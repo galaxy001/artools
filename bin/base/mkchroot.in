@@ -33,7 +33,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='hC:M:c:f:sm'
+opts='hC:M:c:f:s'
 
 while getopts ${opts} arg; do
     case "${arg}" in
