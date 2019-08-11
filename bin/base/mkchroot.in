@@ -15,11 +15,9 @@
 . @libdir@/artools/util-base.sh
 
 working_dir=''
-files=()
 
-nosetarch=false
-copy_mirrorlist=true
-basestrap_args=(-Gc)
+files=()
+chroot_args=()
 
 usage() {
     echo "Usage: ${0##*/} [options] working-dir package-list..."
@@ -28,7 +26,6 @@ usage() {
     echo '    -M <file>     Location of a makepkg config file'
     echo '    -c <dir>      Set pacman cache'
     echo '    -f <file>     Copy file from the host to the chroot'
-    echo '    -m            Do not copy mirrorlist to the chroot'
     echo '    -s            Do not run setarch'
     echo '    -h            This message'
     exit 1
@@ -44,11 +41,12 @@ while getopts ${opts} arg; do
         M) makepkg_conf="$OPTARG" ;;
         c) cache_dir="$OPTARG" ;;
         f) files+=("$OPTARG") ;;
-        s) nosetarch=true ;;
-        m) copy_mirrorlist=false; basestrap_args+=(-M) ;;
+        s) nosetarch=1 ;;
         h|?) usage ;;
         *) error "invalid argument '%s'" "$arg"; usage ;;
     esac
+    chroot_args+=("-$arg")
+    [[ -v OPTARG ]] && chroot_args+=("$OPTARG")
 done
 shift $(($OPTIND - 1))
 
@@ -61,10 +59,10 @@ shift 1
 
 [[ -z $working_dir ]] && die 'Please specify a working directory.'
 
-if [[ -z $cache_dir ]]; then
-    cache_dirs=($(pacman -v $cache_conf 2>&1 | grep '^Cache Dirs:' | sed 's/Cache Dirs:\s*//g'))
-else
-    cache_dirs=(${cache_dir})
+pacconf_cmd=$(command -v pacman-conf || command -v pacconf)
+
+if (( ${#cache_dirs[@]} == 0 )); then
+	mapfile -t cache_dirs < <($pacconf_cmd CacheDir)
 fi
 
 umask 0022
@@ -90,25 +88,17 @@ for f in "${files[@]}"; do
     cp "$f" "$working_dir$f"
 done
 
-_env=()
-while read -r varname; do
-    _env+=("$varname=${!varname}")
-done < <(declare -x | sed -r 's/^declare -x ([^=]*)=.*/\1/' | grep -i '_proxy$')
-env -i "${_env[@]}" \
-basestrap "${basestrap_args[@]}" ${pacman_conf:+-C "$pacman_conf"} "$working_dir" ${cache_dirs[@]/#/--cachedir=} "$@" || die 'Failed to install all packages'
-
-echo "${CHROOTVERSION}" > "$working_dir/.artools"
+basestrap -Mc ${pacman_conf:+-C "$pacman_conf"} "$working_dir" \
+    ${cache_dirs[@]/#/--cachedir=} "$@" || die 'Failed to install all packages'
 
 if [[ ! -f "$working_dir/etc/locale.gen.orig" ]];then
     mv "$working_dir/etc/locale.gen" "$working_dir/etc/locale.gen.orig"
 fi
 printf '%s.UTF-8 UTF-8\n' en_US de_DE > "$working_dir/etc/locale.gen"
 echo 'LANG=en_US.UTF-8' > "$working_dir/etc/locale.conf"
+echo "${CHROOTVERSION}" > "$working_dir/.artools"
 
 dbus-uuidgen --ensure="$working_dir"/etc/machine-id
-
-chroot_args=(${pacman_conf:+-C "$pacman_conf"} ${makepkg_conf:+-M "$makepkg_conf"} ${cache_dir:+-c "$cache_dir"})
-${nosetarch} && chroot_args+=(${nosetarch:+-s})
 
 exec chroot-run \
     "${chroot_args[@]}" \

@@ -31,7 +31,7 @@ load_vars() {
     [[ -f $1 ]] || return 1
 
     for var in {SRC,SRCPKG,PKG,LOG}DEST MAKEFLAGS PACKAGER CARCH GPGKEY; do
-        [[ -z ${!var:-} ]] && eval "$(grep -a "^${var}=" "$1")"
+        [[ -z ${!var:-} ]] && eval "$(source "$1"; printf "%s='%s'" "$var" "${!var}")"
     done
 
     return 0

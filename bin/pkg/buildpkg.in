@@ -94,7 +94,7 @@ else
         -C "${pacman_conf}" \
         -M "${makepkg_conf}" \
         "${CHROOTS_PKG}/${repo}-${ARCH}/root" \
-        pacman -Syu --noconfirm || abort
+        pacman -Syuu --noconfirm || abort
 fi
 
 # Always build official packages reproducibly

@@ -36,18 +36,16 @@ copy_keyring(){
 
 create_min_fs(){
     msg "Creating install root at %s" "$1"
-    mkdir -m 0755 -p $1/var/{cache/pacman/pkg,lib/pacman,log} $1/{dev,etc}
-    mkdir -m 1777 -p $1/{tmp,run}
+    mkdir -m 0755 -p $1/var/{cache/pacman/pkg,lib/pacman,log} $1/{dev,run,etc/pacman.d}
+    mkdir -m 1777 -p $1/tmp
     mkdir -m 0555 -p $1/{sys,proc}
 }
 
 newroot=/mnt
 
-hostcache=false
-copykeyring=true
-copymirrorlist=true
-directory=false
-interactive=false
+hostcache=0
+copykeyring=1
+copymirrorlist=1
 
 usage() {
     echo "usage: ${0##*/} [options] root [packages...]"
@@ -72,10 +70,10 @@ opts=':C:cGiM'
 while getopts ${opts} arg; do
     case "${arg}" in
         C) pacman_conf=$OPTARG ;;
-        c) hostcache=true ;;
-        i) interactive=true ;;
-        G) copykeyring=false ;;
-        M) copymirrorlist=false ;;
+        c) hostcache=1 ;;
+        i) interactive=1 ;;
+        G) copykeyring=0 ;;
+        M) copymirrorlist=0 ;;
         :) echo "invalid argument ${arg}:$OPTARG"; usage 1;;
         ?) usage 0 ;;
     esac
@@ -88,9 +86,13 @@ check_root
 newroot=$1; shift
 pacman_args=("${@:-base}")
 
-${hostcache} || pacman_args+=(--cachedir="$newroot/var/cache/pacman/pkg")
+if (( ! hostcache ));then
+    pacman_args+=(--cachedir="$newroot/var/cache/pacman/pkg")
+fi
 
-${interactive} || pacman_args+=(--noconfirm)
+if (( ! interactive )); then
+    pacman_args+=(--noconfirm)
+fi
 
 [[ -n $pacman_conf ]] && pacman_args+=(--config="$pacman_conf")
 
@@ -102,15 +104,16 @@ create_min_fs "$newroot"
 # mount API filesystems
 chroot_api_mount "$newroot" || die "failed to setup API filesystems in new root"
 
+if (( copykeyring ));then
+    copy_keyring "$newroot"
+fi
+
 msg2 'Installing packages to %s' "$newroot"
 if ! pacman -r "$newroot" -Sy "${pacman_args[@]}"; then
     die 'Failed to install packages to new root'
 fi
 
-if ${copykeyring};then
-    copy_keyring "$newroot"
-fi
 
-if ${copymirrorlist};then
+if (( copymirrorlist ));then
     copy_mirrorlist "$newroot"
 fi
