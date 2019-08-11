@@ -180,7 +180,7 @@ make_livefs() {
 
         prepare_dir "${livefs}"
 
-        mount_overlay "${livefs}" "${work_dir}" "${ROOT_LIST}"
+        mount_overlay "${livefs}" "${work_dir}"
 
         install_packages "${livefs}"
 
@@ -207,7 +207,7 @@ make_bootfs() {
 
         local bootfs="${work_dir}/bootfs"
 
-        mount_overlay "${bootfs}" "${work_dir}" "${ROOT_LIST}"
+        mount_overlay "${bootfs}" "${work_dir}"
 
         prepare_initcpio "${bootfs}"
         prepare_initramfs "${bootfs}"
