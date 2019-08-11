@@ -162,7 +162,7 @@ artix_mount_handler() {
     fi
 
     if [[ "${checksum}" == "y" ]]; then
-        for fs in rootfs desktopfs livefs;do
+        for fs in rootfs livefs;do
             if [[ -f "/run/artix/bootmnt/${artixbasedir}/${arch}/${fs}.sfs" ]]; then
                 if [[ -f "/run/artix/bootmnt/${artixbasedir}/${arch}/${fs}.sha512" ]]; then
                     msg -n ":: Self-test requested, please wait..."
@@ -182,7 +182,7 @@ artix_mount_handler() {
     fi
 
     if [[ "${verify}" == "y" ]]; then
-        for fs in rootfs desktopfs livefs;do
+        for fs in rootfs livefs;do
             if [[ -f "/run/artix/bootmnt/${artixbasedir}/${arch}/${fs}.sfs" ]]; then
                 if [[ -f "/run/artix/bootmnt/${artixbasedir}/${arch}/${fs}.sfs.sig" ]]; then
                     msg -n ":: Signature verification requested, please wait..."
@@ -225,7 +225,7 @@ artix_mount_handler() {
     local dest_sfs="/run/artix/sfs" dest_img="/run/artix/img"
     local lower_dir
 
-    for sfs in livefs desktopfs rootfs;do
+    for sfs in livefs rootfs;do
         if [[ -f "${src}/${sfs}.sfs" ]]; then
             _mnt_sfs "${src}/${sfs}.sfs" "${dest_sfs}/${sfs}"
             if [[ -f "${dest_sfs}/${sfs}/${sfs}.img" ]]; then

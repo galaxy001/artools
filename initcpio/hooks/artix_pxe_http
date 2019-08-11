@@ -40,7 +40,7 @@ artix_pxe_http_mount_handler () {
 
     local _src=${artix_http_srv}${artixbasedir}/${arch}
 
-    for sfs in livefs desktopfs rootfs;do
+    for sfs in livefs rootfs;do
         if [[ ! -z "$( curl -s --head "${_src}/${sfs}.sfs" | grep "OK" )" ]]; then
             _curl_get "${_src}/${sfs}.sfs" "/${arch}"
 
