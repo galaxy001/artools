@@ -33,7 +33,7 @@ prepare_build(){
 
     iso_label="ARTIX_$(date +%Y%m)"
 
-    mkchroot_args+=(-C ${pacman_conf} -m)
+    mkchroot_args+=(-C ${pacman_conf})
     work_dir=${CHROOTS_ISO}/${PROFILE}/${ARCH}
 
     iso_dir="${ISO_POOL}/${PROFILE}"
