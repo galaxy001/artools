@@ -41,18 +41,17 @@ mount_overlay(){
     FS_ACTIVE_MOUNTS=()
     local lower= upper="$1" work="$2" pkglist="$3"
     local fs=${upper##*/}
-    local rootfs="$work/rootfs" desktopfs="$work/desktopfs" livefs="$work/livefs"
+    local rootfs="$work/rootfs" livefs="$work/livefs"
     mkdir -p "${mnt_dir}/work"
     mkdir -p "$upper"
     case $fs in
-        desktopfs) lower="$rootfs" ;;
         livefs)
             lower="$rootfs"
-            [[ -f $pkglist ]] && lower="$desktopfs":"$rootfs"
+            [[ -f $pkglist ]] && lower="$rootfs"
         ;;
         bootfs)
             lower="$livefs":"$rootfs"
-            [[ -f $pkglist ]] && lower="$livefs":"$desktopfs":"$rootfs"
+            [[ -f $pkglist ]] && lower="$livefs":"$rootfs"
         ;;
     esac
     track_fs -t overlay overlay -olowerdir="$lower",upperdir="$upper",workdir="${mnt_dir}/work" "$upper"

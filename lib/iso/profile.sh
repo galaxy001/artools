@@ -23,9 +23,6 @@ init_profile(){
     [[ -f "$profdir/$prof/Packages-Root" ]] && ROOT_LIST="$profdir/$prof/Packages-Root"
     [[ -d "$profdir/$prof/root-overlay" ]] && ROOT_OVERLAY="$profdir/$prof/root-overlay"
 
-    [[ -f "$profdir/$prof/Packages-Desktop" ]] && DESKTOP_LIST="$profdir/$prof/Packages-Desktop"
-    [[ -d "$profdir/$prof/desktop-overlay" ]] && DESKTOP_OVERLAY="$profdir/$prof/desktop-overlay"
-
     [[ -f "$profdir/$prof/Packages-Live" ]] && LIVE_LIST="$profdir/$prof/Packages-Live"
     [[ -d "$profdir/$prof/live-overlay" ]] && LIVE_OVERLAY="$profdir/$prof/live-overlay"
 }

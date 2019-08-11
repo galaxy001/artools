@@ -173,26 +173,6 @@ make_rootfs() {
     fi
 }
 
-make_desktopfs() {
-    if [[ ! -e ${work_dir}/desktopfs.lock ]]; then
-        msg "Prepare [Desktop installation] (desktopfs)"
-        local desktopfs="${work_dir}/desktopfs"
-
-        prepare_dir "${desktopfs}"
-
-        mount_overlay "${desktopfs}" "${work_dir}"
-
-        install_packages "${desktopfs}"
-
-        copy_overlay "${DESKTOP_OVERLAY}" "${desktopfs}"
-
-        umount_overlay
-        clean_up_image "${desktopfs}"
-
-        msg "Done [Desktop installation] (desktopfs)"
-    fi
-}
-
 make_livefs() {
     if [[ ! -e ${work_dir}/livefs.lock ]]; then
         msg "Prepare [Live installation] (livefs)"
@@ -200,7 +180,7 @@ make_livefs() {
 
         prepare_dir "${livefs}"
 
-        mount_overlay "${livefs}" "${work_dir}" "${DESKTOP_LIST}"
+        mount_overlay "${livefs}" "${work_dir}" "${ROOT_LIST}"
 
         install_packages "${livefs}"
 
@@ -227,7 +207,7 @@ make_bootfs() {
 
         local bootfs="${work_dir}/bootfs"
 
-        mount_overlay "${bootfs}" "${work_dir}" "${DESKTOP_LIST}"
+        mount_overlay "${bootfs}" "${work_dir}" "${ROOT_LIST}"
 
         prepare_initcpio "${bootfs}"
         prepare_initramfs "${bootfs}"
@@ -267,10 +247,6 @@ prepare_images(){
     local timer=$(get_timer)
     load_pkgs "${ROOT_LIST}" "${INITSYS}"
     run_safe "make_rootfs"
-    if [[ -f "${DESKTOP_LIST}" ]] ; then
-        load_pkgs "${DESKTOP_LIST}" "${INITSYS}"
-        run_safe "make_desktopfs"
-    fi
     if [[ -f ${LIVE_LIST} ]]; then
         load_pkgs "${LIVE_LIST}" "${INITSYS}"
         run_safe "make_livefs"
