@@ -38,7 +38,10 @@ PKG_BIN = \
 	bin/pkg/pkg2yaml \
 	bin/pkg/buildtree \
 	bin/pkg/lddd \
-	bin/pkg/links-add
+	bin/pkg/links-add \
+	bin/pkg/checkpkg \
+	bin/pkg/finddeps \
+	bin/pkg/find-libdeps
 
 LN_COMMITPKG = \
 	extrapkg \
@@ -163,6 +166,8 @@ install_base:
 install_pkg:
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
 	install $(MODE) $(PKG_BIN) $(DESTDIR)$(BINDIR)
+
+	$(LN) find-libdeps $(DESTDIR)$(BINDIR)/find-libprovides
 
 	$(LN) links-add $(DESTDIR)$(BINDIR)/links-remove
 
