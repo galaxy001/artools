@@ -33,7 +33,7 @@ prepare_build(){
 
     iso_label="ARTIX_$(date +%Y%m)"
 
-    mkchroot_args+=(-C ${pacman_conf})
+    basestrap_args+=(-C ${pacman_conf})
     work_dir=${CHROOTS_ISO}/${PROFILE}/${ARCH}
 
     iso_dir="${ISO_POOL}/${PROFILE}"
@@ -104,7 +104,7 @@ iso_only=false
 log=false
 persist=false
 
-mkchroot_args=()
+basestrap_args=()
 cmd=${0##*/}
 
 REPOSITORY=${cmd##*-}

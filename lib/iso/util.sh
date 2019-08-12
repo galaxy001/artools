@@ -96,12 +96,6 @@ make_iso() {
     msg "Done [Build ISO]"
 }
 
-install_packages(){
-    local fs="$1"
-    setarch "${ARCH}" mkchroot \
-        "${mkchroot_args[@]}" "${fs}" "${packages[@]}"
-}
-
 copy_overlay(){
     local src="$1" dest="$2"
     if [[ -e "$src" ]];then
@@ -114,10 +108,6 @@ clean_up_image(){
     local path mnt="$1"
     msg2 "Cleaning [%s]" "${mnt##*/}"
 
-    if [[ -f "$mnt/etc/locale.gen.orig" ]];then
-        mv "$mnt/etc/locale.gen.orig" "$mnt/etc/locale.gen"
-        rm "$mnt/etc/locale.conf"
-    fi
     path=$mnt/boot
     if [[ -d "$path" ]]; then
         find "$path" -name 'initramfs*.img' -delete &> /dev/null
@@ -143,9 +133,9 @@ clean_up_image(){
         find "$path" -mindepth 1 -delete &> /dev/null
     fi
 
-    if [[ ${mnt##*/} == 'livefs' ]];then
-        rm -rf "$mnt/etc/pacman.d/gnupg"
-    fi
+#     if [[ ${mnt##*/} == 'livefs' ]];then
+#         rm -rf "$mnt/etc/pacman.d/gnupg"
+#     fi
 
     find "$mnt" -name *.pacnew -name *.pacsave -name *.pacorig -delete
     if [[ -f "$mnt/boot/grub/grub.cfg" ]]; then
@@ -163,7 +153,8 @@ make_rootfs() {
 
         prepare_dir "${rootfs}"
 
-        install_packages "${rootfs}"
+        basestrap -GMc "${basestrap_args[@]}" "${rootfs}" "${packages[@]}"
+        echo "${CHROOTVERSION}" > "${rootfs}/.artools"
 
         copy_overlay "${ROOT_OVERLAY}" "${rootfs}"
 
@@ -182,7 +173,7 @@ make_livefs() {
 
         mount_overlay "${livefs}" "${work_dir}"
 
-        install_packages "${livefs}"
+        basestrap -GMc "${basestrap_args[@]}" "${livefs}" "${packages[@]}"
 
         copy_overlay "${LIVE_OVERLAY}" "${livefs}"
 
