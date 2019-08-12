@@ -27,20 +27,6 @@ error_function() {
     exit 2
 }
 
-# $1: function
-run_log(){
-    local func="$1" log_dir='/var/log/artools'
-    [[ ! -d $log_dir ]] && mkdir -p $log_dir
-    local logfile=${log_dir}/$(gen_iso_fn).$func.log
-    logpipe=$(mktemp -u "/tmp/$func.pipe.XXXXXXXX")
-    mkfifo "$logpipe"
-    tee "$logfile" < "$logpipe" &
-    local teepid=$!
-    $func &> "$logpipe"
-    wait $teepid
-    rm "$logpipe"
-}
-
 run_safe() {
     local restoretrap func="$1"
     set -e
@@ -48,11 +34,7 @@ run_safe() {
     restoretrap=$(trap -p ERR)
     trap 'error_function $func' ERR
 
-    if ${log};then
-        run_log "$func"
-    else
-        "$func"
-    fi
+    "$func"
 
     eval $restoretrap
     set +E
@@ -132,11 +114,6 @@ clean_up_image(){
     if [[ -d $path ]];then
         find "$path" -mindepth 1 -delete &> /dev/null
     fi
-
-#     if [[ ${mnt##*/} == 'livefs' ]];then
-#         rm -rf "$mnt/etc/pacman.d/gnupg"
-#     fi
-
     find "$mnt" -name *.pacnew -name *.pacsave -name *.pacorig -delete
     if [[ -f "$mnt/boot/grub/grub.cfg" ]]; then
         rm $mnt/boot/grub/grub.cfg
@@ -153,8 +130,7 @@ make_rootfs() {
 
         prepare_dir "${rootfs}"
 
-        basestrap -GMc "${basestrap_args[@]}" "${rootfs}" "${packages[@]}"
-        echo "${CHROOTVERSION}" > "${rootfs}/.artools"
+        basestrap "${basestrap_args[@]}" "${rootfs}" "${packages[@]}"
 
         copy_overlay "${ROOT_OVERLAY}" "${rootfs}"
 
@@ -175,7 +151,7 @@ make_livefs() {
 
         mount_overlay "${livefs}" "${work_dir}"
 
-        basestrap -GMc "${basestrap_args[@]}" "${livefs}" "${packages[@]}"
+        basestrap "${basestrap_args[@]}" "${livefs}" "${packages[@]}"
 
         copy_overlay "${LIVE_OVERLAY}" "${livefs}"
 
@@ -234,7 +210,7 @@ make_grub(){
 compress_images(){
     local timer=$(get_timer)
     run_safe "make_iso"
-    user_own "${iso_dir}" "-R"
+    chown -R "${OWNER}:$(id --group ${OWNER})" "${iso_dir}"
     show_elapsed_time "${FUNCNAME}" "${timer}"
 }
 

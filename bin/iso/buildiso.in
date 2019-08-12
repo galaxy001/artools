@@ -15,6 +15,21 @@
 . @libdir@/artools/util-base.sh
 . @libdir@/artools/util-iso.sh
 
+gen_iso_fn(){
+    local vars=("artix") name
+    vars+=("${PROFILE}")
+    vars+=("${INITSYS}")
+    case "${REPOSITORY}" in
+        'gremlins'|'goblins') vars+=("${REPOSITORY}") ;;
+    esac
+    vars+=("${ISO_VERSION}")
+    vars+=("${ARCH}")
+    for n in ${vars[@]};do
+        name=${name:-}${name:+-}${n}
+    done
+    echo $name
+}
+
 prepare_build(){
     timer_start=$(get_timer)
 
@@ -73,7 +88,9 @@ build(){
         lock_close 9
 
         rm -rf --one-file-system "${work_dir}"
-        clean_iso_root "${iso_root}"
+
+        msg "Deleting isoroot [%s] ..." "${iso_root##*/}"
+        rm -rf --one-file-system "${iso_root}"
     fi
 
     if ${iso_only}; then
@@ -101,10 +118,9 @@ clean_first=true
 pretend=false
 images_only=false
 iso_only=false
-log=false
 persist=false
 
-basestrap_args=()
+basestrap_args=(-GMc)
 cmd=${0##*/}
 
 REPOSITORY=${cmd##*-}
@@ -125,7 +141,6 @@ usage() {
     echo '    -x                 Build images only'
     echo '    -z                 Generate iso only'
     echo '                       Requires pre built images (-x)'
-    echo '    -l                 Log to file'
     echo '    -q                 Query settings and pretend build'
     echo '    -h                 This help'
     echo ''
@@ -135,7 +150,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:r:t:i:g:czxmlqh'
+opts='p:r:t:i:g:czxmqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -148,7 +163,6 @@ while getopts "${opts}" arg; do
         x) images_only=true ;;
         z) iso_only=true ;;
         m) persist=true ;;
-        l) log=true ;;
         q) pretend=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;

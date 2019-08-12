@@ -29,11 +29,11 @@ prepare_initramfs(){
     fi
 
     if [[ -n ${GPG_KEY} ]]; then
-        user_run "gpg --export ${GPG_KEY} >${USERCONFDIR}/artools/gpgkey"
-        exec 17<>${USERCONFDIR}/artools/GPG_KEY
+        su ${OWNER} -c "gpg --export ${GPG_KEY} >/tmp/GPG_KEY"
+        exec 17<>/tmp/GPG_KEY
     fi
     local _kernel=$(cat $mnt/usr/lib/modules/*/version)
-    ARTIX_GNUPG_FD=${GPG_KEY:+17} chroot-run $mnt \
+    ARTIX_GNUPG_FD=${GPG_KEY:+17} artools-chroot $mnt \
         /usr/bin/mkinitcpio -k ${_kernel} \
         -c /etc/mkinitcpio-artix.conf \
         -g /boot/initramfs.img
@@ -41,8 +41,8 @@ prepare_initramfs(){
     if [[ -n ${GPG_KEY} ]]; then
         exec 17<&-
     fi
-    if [[ -f ${USERCONFDIR}/artools/GPG_KEY ]]; then
-        rm ${USERCONFDIR}/artools/GPG_KEY
+    if [[ -f /tmp/GPG_KEY ]]; then
+        rm /tmp/GPG_KEY
     fi
 }
 
@@ -64,8 +64,9 @@ configure_grub(){
 }
 
 prepare_grub(){
-    local platform=i386-pc img='core.img' grub=$3/boot/grub efi=$3/efi/boot \
-        lib=$1/usr/lib/grub prefix=/boot/grub theme=$2/usr/share/grub
+    local platform=i386-pc img='core.img' prefix=/boot/grub
+    local lib=$1/usr/lib/grub theme=$2/usr/share/grub
+    local grub=$3/boot/grub efi=$3/efi/boot
 
     prepare_dir ${grub}/${platform}
 

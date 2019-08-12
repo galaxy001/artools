@@ -12,33 +12,12 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-gen_iso_fn(){
-    local vars=("artix") name
-    vars+=("${PROFILE}")
-    vars+=("${INITSYS}")
-    case "${REPOSITORY}" in
-        'gremlins'|'goblins') vars+=("${REPOSITORY}") ;;
-    esac
-    vars+=("${ISO_VERSION}")
-    vars+=("${ARCH}")
-    for n in ${vars[@]};do
-        name=${name:-}${name:+-}${n}
-    done
-    echo $name
-}
-
-clean_iso_root(){
-    local dest="$1"
-    msg "Deleting isoroot [%s] ..." "${dest##*/}"
-    rm -rf --one-file-system "$dest"
-}
-
 make_sig () {
     local idir="$1" file="$2"
     msg2 "Creating signature file..."
     cd "$idir"
-    user_own "$idir"
-    user_run "gpg --detach-sign --default-key ${GPG_KEY} $file.sfs"
+    chown "${OWNER}:$(id --group ${OWNER})" "$idir"
+    su ${OWNER} -c "gpg --detach-sign --default-key ${GPG_KEY} $file.sfs"
     chown -R root "$idir"
     cd ${OLDPWD}
 }

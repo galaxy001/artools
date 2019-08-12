@@ -159,15 +159,6 @@ load_config(){
     return 0
 }
 
-user_own(){
-    local flag=$2
-    chown ${flag} "${OWNER}:$(id --group ${OWNER})" "$1"
-}
-
-user_run(){
-    su ${OWNER} -c "$@"
-}
-
 load_user_info(){
     OWNER=${SUDO_USER:-$USER}
 
