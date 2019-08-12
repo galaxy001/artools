@@ -112,6 +112,10 @@ chroot_extra_mount() {
     chroot_add_resolv_conf "$1"
     chroot_mount "/etc/hosts" "$1/etc/hosts" -B
     chroot_mount "${cache_dirs[0]}" "$1${cache_dirs[0]}" -B
+    if [[ -e /etc/localtime ]];then
+        [[ -e $1/etc/localtime ]] || touch $1/etc/localtime
+        chroot_mount "/etc/localtime" "$1/etc/localtime" -B
+    fi
 
     for cache_dir in ${cache_dirs[@]:1}; do
         chroot_mount "$cache_dir" "$1${cache_dir}" -Br
