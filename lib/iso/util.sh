@@ -160,6 +160,8 @@ make_rootfs() {
 
         clean_up_image "${rootfs}"
 
+        : > ${work_dir}/rootfs.lock
+
         msg "Done [Base installation] (rootfs)"
     fi
 }
@@ -182,6 +184,8 @@ make_livefs() {
         umount_overlay
 
         clean_up_image "${livefs}"
+
+        : > ${work_dir}/livefs.lock
 
         msg "Done [Live installation] (livefs)"
     fi
