@@ -15,6 +15,62 @@
 . @libdir@/artools/util-base.sh
 . @libdir@/artools/util-pkg.sh
 
+find_cached_pkgfile() {
+    local searchdirs=("$PKGDEST" "$PWD") results=()
+    local pkg="$1"
+    for dir in "${searchdirs[@]}"; do
+        [[ -d $dir ]] || continue
+        results+=$(find "$dir" -type f -name "$pkg")
+    done
+    case ${#results[*]} in
+        0)
+            return 1
+        ;;
+        1)
+            printf '%s\n' "${results[0]}"
+            return 0
+        ;;
+        *)
+            error 'Multiple packages found:'
+            printf '\t%s\n' "${results[@]}" >&2
+            return 1
+        ;;
+    esac
+}
+
+update_repo2(){
+    local repo="$1"
+    local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
+
+    for name in ${passfiles[@]}; do
+        if pkgfile=$(find_cached_pkgfile "$name");then
+            info "Found: %s" "$name"
+            if ${add_pkg};then
+                local action='add'
+                packages+=("$name")
+#                 checkpkg "${pkgfile}" || return 2
+                if ${sign_pkg};then
+                    [[ -e ${pkgfile}.sig ]] && rm ${pkgfile}.sig
+                    signfile ${pkgfile}
+                fi
+                ln -sf ${pkgfile}{,.sig} $repo_path/
+            elif ${del_pkg};then
+                local action='remove'
+                packages+=("$name")
+                [[ -e $repo_path/$name ]] && rm $repo_path/$name
+                [[ -e $repo_path/$name.sig ]] && rm $repo_path/$name.sig
+            fi
+        fi
+    done
+    cd $repo_path
+    if [[ -n $action ]]; then
+        repo-$action -R $repo.${PKGDBEXT} ${packages[@]}
+        ${linksdb} && links-$action $repo.${LINKSDBEXT} ${packages[@]}
+    fi
+
+    return 0
+}
+
 update_repo(){
     local repo="$1" pkgfile ver
     local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
@@ -100,6 +156,12 @@ done
 
 shift $(($OPTIND - 1))
 
+passfiles="$@"
+
 prepare_dir "${REPOS_ROOT}"
 
-update_repo "${dest_repo}"
+if [[ -n ${passfiles[@]} ]]; then
+    update_repo2 "${dest_repo}"
+else
+    update_repo "${dest_repo}"
+fi
