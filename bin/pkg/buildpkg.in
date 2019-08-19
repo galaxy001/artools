@@ -20,6 +20,7 @@ load_user_info
 load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
 
 create_first=false
+rebuild=false
 
 mkchrootpkg_args=(-c -n)
 
@@ -27,22 +28,11 @@ cmd=${0##*/}
 repo=${cmd#*-}
 base_devel=('base-devel')
 
-case ${repo} in
-    system|world|galaxy) repo='default' ;;
-    lib32*) base_devel+=('multilib-devel') ;;
-    galaxy-gremlins|galaxy-goblins) repo=${repo#*-} ;;
-esac
-
-pacman_conf="${DATADIR}/pacman-${repo}.conf"
-[[ -f ${USERCONFDIR}/artools/pacman-${repo}.conf ]] && pacman_conf="${USERCONFDIR}/artools/pacman-${repo}.conf"
-
-makepkg_conf="${DATADIR}/makepkg.conf"
-[[ -f ${USERCONFDIR}/artools/makepkg.conf ]] && makepkg_conf="${USERCONFDIR}/artools/makepkg.conf"
-
 usage() {
     echo "Usage: ${0##*/} [options] -- [mkchrootpkg_args]"
     echo "    -r <dir>           Create chroots in this directory"
     echo '    -c                 Recreate the chroot before building'
+    echo '    -m                 Major rebuild'
     echo '    -h                 This help'
     echo ''
     echo "Default mkchrootpkg_args args: ${mkchrootpkg_args[*]}"
@@ -52,16 +42,33 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='hcr:'
+opts='hcmr:'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         r) CHROOTS_PKG="$OPTARG" ;;
         c) create_first=true ;;
+        m) rebuild=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '%s'" "${arg}"; usage 1 ;;
     esac
 done
+
+if ${rebuild};then
+    repo='default'
+else
+    case ${repo} in
+        system|world|galaxy) repo='default' ;;
+        lib32*) base_devel+=('multilib-devel') ;;
+        galaxy-gremlins|galaxy-goblins) repo=${repo#*-} ;;
+    esac
+fi
+
+pacman_conf="${DATADIR}/pacman-${repo}.conf"
+[[ -f ${USERCONFDIR}/artools/pacman-${repo}.conf ]] && pacman_conf="${USERCONFDIR}/artools/pacman-${repo}.conf"
+
+makepkg_conf="${DATADIR}/makepkg.conf"
+[[ -f ${USERCONFDIR}/artools/makepkg.conf ]] && makepkg_conf="${USERCONFDIR}/artools/makepkg.conf"
 
 check_root SOURCE_DATE_EPOCH
 
