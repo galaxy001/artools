@@ -38,6 +38,23 @@ find_cached_pkgfile() {
     esac
 }
 
+get_pkgbasename(){
+    local pkg="$1"
+    local pkgbasename name ver rel arch
+
+    pkgbasename=${pkg%.pkg.tar.?z}
+    arch=${pkgbasename##*-}
+    pkgbasename=${pkgbasename%-"$arch"}
+
+    rel=${pkgbasename##*-}
+    pkgbasename=${pkgbasename%-"$rel"}
+
+    ver=${pkgbasename##*-}
+
+    name=${pkgbasename%-"$ver"}
+    echo $name
+}
+
 update_repo2(){
     local repo="$1"
     local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
@@ -56,7 +73,7 @@ update_repo2(){
                 ln -sf ${pkgfile}{,.sig} $repo_path/
             elif ${del_pkg};then
                 local action='remove'
-                packages+=("$name")
+                packages+=("$(get_pkgbasename "$name")")
                 [[ -e $repo_path/$name ]] && rm $repo_path/$name
                 [[ -e $repo_path/$name.sig ]] && rm $repo_path/$name.sig
             fi
