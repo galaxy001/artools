@@ -127,11 +127,12 @@ view_build(){
 
 check_tree(){
     local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "${PACKAGE}")
-
-    local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/${PACKAGE}
-    local repo=$(find_repo "$pkg_path" "${staging}" "${unstable}")
-    msg2 "repo: %s" "$repo"
     [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "${PACKAGE}"
+    local git_tree_artix=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    local tree_dir=$(get_artix_tree "${PACKAGE}" "$git_tree_artix" "$git_tree_arch")
+    msg "tree_dir: %s" "$tree_dir"
+    [[ -z $git_tree_artix ]] && msg2 "exists: %s" "no"
+    [[ -n $git_tree_artix ]] && msg2 "exists: %s" "yes"
 }
 
 sync_repos(){
