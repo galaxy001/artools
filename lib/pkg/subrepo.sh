@@ -139,22 +139,3 @@ config_tree(){
         fi
     cd ..
 }
-
-subrepo_new(){
-    local pkg="$1" tree="$2" team="${3:-$2}"
-    local dest=${TREE_DIR_ARTIX}/$tree/$pkg/trunk
-
-    cd ${TREE_DIR_ARTIX}/$tree
-
-    local org=$(get_pkg_org "$pkg")
-
-    create_repo "$pkg" "$org"
-
-    add_repo_to_team "$pkg" "$org" "$team"
-
-    subrepo_clone "$pkg" "$org"
-
-    prepare_dir "$dest"
-
-    commit_jenkins_files "$pkg"
-}

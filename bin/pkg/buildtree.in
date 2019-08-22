@@ -74,19 +74,22 @@ show_deps(){
 }
 
 from_arch(){
-    local pkg="$1" src= dest=
-    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "$pkg")
-    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "$pkg"
+    local src= dest=
 
-    local package=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
+    cd ${TREE_DIR_ARTIX}
+
+    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "${PACKAGE}")
+    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "${PACKAGE}"
+
+    local package=${TREE_DIR_ARCH}/$git_tree_arch/${PACKAGE}
     local repo=$(find_repo "$package" "${staging}" "${unstable}")
 
     src=$package/repos/$repo
 
-    local git_tree_artix=$(find_tree "${TREE_DIR_ARTIX}" "$pkg")
-    local tree_dir=$(get_artix_tree "$pkg" "$git_tree_artix" "$git_tree_arch")
+    local git_tree_artix=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    local tree_dir=$(get_artix_tree "${PACKAGE}" "$git_tree_artix" "$git_tree_arch")
 
-    dest=${TREE_DIR_ARTIX}/$tree_dir/$pkg/trunk
+    dest=${TREE_DIR_ARTIX}/$tree_dir/${PACKAGE}/trunk
 
     msg "tree: %s" "$tree_dir"
     show_deps "$src" "$repo"
@@ -96,30 +99,39 @@ from_arch(){
         cd ${TREE_DIR_ARTIX}/$git_tree_artix
 
         . $dest/PKGBUILD 2>/dev/null
-        local artixver=$(get_full_version $pkg)
+        local artixver=$(get_full_version ${PACKAGE})
 
         msg2 "Artix Version: %s" "$artixver"
     else
-        subrepo_new "$pkg" "$tree_dir" "$git_tree_arch"
+        subrepo_new "${PACKAGE}" "$tree_dir" "$git_tree_arch"
     fi
 
-    msg "Sync (%s) from [%s] to [%s]" "$pkg" "$git_tree_arch" "$tree_dir"
+    msg "Sync (%s) from [%s] to [%s]" "${PACKAGE}" "$git_tree_arch" "$tree_dir"
 
     sync_pkg "$src" "$dest"
-    patch_pkg "$pkg"
+    patch_pkg "${PACKAGE}"
 }
 
 view_build(){
-    local pkg="$1" src=
-    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "$pkg")
-    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "$pkg"
+    local src=
+    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "${PACKAGE}")
+    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "${PACKAGE}"
 
-    local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/$pkg
+    local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/${PACKAGE}
     local repo=$(find_repo "$pkg_path" "${staging}" "${unstable}")
 
     src=$pkg_path/repos/$repo
 
     show_deps "$src" "$repo"
+}
+
+check_tree(){
+    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "${PACKAGE}")
+
+    local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/${PACKAGE}
+    local repo=$(find_repo "$pkg_path" "${staging}" "${unstable}")
+    msg2 "repo: %s" "$repo"
+    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "${PACKAGE}"
 }
 
 sync_repos(){
@@ -131,6 +143,25 @@ sync_repos(){
             pull_tree_artix "${TREE_NAMES_ARTIX[*]}"
         fi
     fi
+}
+
+
+subrepo_new(){
+    local dest=${TREE_DIR_ARTIX}/${GROUP}/${PACKAGE}/trunk
+
+    cd ${TREE_DIR_ARTIX}/${GROUP}
+
+    local org=$(get_pkg_org "${PACKAGE}")
+
+    create_repo "${PACKAGE}" "$org"
+
+    add_repo_to_team "${PACKAGE}" "$org" "${TEAM:-$GROUP}"
+
+    subrepo_clone "${PACKAGE}" "$org"
+
+    prepare_dir "$dest"
+
+    commit_jenkins_files "${PACKAGE}"
 }
 
 load_user_info
@@ -149,6 +180,7 @@ conf=false
 unstable=false
 staging=true
 sync_group=false
+check=false
 
 PACKAGE=''
 
@@ -169,7 +201,8 @@ usage() {
     echo '    -n            Make new remote subrepo and clone it'
     echo '    -u            Include kde & gnome unstable (only with -i)'
     echo '    -w            Exclude staging (only with -i)'
-    echo '    -v            View package depends'
+    echo '    -v            Check if a package is in the artix tree(s)'
+    echo '    -c            View package depends'
     echo '    -h            This help'
     echo ''
     echo ''
@@ -178,7 +211,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:t:g:uwsinzyvh'
+opts='p:t:g:uwsinzycvh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -192,6 +225,7 @@ while getopts "${opts}" arg; do
         n) createnew=true ;;
         w) staging=false ;;
         u) unstable=true ;;
+        c) check=true ;;
         v) view=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
@@ -205,8 +239,10 @@ prepare_dir "${TREE_DIR_ARCH}"
 
 ${sync} && sync_repos
 
-${view} && view_build "${PACKAGE}"
+${view} && view_build
 
-${import} && from_arch "${PACKAGE}"
+${check} && check_tree
 
-${createnew} && subrepo_new "${PACKAGE}" "${GROUP}" "${TEAM}"
+${import} && from_arch
+
+${createnew} && subrepo_new
