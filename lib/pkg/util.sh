@@ -109,7 +109,7 @@ find_repo(){
     local pkg="$1" stag="$2" unst="$3" repo=
 
     for r in $(arch_repos "$stag" "$unst");do
-        [[ -f $pkg/repos/$r-x86_64/PKGBUILD ]] && repo=$r-x86_64
+        [[ -f $pkg/repos/$r-${ARCH}/PKGBUILD ]] && repo=$r-${ARCH}
         [[ -f $pkg/repos/$r-any/PKGBUILD ]] && repo=$r-any
     done
     echo $repo
