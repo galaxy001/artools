@@ -102,7 +102,7 @@ update_repo(){
 
     for name in ${pkgsearch[@]}; do
         pkgarch=$(get_pkg_arch "$name")
-        ver=$(get_full_version "$name")
+        ver=$(get_full_version)
         if pkgfile=$(find_cached_package "$name" "$ver" "$pkgarch");then
             local pkg=${pkgfile##*/}
             info "Found: %s" "$pkg"

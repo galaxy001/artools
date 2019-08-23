@@ -43,7 +43,7 @@ TEMPDIR=$(mktemp -d --tmpdir checkpkg-script.XXXX)
 for _pkgname in "${pkgname[@]}"; do
     comparepkg=$_pkgname
     pkgurl=
-    target_pkgver=$(get_full_version "$_pkgname")
+    target_pkgver=$(get_full_version)
     if ! pkgfile=$(find_cached_package "$_pkgname" "$target_pkgver" "$CARCH"); then
         die 'tarball not found for package: %s' "${_pkgname}-$target_pkgver"
     fi

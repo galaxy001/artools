@@ -58,7 +58,7 @@ show_deps(){
 
     [[ $arch == 'any' ]] && CARCH=any
 
-    local archver=$(get_full_version $pkg)
+    local archver=$(get_full_version)
 
     msg2 "repo: %s" "$repo"
     [[ -n ${pkgbase} ]] && msg2 "pkgbase: %s" "${pkgbase}"
@@ -99,7 +99,7 @@ from_arch(){
         cd ${TREE_DIR_ARTIX}/$git_tree_artix
 
         . $dest/PKGBUILD 2>/dev/null
-        local artixver=$(get_full_version ${PACKAGE})
+        local artixver=$(get_full_version)
 
         msg2 "Artix Version: %s" "$artixver"
     else

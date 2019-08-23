@@ -18,14 +18,14 @@
 compare(){
     local pkgpath="$1" group="$2"
     local pkg=${pkgpath##*/}
-    local artixrepo=$(find_repo "$package" "${staging}" "${unstable}")
+    local artixrepo=$(find_repo "$pkgpath" "${staging}" "${unstable}")
     local artixshow=${artixrepo%-*}
     local pkgbuild=$pkgpath/repos/$artixrepo/PKGBUILD
 
     if [[ -f $pkgbuild ]];then
 
         . $pkgbuild 2>/dev/null
-        local artixver=$(get_full_version $pkg)
+        local artixver=$(get_full_version)
 
         local archpath=$(get_import_path $pkg)
 
@@ -36,7 +36,7 @@ compare(){
 
         if [[ -f $pkgbuild ]];then
             . $pkgbuild 2>/dev/null
-            local archver=$(get_full_version $pkg)
+            local archver=$(get_full_version)
         fi
 
         local result=$(vercmp "$artixver" "$archver")
@@ -101,7 +101,7 @@ check_db(){
             if [[ -f $pkgbuild ]];then
 
                 . $pkgbuild 2>/dev/null
-                local artixver=$(get_full_version $pkg)
+                local artixver=$(get_full_version)
                 local is_entry=false
 
                 for name in ${pkgname[@]};do
