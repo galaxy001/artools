@@ -159,6 +159,7 @@ get_artix_tree(){
         $(get_cases kde)) tree=packages-kde ;;
         $(get_cases gnome)) tree=packages-gnome ;;
         $(get_cases mate)) tree=packages-mate ;;
+        $(get_cases xfce)) tree=packages-xfce ;;
         *) tree=$artix_tree
     esac"
     echo $tree

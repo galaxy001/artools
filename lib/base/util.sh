@@ -93,6 +93,7 @@ init_artools_pkg(){
             packages-lxqt
             packages-mate
             packages-kde
+            packages-xfce
     )
 
     HOST_TREE_ARTIX=${HOST_TREE_ARTIX:-"gitea@${GIT_DOMAIN}:artixlinux"}
