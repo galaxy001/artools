@@ -74,7 +74,7 @@ commit_pkg(){
 
         ${push} && pull_tree "${git_tree}" "$head"
 
-        subrepo_pull "${PACKAGE}"
+#         subrepo_pull "${PACKAGE}"
         subrepo_push "${PACKAGE}"
         subrepo_clean "${PACKAGE}"
 
@@ -130,7 +130,7 @@ symlink_commit_pkg(){
 
         ${push} && pull_tree "${git_tree}" "$head"
 
-        subrepo_pull "${PACKAGE}"
+#         subrepo_pull "${PACKAGE}"
         subrepo_push "${PACKAGE}"
         subrepo_clean "${PACKAGE}"
 
