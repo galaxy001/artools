@@ -33,7 +33,7 @@ gen_iso_fn(){
 prepare_build(){
     timer_start=$(get_timer)
 
-    load_profile "${PROFILE}"
+    load_profile
 
     local pacman_conf pac_file="pacman-default.conf"
 

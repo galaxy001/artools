@@ -134,7 +134,7 @@ make_rootfs() {
 
         copy_overlay "${ROOT_OVERLAY}" "${rootfs}"
 
-        [[ ! -d ${work_dir}/livefs ]] && configure_image "${rootfs}"
+        [[ -z ${LIVE_LIST} ]] && configure_image "${rootfs}"
 
         clean_up_image "${rootfs}"
 
@@ -201,7 +201,7 @@ make_grub(){
         msg "Prepare [/iso/boot/grub]"
 
         local layer=${work_dir}/rootfs
-        [[ -d ${work_dir}/livefs ]] && layer=${work_dir}/livefs
+        [[ -n ${LIVE_LIST} ]] && layer=${work_dir}/livefs
 
         prepare_grub "${work_dir}/rootfs" "$layer" "${iso_root}"
 

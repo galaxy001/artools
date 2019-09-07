@@ -12,21 +12,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-init_profile(){
-    local profdir="$1" prof="$2"
-
-    ROOT_LIST="$profdir/base/Packages-Root"
-    ROOT_OVERLAY="$profdir/base/root-overlay"
-    [[ -f "$profdir/base/Packages-Live" ]] && LIVE_LIST="$profdir/base/Packages-Live"
-    [[ -d "$profdir/base/live-overlay" ]] && LIVE_OVERLAY="$profdir/base/live-overlay"
-
-    [[ -f "$profdir/$prof/Packages-Root" ]] && ROOT_LIST="$profdir/$prof/Packages-Root"
-    [[ -d "$profdir/$prof/root-overlay" ]] && ROOT_OVERLAY="$profdir/$prof/root-overlay"
-
-    [[ -f "$profdir/$prof/Packages-Live" ]] && LIVE_LIST="$profdir/$prof/Packages-Live"
-    [[ -d "$profdir/$prof/live-overlay" ]] && LIVE_OVERLAY="$profdir/$prof/live-overlay"
-}
-
 show_profile(){
     msg2 "iso_file: %s" "${iso_file}"
     msg2 "AUTOLOGIN: %s" "${AUTOLOGIN}"
@@ -39,15 +24,24 @@ show_profile(){
 }
 
 load_profile(){
-    local prof="$1"
-    local profdir="${DATADIR}/iso-profiles"
-    [[ -d ${WORKSPACE_DIR}/iso-profiles ]] && profdir=${WORKSPACE_DIR}/iso-profiles
+    local profile_dir="${DATADIR}/iso-profiles"
+    [[ -d ${WORKSPACE_DIR}/iso-profiles ]] && profile_dir=${WORKSPACE_DIR}/iso-profiles
 
-    init_profile "$profdir" "$prof"
 
-    [[ -f $profdir/$prof/profile.conf ]] || return 1
+    ROOT_LIST="$profile_dir/base/Packages-Root"
+    ROOT_OVERLAY="$profile_dir/base/root-overlay"
+    [[ -f "$profile_dir/base/Packages-Live" ]] && LIVE_LIST="$profile_dir/base/Packages-Live"
+    [[ -d "$profile_dir/base/live-overlay" ]] && LIVE_OVERLAY="$profile_dir/base/live-overlay"
 
-    [[ -r $profdir/$prof/profile.conf ]] && . $profdir/$prof/profile.conf
+    [[ -f "$profile_dir/${PROFILE}/Packages-Root" ]] && ROOT_LIST="$profile_dir/${PROFILE}/Packages-Root"
+    [[ -d "$profile_dir/${PROFILE}/root-overlay" ]] && ROOT_OVERLAY="$profile_dir/${PROFILE}/root-overlay"
+
+    [[ -f "$profile_dir/${PROFILE}/Packages-Live" ]] && LIVE_LIST="$profile_dir/${PROFILE}/Packages-Live"
+    [[ -d "$profile_dir/${PROFILE}/live-overlay" ]] && LIVE_OVERLAY="$profile_dir/${PROFILE}/live-overlay"
+
+    [[ -f $profile_dir/${PROFILE}/profile.conf ]] || return 1
+
+    [[ -r $profile_dir/${PROFILE}/profile.conf ]] && . $profile_dir/${PROFILE}/profile.conf
 
     DISPLAYMANAGER=${DISPLAYMANAGER:-'none'}
 
@@ -63,7 +57,7 @@ load_profile(){
     ADDGROUPS=${ADDGROUPS:-"video,power,optical,network,lp,scanner,wheel,users,log"}
 
     if [[ -z ${SERVICES[@]} ]];then
-        SERVICES=('acpid' 'bluetooth' 'cronie' 'cupsd' 'syslog-ng' 'NetworkManager')
+        SERVICES=('acpid' 'bluetooth' 'cronie' 'cupsd' 'syslog-ng' 'connman')
     fi
 
     if [[ ${DISPLAYMANAGER} != "none" ]];then
