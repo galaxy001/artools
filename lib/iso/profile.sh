@@ -17,8 +17,8 @@ init_profile(){
 
     ROOT_LIST="$profdir/base/Packages-Root"
     ROOT_OVERLAY="$profdir/base/root-overlay"
-    LIVE_LIST="$profdir/base/Packages-Live"
-    LIVE_OVERLAY="$profdir/base/live-overlay"
+    [[ -f "$profdir/base/Packages-Live" ]] && LIVE_LIST="$profdir/base/Packages-Live"
+    [[ -d "$profdir/base/live-overlay" ]] && LIVE_OVERLAY="$profdir/base/live-overlay"
 
     [[ -f "$profdir/$prof/Packages-Root" ]] && ROOT_LIST="$profdir/$prof/Packages-Root"
     [[ -d "$profdir/$prof/root-overlay" ]] && ROOT_OVERLAY="$profdir/$prof/root-overlay"

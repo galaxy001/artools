@@ -218,7 +218,7 @@ prepare_images(){
     local timer=$(get_timer)
     load_pkgs "${ROOT_LIST}" "${INITSYS}"
     run_safe "make_rootfs"
-    if [[ -f ${LIVE_LIST} ]]; then
+    if [[ -n ${LIVE_LIST} ]]; then
         load_pkgs "${LIVE_LIST}" "${INITSYS}"
         run_safe "make_livefs"
     fi
