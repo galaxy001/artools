@@ -44,7 +44,10 @@ mount_overlay(){
     mkdir -p "$upper"
     case $upper in
         */livefs) lower="$work/rootfs" ;;
-        */bootfs) lower="$work/livefs":"$work/rootfs" ;;
+        */bootfs)
+            lower="$work/rootfs"
+            [[ -d "$work/livefs" ]] && lower="$work/livefs":"$work/rootfs"
+        ;;
     esac
     track_fs -t overlay overlay -olowerdir="$lower",upperdir="$upper",workdir="${mnt_dir}/work" "$upper"
 }

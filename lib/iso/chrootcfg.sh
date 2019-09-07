@@ -159,14 +159,14 @@ configure_calamares(){
     fi
 }
 
-configure_live_image(){
+configure_image(){
     local fs="$1"
-    msg "Configuring [livefs]"
+    msg "Configuring [%s]" "${fs##*/}"
     configure_hosts "$fs"
     configure_system "$fs"
     configure_services "$fs"
     configure_calamares "$fs"
     [[ ! -d "$fs/etc/artools" ]] && mkdir -p "$fs/etc/artools"
     write_live_session_conf > "$fs/etc/artools/live.conf"
-    msg "Done configuring [livefs]"
+    msg "Done configuring [%s]" "${fs##*/}"
 }

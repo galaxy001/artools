@@ -134,6 +134,8 @@ make_rootfs() {
 
         copy_overlay "${ROOT_OVERLAY}" "${rootfs}"
 
+        [[ ! -d ${work_dir}/livefs ]] && configure_image "${rootfs}"
+
         clean_up_image "${rootfs}"
 
         : > ${work_dir}/rootfs.lock
@@ -155,7 +157,7 @@ make_livefs() {
 
         copy_overlay "${LIVE_OVERLAY}" "${livefs}"
 
-        configure_live_image "${livefs}"
+        configure_image "${livefs}"
 
         umount_overlay
 
@@ -198,7 +200,10 @@ make_grub(){
     if [[ ! -e ${work_dir}/grub.lock ]]; then
         msg "Prepare [/iso/boot/grub]"
 
-        prepare_grub "${work_dir}/rootfs" "${work_dir}/livefs" "${iso_root}"
+        local layer=${work_dir}/rootfs
+        [[ -d ${work_dir}/livefs ]] && layer=${work_dir}/livefs
+
+        prepare_grub "${work_dir}/rootfs" "$layer" "${iso_root}"
 
         configure_grub "${iso_root}"
 
