@@ -57,7 +57,7 @@ load_profile(){
     if [[ ${DISPLAYMANAGER} != "none" ]];then
         case "${INITSYS}" in
             'openrc') SERVICES+=('xdm') ;;
-            'runit') SERVICES+=("${DISPLAYMANAGER}") ;;
+            'runit'|'s6') SERVICES+=("${DISPLAYMANAGER}") ;;
         esac
     fi
 

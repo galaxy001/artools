@@ -28,6 +28,15 @@ add_svc_runit(){
     fi
 }
 
+add_svc_s6(){
+    local mnt="$1" name="$2"
+    if [[ -d $mnt/etc/s6/sv/$name ]]; then
+        msg2 "Setting %s ..." "$name"
+        chroot $mnt s6-rc-bundle $name default &>/dev/null
+        chroot $mnt s6-rc -u change default &>/dev/null
+    fi
+}
+
 set_xdm(){
     if [[ -f $1/etc/conf.d/xdm ]];then
         local conf='DISPLAYMANAGER="'${DISPLAYMANAGER}'"'
@@ -70,6 +79,14 @@ configure_services(){
                 add_svc_runit "$mnt" "$svc"
             done
         ;;
+        's6')
+            for svc in ${SERVICES[@]}; do
+                add_svc_s6 "$mnt" "$svc"
+            done
+            for svc in ${SERVICES_LIVE[@]}; do
+                add_svc_s6 "$mnt" "$svc"
+            done
+        ;;
     esac
     info "Done configuring [%s]" "${INITSYS}"
 }
@@ -77,7 +94,7 @@ configure_services(){
 configure_system(){
     local mnt="$1"
     case ${INITSYS} in
-        'openrc' | 'runit')
+        'openrc' | 'runit'|'s6')
             configure_logind "$mnt" "elogind"
         ;;
     esac
@@ -129,6 +146,15 @@ write_servicescfg_conf(){
             for svc in ${SERVICES[@]};do
                 yaml+=$(write_yaml_seq_map 2 'name' "$svc")
                 yaml+=$(write_yaml_map 4 'runlevel' 'default')
+            done
+        ;;
+        's6')
+            yaml+=$(write_yaml_map 0 'svDir' '/etc/s6/sv')
+            yaml+=$(write_yaml_map 0 'rcDir' '/etc/s6-rc')
+            yaml+=$(write_yaml_map 0 'services')
+            for svc in ${SERVICES[@]};do
+                yaml+=$(write_yaml_seq_map 2 'name' "$svc")
+                yaml+=$(write_yaml_map 4 'bundle' 'default')
             done
         ;;
     esac
