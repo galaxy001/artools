@@ -27,14 +27,8 @@ load_profile(){
     local profile_dir="${DATADIR}/iso-profiles"
     [[ -d ${WORKSPACE_DIR}/iso-profiles ]] && profile_dir=${WORKSPACE_DIR}/iso-profiles
 
-
-    ROOT_LIST="$profile_dir/base/Packages-Root"
-    ROOT_OVERLAY="$profile_dir/base/root-overlay"
-    [[ -f "$profile_dir/base/Packages-Live" ]] && LIVE_LIST="$profile_dir/base/Packages-Live"
-    [[ -d "$profile_dir/base/live-overlay" ]] && LIVE_OVERLAY="$profile_dir/base/live-overlay"
-
-    [[ -f "$profile_dir/${PROFILE}/Packages-Root" ]] && ROOT_LIST="$profile_dir/${PROFILE}/Packages-Root"
-    [[ -d "$profile_dir/${PROFILE}/root-overlay" ]] && ROOT_OVERLAY="$profile_dir/${PROFILE}/root-overlay"
+    ROOT_LIST="$profile_dir/${PROFILE}/Packages-Root"
+    ROOT_OVERLAY="$profile_dir/${PROFILE}/root-overlay"
 
     [[ -f "$profile_dir/${PROFILE}/Packages-Live" ]] && LIVE_LIST="$profile_dir/${PROFILE}/Packages-Live"
     [[ -d "$profile_dir/${PROFILE}/live-overlay" ]] && LIVE_OVERLAY="$profile_dir/${PROFILE}/live-overlay"

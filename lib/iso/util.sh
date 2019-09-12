@@ -13,9 +13,6 @@
 # GNU General Public License for more details.
 
 error_function() {
-    if [[ -p $logpipe ]]; then
-        rm "$logpipe"
-    fi
     local func="$1"
     # first exit all subshells, then print the error
     if (( ! BASH_SUBSHELL )); then
@@ -203,9 +200,9 @@ make_grub(){
         local layer=${work_dir}/rootfs
         [[ -n ${LIVE_LIST} ]] && layer=${work_dir}/livefs
 
-        prepare_grub "${work_dir}/rootfs" "$layer" "${iso_root}"
+        prepare_grub "${work_dir}/rootfs" "$layer"
 
-        configure_grub "${iso_root}"
+        configure_grub
 
         : > ${work_dir}/grub.lock
         msg "Done [/iso/boot/grub]"

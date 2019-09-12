@@ -66,7 +66,7 @@ configure_grub(){
 prepare_grub(){
     local platform=i386-pc img='core.img' prefix=/boot/grub
     local lib=$1/usr/lib/grub theme=$2/usr/share/grub
-    local grub=$3/boot/grub efi=$3/efi/boot
+    local grub=${iso_root}/boot/grub efi=${iso_root}/efi/boot
 
     prepare_dir ${grub}/${platform}
 
