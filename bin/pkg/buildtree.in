@@ -74,7 +74,7 @@ show_deps(){
 }
 
 subrepo_new(){
-    local group="$1" team="$2"
+    local group="${1:-$GROUP}" team="${2:-$TEAM}"
     local dest=${TREE_DIR_ARTIX}/$group/${PACKAGE}/trunk
 
     cd ${TREE_DIR_ARTIX}/$group
