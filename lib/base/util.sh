@@ -84,6 +84,7 @@ init_artools_pkg(){
             packages-xorg
             packages-python
             packages-perl
+            packages-java
             packages-qt5
             packages-devel
             packages-ruby
@@ -94,6 +95,7 @@ init_artools_pkg(){
             packages-mate
             packages-kde
             packages-xfce
+#             packages-haskell
     )
 
     HOST_TREE_ARTIX=${HOST_TREE_ARTIX:-"gitea@${GIT_DOMAIN}:artixlinux"}
