@@ -54,9 +54,10 @@ load_team_id(){
 add_repo_to_team(){
     local pkg="$1" org="$2" team="$3"
     local id=$(load_team_id "$org" "$team")
+    local gitname=$(get_compliant_name "$pkg")
 
-    msg2 "Adding package repo [%s] to team (%s)" "$pkg" "$team"
+    msg2 "Adding package repo [%s] to team (%s)" "$gitname" "$team"
 
-    curl -s -X PUT "${GIT_URL}/api/v1/teams/$id/repos/$org/$pkg?access_token=${GIT_TOKEN}" \
+    curl -s -X PUT "${GIT_URL}/api/v1/teams/$id/repos/$org/$gitname?access_token=${GIT_TOKEN}" \
         -H  "accept: application/json"
 }
