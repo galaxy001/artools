@@ -85,7 +85,7 @@ load_pkgs(){
 
     local _init="s|@$init||g"
     case "$init" in
-        'openrc') _init_rm1="s|@runit.*||g"; _init_rm2="s|@s6*||g" ;;
+        'openrc') _init_rm1="s|@runit.*||g"; _init_rm2="s|@s6.*||g" ;;
         's6') _init_rm1="s|@runit.*||g"; _init_rm2="s|@openrc.*||g" ;;
         'runit') _init_rm1="s|@s6.*||g"; _init_rm2="s|@openrc.*||g" ;;
     esac
