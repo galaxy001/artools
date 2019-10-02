@@ -32,8 +32,8 @@ add_svc_s6(){
     local mnt="$1" name="$2"
     if [[ -d $mnt/etc/s6/sv/$name ]]; then
         msg2 "Setting %s ..." "$name"
-        chroot $mnt s6-rc-bundle $name default &>/dev/null
-        chroot $mnt s6-rc -u change default &>/dev/null
+#         chroot $mnt s6-rc-bundle $name default &>/dev/null
+#         chroot $mnt s6-rc -u change default &>/dev/null
     fi
 }
 
