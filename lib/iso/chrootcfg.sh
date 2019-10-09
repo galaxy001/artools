@@ -168,7 +168,7 @@ write_unpackfs_conf(){
     yaml+=$(write_yaml_map 0 'unpack')
     yaml+=$(write_yaml_seq_map 2 'source' "/run/artix/bootmnt/artix/x86_64/rootfs.sfs")
     yaml+=$(write_yaml_map 4 'sourcefs' 'squashfs')
-    yaml+=$(write_yaml_map 4 'destination' '')
+    yaml+=$(write_yaml_map 4 'destination' '""')
     yaml+=$(write_empty_line)
     printf '%s' "${yaml}"
 }
