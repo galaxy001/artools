@@ -32,7 +32,7 @@ prepare_initramfs(){
         su ${OWNER} -c "gpg --export ${GPG_KEY} >/tmp/GPG_KEY"
         exec 17<>/tmp/GPG_KEY
     fi
-    local _kernel=$(cat $mnt/usr/lib/modules/*/version)
+    local _kernel=$(<$mnt/usr/src/linux/version)
     ARTIX_GNUPG_FD=${GPG_KEY:+17} artools-chroot $mnt \
         /usr/bin/mkinitcpio -k ${_kernel} \
         -c /etc/mkinitcpio-artix.conf \
