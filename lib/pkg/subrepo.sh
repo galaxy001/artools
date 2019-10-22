@@ -81,7 +81,7 @@ pull_tree(){
     local remote_head=$(get_remote_head)
 
     msg "Checking %s (%s)" "${tree}" "$os"
-    if $(has_changes "${local_head}" "${remote_head}");then
+    if has_changes "${local_head}" "${remote_head}";then
         git pull origin master
     fi
 }
