@@ -69,7 +69,6 @@ load_profile(){
 }
 
 write_live_session_conf(){
-    msg2 "Writing live.conf"
     local conf=''
     conf+=$(printf '%s\n' '# live session configuration')
     conf+=$(printf "\nAUTOLOGIN=%s\n" "${AUTOLOGIN}")

@@ -193,6 +193,7 @@ configure_image(){
     configure_services "$fs"
     configure_calamares "$fs"
     [[ ! -d "$fs/etc/artools" ]] && mkdir -p "$fs/etc/artools"
+    msg2 "Writing live.conf"
     write_live_session_conf > "$fs/etc/artools/live.conf"
     msg "Done configuring [%s]" "${fs##*/}"
 }
