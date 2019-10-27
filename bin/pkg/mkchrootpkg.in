@@ -31,6 +31,7 @@ clean_first=0
 run_namcap=0
 run_checkpkg=0
 temp_chroot=0
+run_nocheck=0
 
 bindmounts_ro=()
 bindmounts_rw=()
@@ -75,6 +76,7 @@ usage() {
     echo "           Default: $copy"
     echo '-n         Run namcap on the package'
     echo '-C         Run checkpkg on the package'
+    echo '-N         Disable check() function'
     echo '-T         Build in a temporary directory'
     echo '-U         Run makepkg as a specified user'
     exit 1
@@ -280,7 +282,7 @@ move_products() {
 
 orig_argv=("$0" "$@")
 
-opts='hcur:I:l:nCTD:d:U:'
+opts='hcur:I:l:nNCTD:d:U:'
 
 while getopts "${opts}" arg; do
     case "$arg" in
@@ -292,6 +294,7 @@ while getopts "${opts}" arg; do
         I) install_pkgs+=("$OPTARG") ;;
         l) copy="$OPTARG" ;;
         n) run_namcap=1; makepkg_args+=(--install) ;;
+        N) run_nocheck=1; makepkg_args+=(--nocheck) ;;
         C) run_checkpkg=1 ;;
         T) temp_chroot=1; copy+="-$$" ;;
         U) makepkg_user="$OPTARG" ;;

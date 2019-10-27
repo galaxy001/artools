@@ -21,6 +21,8 @@ load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/
 
 create_first=false
 rebuild=false
+no_check=false
+is_checkpkg=false
 
 mkchrootpkg_args=(-c -n)
 
@@ -33,6 +35,8 @@ usage() {
     echo "    -r <dir>           Create chroots in this directory"
     echo '    -c                 Recreate the chroot before building'
     echo '    -m                 Major rebuild'
+    echo '    -N                 Disable check() function'
+    echo '    -C                 Run checkpkg after built'
     echo '    -h                 This help'
     echo ''
     echo "Default mkchrootpkg_args args: ${mkchrootpkg_args[*]}"
@@ -42,13 +46,15 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='hcmr:'
+opts='hcCNmr:'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         r) CHROOTS_PKG="$OPTARG" ;;
         c) create_first=true ;;
         m) rebuild=true ;;
+        C) is_checkpkg=true; mkchrootpkg_args+=(-C) ;;
+        N) no_check=true; mkchrootpkg_args+=(-N) ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '%s'" "${arg}"; usage 1 ;;
     esac
