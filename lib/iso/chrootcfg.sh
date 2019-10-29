@@ -29,12 +29,15 @@ add_svc_runit(){
 }
 
 add_svc_s6(){
-    local mnt="$1" name="$2"
-    if [[ -d $mnt/etc/s6/sv/$name ]]; then
-        msg2 "Setting %s ..." "$name"
-#         chroot $mnt s6-rc-bundle $name default &>/dev/null
-#         chroot $mnt s6-rc -u change default &>/dev/null
-    fi
+    local mnt="$1" names="$2" valid=""
+    for svc in $names; do
+        if [[ -d $mnt/etc/s6/sv/$svc ]]; then
+            msg2 "Setting %s ..." "$svc"
+            valid+=$svc
+            valid+=" "
+        fi
+    done
+    chroot $mnt s6-rc-bundle -c /etc/s6/rc/compiled add default $valid
 }
 
 set_xdm(){
@@ -80,12 +83,8 @@ configure_services(){
             done
         ;;
         's6')
-            for svc in ${SERVICES[@]}; do
-                add_svc_s6 "$mnt" "$svc"
-            done
-            for svc in ${SERVICES_LIVE[@]}; do
-                add_svc_s6 "$mnt" "$svc"
-            done
+            local svcs="${SERVICES[@]} ${SERVICES_LIVE[@]}"
+            add_svc_s6 "$mnt" "$svcs"
         ;;
     esac
     info "Done configuring [%s]" "${INITSYS}"
@@ -150,7 +149,7 @@ write_servicescfg_conf(){
         ;;
         's6')
             yaml+=$(write_yaml_map 0 'svDir' '/etc/s6/sv')
-            yaml+=$(write_yaml_map 0 'rcDir' '/etc/s6-rc')
+            yaml+=$(write_yaml_map 0 'rcDir' '/etc/s6/rc')
             yaml+=$(write_yaml_map 0 'services')
             for svc in ${SERVICES[@]};do
                 yaml+=$(write_yaml_seq_map 2 'name' "$svc")
