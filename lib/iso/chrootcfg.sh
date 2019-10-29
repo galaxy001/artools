@@ -12,32 +12,36 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-add_svc_rc(){
-    local mnt="$1" name="$2" rlvl="$3"
-    if [[ -f $mnt/etc/init.d/$name ]];then
-        msg2 "Setting %s ..." "$name"
-        chroot $mnt rc-update add $name $rlvl &>/dev/null
-    fi
+add_svc_openrc(){
+    local mnt="$1" names="$2" rlvl="${3:-default}"
+    for svc in $names; do
+        if [[ -f $mnt/etc/init.d/$svc ]];then
+            msg2 "Setting %s ..." "$svc"
+            [[ $svc == "xdm" ]] && set_xdm "$mnt"
+            chroot $mnt rc-update add $svc $rlvl &>/dev/null
+        fi
+    done
 }
 
 add_svc_runit(){
-    local mnt="$1" name="$2"
-    if [[ -d $mnt/etc/runit/sv/$name ]]; then
-        msg2 "Setting %s ..." "$name"
-        chroot $mnt ln -s /etc/runit/sv/$name /etc/runit/runsvdir/default &>/dev/null
-    fi
+    local mnt="$1" names="$2" rlvl="${3:-default}"
+    for svc in $names; do
+        if [[ -d $mnt/etc/runit/sv/$svc ]]; then
+            msg2 "Setting %s ..." "$svc"
+            chroot $mnt ln -s /etc/runit/sv/$svc /etc/runit/runsvdir/$rlvl &>/dev/null
+        fi
+    done
 }
 
 add_svc_s6(){
-    local mnt="$1" names="$2" valid=""
+    local mnt="$1" names="$2" valid="" rlvl="${3:-default}"
     for svc in $names; do
         if [[ -d $mnt/etc/s6/sv/$svc ]]; then
             msg2 "Setting %s ..." "$svc"
-            valid+=$svc
-            valid+=" "
+            valid=${valid:-}${valid:+' '}${svc}
         fi
     done
-    chroot $mnt s6-rc-bundle -c /etc/s6/rc/compiled add default $valid
+    chroot $mnt s6-rc-bundle -c /etc/s6/rc/compiled add $rlvl $valid
 }
 
 set_xdm(){
@@ -63,40 +67,14 @@ configure_logind(){
 
 configure_services(){
     local mnt="$1"
-    info "Configuring [%s]" "${INITSYS}"
-    case ${INITSYS} in
-        'openrc')
-            for svc in ${SERVICES[@]}; do
-                [[ $svc == "xdm" ]] && set_xdm "$mnt"
-                add_svc_rc "$mnt" "$svc" "default"
-            done
-            for svc in ${SERVICES_LIVE[@]}; do
-                add_svc_rc "$mnt" "$svc" "default"
-            done
-        ;;
-        'runit')
-            for svc in ${SERVICES[@]}; do
-                add_svc_runit "$mnt" "$svc"
-            done
-            for svc in ${SERVICES_LIVE[@]}; do
-                add_svc_runit "$mnt" "$svc"
-            done
-        ;;
-        's6')
-            local svcs="${SERVICES[@]} ${SERVICES_LIVE[@]}"
-            add_svc_s6 "$mnt" "$svcs"
-        ;;
-    esac
-    info "Done configuring [%s]" "${INITSYS}"
+    info "Configuring [%s] services" "${INITSYS}"
+    add_svc_${INITSYS} "$mnt" "${SERVICES[*]} ${SERVICES_LIVE[*]}"
+    info "Done configuring [%s] services" "${INITSYS}"
 }
 
 configure_system(){
     local mnt="$1"
-    case ${INITSYS} in
-        'openrc' | 'runit'|'s6')
-            configure_logind "$mnt" "elogind"
-        ;;
-    esac
+    configure_logind "$mnt" "elogind"
     echo ${HOST_NAME} > $mnt/etc/hostname
 }
 
@@ -161,16 +139,16 @@ write_servicescfg_conf(){
     printf '%s' "${yaml}"
 }
 
-write_unpackfs_conf(){
-    local yaml=$(write_yaml_header)
-    yaml+=$(write_empty_line)
-    yaml+=$(write_yaml_map 0 'unpack')
-    yaml+=$(write_yaml_seq_map 2 'source' "/run/artix/bootmnt/artix/x86_64/rootfs.sfs")
-    yaml+=$(write_yaml_map 4 'sourcefs' 'squashfs')
-    yaml+=$(write_yaml_map 4 'destination' '""')
-    yaml+=$(write_empty_line)
-    printf '%s' "${yaml}"
-}
+# write_unpackfs_conf(){
+#     local yaml=$(write_yaml_header)
+#     yaml+=$(write_empty_line)
+#     yaml+=$(write_yaml_map 0 'unpack')
+#     yaml+=$(write_yaml_seq_map 2 'source' "/run/artix/bootmnt/artix/x86_64/rootfs.sfs")
+#     yaml+=$(write_yaml_map 4 'sourcefs' 'squashfs')
+#     yaml+=$(write_yaml_map 4 'destination' '""')
+#     yaml+=$(write_empty_line)
+#     printf '%s' "${yaml}"
+# }
 
 configure_calamares(){
     local mods="$1/etc/calamares/modules"
@@ -178,7 +156,7 @@ configure_calamares(){
         msg2 "Configuring Calamares"
         write_users_conf > "$mods"/users.conf
         write_servicescfg_conf > "$mods"/services-"${INITSYS}".conf
-        write_unpackfs_conf > "$mods"/unpackfs.conf
+#         write_unpackfs_conf > "$mods"/unpackfs.conf
         sed -e "s|openrc|${INITSYS}|" -i "$mods"/postcfg.conf
         sed -e "s|services-openrc|services-${INITSYS}|" -i "$1"/etc/calamares/settings.conf
     fi
