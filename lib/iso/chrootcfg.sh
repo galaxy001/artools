@@ -103,60 +103,35 @@ write_users_conf(){
 }
 
 write_servicescfg_conf(){
+    local key1="$1" val1="$2" key2="$3" val2="$4"
     local yaml=$(write_yaml_header)
     yaml+=$(write_empty_line)
-    case "${INITSYS}" in
-        'runit')
-            yaml+=$(write_yaml_map 0 'svDir' '/etc/runit/sv')
-            yaml+=$(write_yaml_map 0 'runsvDir' '/etc/runit/runsvdir')
-            yaml+=$(write_yaml_map 0 'services')
-            yaml+=$(write_yaml_map 2 'enabled')
-            for svc in ${SERVICES[@]};do
-                yaml+=$(write_yaml_seq_map 4 'name' "$svc")
-                yaml+=$(write_yaml_map 6 'runlevel' 'default')
-            done
-        ;;
-        'openrc')
-            yaml+=$(write_yaml_map 0 'initdDir' '/etc/init.d')
-            yaml+=$(write_yaml_map 0 'runlevelsDir' '/etc/runlevels')
-            yaml+=$(write_yaml_map 0 'services')
-            for svc in ${SERVICES[@]};do
-                yaml+=$(write_yaml_seq_map 2 'name' "$svc")
-                yaml+=$(write_yaml_map 4 'runlevel' 'default')
-            done
-        ;;
-        's6')
-            yaml+=$(write_yaml_map 0 'svDir' '/etc/s6/sv')
-            yaml+=$(write_yaml_map 0 'rcDir' '/etc/s6/rc')
-            yaml+=$(write_yaml_map 0 'services')
-            for svc in ${SERVICES[@]};do
-                yaml+=$(write_yaml_seq_map 2 'name' "$svc")
-                yaml+=$(write_yaml_map 4 'bundle' 'default')
-            done
-        ;;
-    esac
+    yaml+=$(write_yaml_map 0 "$key1" "$val1")
+    yaml+=$(write_yaml_map 0 "$key2" "$val2")
+    yaml+=$(write_yaml_map 0 'services')
+    for svc in ${SERVICES[@]};do
+        yaml+=$(write_yaml_seq 2 "$svc")
+    done
     yaml+=$(write_empty_line)
     printf '%s' "${yaml}"
 }
-
-# write_unpackfs_conf(){
-#     local yaml=$(write_yaml_header)
-#     yaml+=$(write_empty_line)
-#     yaml+=$(write_yaml_map 0 'unpack')
-#     yaml+=$(write_yaml_seq_map 2 'source' "/run/artix/bootmnt/artix/x86_64/rootfs.sfs")
-#     yaml+=$(write_yaml_map 4 'sourcefs' 'squashfs')
-#     yaml+=$(write_yaml_map 4 'destination' '""')
-#     yaml+=$(write_empty_line)
-#     printf '%s' "${yaml}"
-# }
 
 configure_calamares(){
     local mods="$1/etc/calamares/modules"
     if [[ -d "$mods" ]];then
         msg2 "Configuring Calamares"
         write_users_conf > "$mods"/users.conf
-        write_servicescfg_conf > "$mods"/services-"${INITSYS}".conf
-#         write_unpackfs_conf > "$mods"/unpackfs.conf
+        case "${INITSYS}" in
+            'runit')
+                write_servicescfg_conf 'svDir' '/etc/runit/sv' 'runsvDir' '/etc/runit/runsvdir' > "$mods"/services-"${INITSYS}".conf
+            ;;
+            'openrc')
+                write_servicescfg_conf 'initdDir' '/etc/init.d' 'runlevelsDir' '/etc/runlevels' > "$mods"/services-"${INITSYS}".conf
+            ;;
+            's6')
+                write_servicescfg_conf 'svDir' '/etc/s6/sv' 'rcDir' '/etc/s6/rc' > "$mods"/services-"${INITSYS}".conf
+            ;;
+        esac
         sed -e "s|openrc|${INITSYS}|" -i "$mods"/postcfg.conf
         sed -e "s|services-openrc|services-${INITSYS}|" -i "$1"/etc/calamares/settings.conf
     fi
