@@ -102,7 +102,7 @@ write_users_conf(){
     printf '%s' "${yaml}"
 }
 
-write_servicescfg_conf(){
+write_services_conf(){
     local key1="$1" val1="$2" key2="$3" val2="$4"
     local yaml=$(write_yaml_header)
     yaml+=$(write_empty_line)
@@ -116,22 +116,27 @@ write_servicescfg_conf(){
     printf '%s' "${yaml}"
 }
 
+write_services_openrc_conf(){
+    local mods="$1"
+    write_services_conf 'initdDir' '/etc/init.d' 'runlevelsDir' '/etc/runlevels' > "$mods"/services-openrc.conf
+}
+
+write_services_runit_conf(){
+    local mods="$1"
+    write_services_conf 'svDir' '/etc/runit/sv' 'runsvDir' '/etc/runit/runsvdir' > "$mods"/services-runit.conf
+}
+
+write_services_s6_conf(){
+    local mods="$1"
+    write_services_conf 'svDir' '/etc/s6/sv' 'rcDir' '/etc/s6/rc' > "$mods"/services-s6.conf
+}
+
 configure_calamares(){
     local mods="$1/etc/calamares/modules"
     if [[ -d "$mods" ]];then
         msg2 "Configuring Calamares"
         write_users_conf > "$mods"/users.conf
-        case "${INITSYS}" in
-            'runit')
-                write_servicescfg_conf 'svDir' '/etc/runit/sv' 'runsvDir' '/etc/runit/runsvdir' > "$mods"/services-"${INITSYS}".conf
-            ;;
-            'openrc')
-                write_servicescfg_conf 'initdDir' '/etc/init.d' 'runlevelsDir' '/etc/runlevels' > "$mods"/services-"${INITSYS}".conf
-            ;;
-            's6')
-                write_servicescfg_conf 'svDir' '/etc/s6/sv' 'rcDir' '/etc/s6/rc' > "$mods"/services-"${INITSYS}".conf
-            ;;
-        esac
+        write_services_"${INITSYS}"_conf "$mods"
         sed -e "s|services-openrc|services-${INITSYS}|" -i "$1"/etc/calamares/settings.conf
     fi
 }
