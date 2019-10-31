@@ -132,7 +132,6 @@ configure_calamares(){
                 write_servicescfg_conf 'svDir' '/etc/s6/sv' 'rcDir' '/etc/s6/rc' > "$mods"/services-"${INITSYS}".conf
             ;;
         esac
-        sed -e "s|openrc|${INITSYS}|" -i "$mods"/postcfg.conf
         sed -e "s|services-openrc|services-${INITSYS}|" -i "$1"/etc/calamares/settings.conf
     fi
 }
