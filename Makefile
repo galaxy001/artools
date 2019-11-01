@@ -10,8 +10,8 @@ LIBDIR = $(PREFIX)/lib
 DATADIR = $(PREFIX)/share
 CPIODIR = $(SYSCONFDIR)/initcpio
 
-CONF = \
-	data/artools.conf
+BASE_CONF = \
+	data/conf/base.conf
 
 BASE_BIN = \
 	bin/base/signfile \
@@ -29,6 +29,9 @@ BASE_UTIL = lib/util-base.sh
 BASE_DATA = \
 	$(wildcard data/base/pacman*.conf)
 
+PKG_CONF = \
+	data/conf/pkg.conf
+
 PKG_BIN = \
 	bin/pkg/buildpkg \
 	bin/pkg/deploypkg \
@@ -43,18 +46,6 @@ PKG_BIN = \
 	bin/pkg/finddeps \
 	bin/pkg/find-libdeps \
 	bin/pkg/batchpkg
-
-# LN_BATCHPKG = \
-# 	core-batch \
-# 	extra-batch \
-# 	testing-batch \
-# 	staging-batch \
-# 	community-batch \
-# 	community-testing-batch \
-# 	community-staging-batch \
-# 	multilib-batch \
-# 	multilib-testing-batch \
-# 	multilib-staging-batch
 
 LN_COMMITPKG = \
 	extrapkg \
@@ -108,6 +99,9 @@ PKG_DATA = \
 
 PATCHES = \
 	$(wildcard data/patches/*.patch)
+
+ISO_CONF = \
+	data/conf/iso.conf
 
 ISO_BIN = \
 	bin/iso/buildiso \
@@ -164,7 +158,7 @@ clean:
 
 install_base:
 	install $(DIRMODE) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
-	install $(FILEMODE) $(CONF) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
+	install $(FILEMODE) $(BASE_CONF) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
 
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
 	install $(MODE) $(BASE_BIN) $(DESTDIR)$(BINDIR)
@@ -177,6 +171,9 @@ install_base:
 	install $(FILEMODE) $(BASE_DATA) $(DESTDIR)$(DATADIR)/$(TOOLS)
 
 install_pkg:
+	install $(DIRMODE) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
+	install $(FILEMODE) $(PKG_CONF) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
+
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
 	install $(MODE) $(PKG_BIN) $(DESTDIR)$(BINDIR)
 
@@ -187,7 +184,6 @@ install_pkg:
 	for l in $(LN_COMMITPKG); do $(LN) commitpkg $(DESTDIR)$(BINDIR)/$$l; done
 	for l in $(LN_BUILDPKG); do $(LN) buildpkg $(DESTDIR)$(BINDIR)/$$l; done
 	for l in $(LN_DEPLOYPKG); do $(LN) deploypkg $(DESTDIR)$(BINDIR)/$$l; done
-# 	for l in $(LN_BATCHPKG); do $(LN) batchpkg $(DESTDIR)$(BINDIR)/$$l; done
 
 	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)/pkg
 	install $(FILEMODE) $(PKG_UTIL) $(DESTDIR)$(LIBDIR)/$(TOOLS)
@@ -203,6 +199,9 @@ install_cpio:
 	+make CPIODIR=$(CPIODIR) DESTDIR=$(DESTDIR) -C initcpio install
 
 install_iso: install_cpio
+	install $(DIRMODE) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
+	install $(FILEMODE) $(ISO_CONF) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
+
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
 	install $(MODE) $(ISO_BIN) $(DESTDIR)$(BINDIR)
 

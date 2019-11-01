@@ -12,8 +12,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
-. @libdir@/artools/util-iso.sh
+for name in base iso; do
+    . @libdir@/artools/util-"${name}".sh
+done
 
 gen_iso_fn(){
     local vars=("artix") name
@@ -42,7 +43,7 @@ prepare_build(){
     esac
 
     pacman_conf="${DATADIR}/$pac_file"
-    [[ -f ${USERCONFDIR}/artools/$pac_file ]] && pacman_conf="${USERCONFDIR}/artools/$pac_file"
+    [[ -f ${USER_CONF_DIR}/$pac_file ]] && pacman_conf="${USER_CONF_DIR}/$pac_file"
 
     iso_file=$(gen_iso_fn).iso
 
@@ -112,7 +113,9 @@ build(){
 
 load_user_info
 
-load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+for name in base iso; do
+    load_"${name}"_config "${USER_CONF_DIR}" || load_"${name}"_config "${SYSCONFDIR}"
+done
 
 clean_first=true
 pretend=false

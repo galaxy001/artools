@@ -16,7 +16,7 @@
 
 load_user_info
 
-load_vars "${USERCONFDIR}/pacman/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
+load_vars "${XDG_CONFIG_HOME}/pacman/makepkg.conf" || load_vars "${USER_HOME}/.makepkg.conf"
 load_vars /etc/makepkg.conf
 
 file_to_sign="$1"

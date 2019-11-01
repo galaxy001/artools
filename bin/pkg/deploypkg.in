@@ -12,8 +12,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
-. @libdir@/artools/util-pkg.sh
+for name in base pkg; do
+    . @libdir@/artools/util-"${name}".sh
+done
 
 find_cached_pkgfile() {
     local searchdirs=("$PKGDEST" "$PWD") results=()
@@ -132,8 +133,11 @@ update_repo(){
 
 load_user_info
 
-load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
-load_vars "${USERCONFDIR}/pacman/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
+for name in base pkg; do
+    load_"${name}"_config "${USER_CONF_DIR}" || load_"${name}"_config "${SYSCONFDIR}"
+done
+
+load_vars "${XDG_CONFIG_HOME}/pacman/makepkg.conf" || load_vars "${USER_HOME}/.makepkg.conf"
 load_vars /etc/makepkg.conf
 
 add_pkg=false

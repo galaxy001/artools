@@ -12,12 +12,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
-. @libdir@/artools/util-pkg.sh
+for name in base pkg; do
+    . @libdir@/artools/util-"${name}".sh
+done
 
 load_user_info
 
-load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+for name in base pkg; do
+    load_"${name}"_config "${USER_CONF_DIR}" || load_"${name}"_config "${SYSCONFDIR}"
+done
 
 create_first=false
 rebuild=false
@@ -71,10 +74,10 @@ else
 fi
 
 pacman_conf="${DATADIR}/pacman-${repo}.conf"
-[[ -f ${USERCONFDIR}/artools/pacman-${repo}.conf ]] && pacman_conf="${USERCONFDIR}/artools/pacman-${repo}.conf"
+[[ -f ${USER_CONF_DIR}/pacman-${repo}.conf ]] && pacman_conf="${USER_CONF_DIR}/pacman-${repo}.conf"
 
 makepkg_conf="${DATADIR}/makepkg.conf"
-[[ -f ${USERCONFDIR}/artools/makepkg.conf ]] && makepkg_conf="${USERCONFDIR}/artools/makepkg.conf"
+[[ -f ${USER_CONF_DIR}/makepkg.conf ]] && makepkg_conf="${USER_CONF_DIR}/makepkg.conf"
 
 check_root SOURCE_DATE_EPOCH
 

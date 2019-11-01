@@ -12,8 +12,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
-. @libdir@/artools/util-pkg.sh
+for name in base pkg; do
+    . @libdir@/artools/util-"${name}".sh
+done
 
 compare(){
     local pkgpath="$1" group="$2"
@@ -55,7 +56,7 @@ compare(){
                             msg_row_notify "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
 
                             if [[ -n "$archshow" ]]; then
-                                printf "%s\n" "$archshow:$artixshow:$pkg" >> ${WORKSPACE_DIR}/pkg_moves.list
+                                printf "%s\n" "$archshow:$artixshow:$pkg" >> ${TREE_DIR_ARTIX}/pkg_moves.list
                             fi
                         fi
                     ;;
@@ -67,7 +68,7 @@ compare(){
             if [ $result -eq -1 ];then
                 msg_row_upgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
 
-                printf "%s\n" "$archshow:$pkg" >> ${WORKSPACE_DIR}/pkg_upgrades.list
+                printf "%s\n" "$archshow:$pkg" >> ${TREE_DIR_ARTIX}/pkg_upgrades.list
             fi
 
         elif ${downgrades};then
@@ -86,7 +87,7 @@ compare(){
 
 is_db_entry() {
     local pkgname="$1" repo="$(arch2artix $2)"
-    if [[ -d ${USERCACHEDIR}/${LINKSDBEXT}/${ARCH}/$repo/$pkgname ]];then
+    if [[ -d ${USER_CACHE_DIR}/${LINKSDBEXT}/${ARCH}/$repo/$pkgname ]];then
         return 0
     fi
     return 1
@@ -128,7 +129,7 @@ check_db(){
 update_db_cache(){
     msg "Updating database cache"
     for repo in "${searchrepos[@]}"; do
-        local cachedir=${USERCACHEDIR}/${LINKSDBEXT}/${ARCH}/${repo}
+        local cachedir=${USER_CACHE_DIR}/${LINKSDBEXT}/${ARCH}/${repo}
         rm -rf "$cachedir"
         mkdir -p "$cachedir"
         msg2 "%s" "$repo"
@@ -142,7 +143,7 @@ query_db() {
     msg_table_header "${table3}" "Repo" "Package" "Library"
     for repo in "${searchrepos[@]}"; do
         local prefix=
-        local db=${USERCACHEDIR}/${LINKSDBEXT}/${ARCH}/${repo}/
+        local db=${USER_CACHE_DIR}/${LINKSDBEXT}/${ARCH}/${repo}/
         if [[ -d ${db} ]]; then
             while read -rd '' pkg; do
                 read -r match
@@ -168,8 +169,8 @@ show_version_table(){
         msg_table_header "${table}" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version" "Group"
     fi
 
-    [[ -f ${WORKSPACE_DIR}/pkg_moves.list ]] && rm ${WORKSPACE_DIR}/pkg_moves.list
-    [[ -f ${WORKSPACE_DIR}/pkg_upgrades.list ]] && rm ${WORKSPACE_DIR}/pkg_upgrades.list
+    [[ -f ${TREE_DIR_ARTIX}/pkg_moves.list ]] && rm ${TREE_DIR_ARTIX}/pkg_moves.list
+    [[ -f ${TREE_DIR_ARTIX}/pkg_upgrades.list ]] && rm ${TREE_DIR_ARTIX}/pkg_upgrades.list
     for tree in ${TREE_NAMES_ARTIX[@]};do
 
         local git=$(find ${TREE_DIR_ARTIX}/$tree/ -mindepth 1 -maxdepth 1 -type d)
@@ -186,8 +187,11 @@ show_version_table(){
 
 load_user_info
 
-load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
-load_vars "${USERCONFDIR}/pacman/makepkg.conf" || load_vars "$USER_HOME/.makepkg.conf"
+for name in base pkg; do
+    load_"${name}"_config "${USER_CONF_DIR}" || load_"${name}"_config "${SYSCONFDIR}"
+done
+
+load_vars "${XDG_CONFIG_HOME}/pacman/makepkg.conf" || load_vars "${USER_HOME}/.makepkg.conf"
 load_vars /etc/makepkg.conf
 
 unstable=false

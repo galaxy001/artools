@@ -12,35 +12,34 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
-. @libdir@/artools/util-pkg.sh
-
-load_user_info
-
-load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+for name in base pkg; do
+    . @libdir@/artools/util-"${name}".sh
+done
 
 move=false
 upgrade=false
 
 batch_move() {
-    [[ -f ${WORKSPACE_DIR}/pkg_moves.list ]] || die "pkg_moves.list does not exist!"
+    local pkglist=${TREE_DIR_ARTIX}/pkg_moves.list
+    [[ -f $pkglist ]] || die "pkg_moves.list does not exist!"
     while read entry;do
         local pkg=${entry##*:}
         local src=${entry%:*}
         src=${src#*:}
         local dest=${entry%%:*}
         echo "${dest}pkg -s ${src} -u -p ${pkg}"
-    done < ${WORKSPACE_DIR}/pkg_moves.list
+    done < $pkglist
 }
 
 batch_upgrade() {
-    [[ -f ${WORKSPACE_DIR}/pkg_upgrades.list ]] || die "pkg_upgrades.list does not exist!"
+    local pkglist=${TREE_DIR_ARTIX}/pkg_upgrades.list
+    [[ -f $pkglist ]] || die "pkg_upgrades.list does not exist!"
     while read entry;do
         local pkg=${entry#*:}
         local dest=${entry%:*}
         echo "buildtree -i -p ${pkg}"
         echo "${dest}pkg -u -p ${pkg}"
-    done < ${WORKSPACE_DIR}/pkg_upgrades.list
+    done < $pkglist
 }
 
 usage() {
@@ -52,6 +51,12 @@ usage() {
     echo ''
     exit $1
 }
+
+load_user_info
+
+for name in base pkg; do
+    load_"${name}"_config "${USER_CONF_DIR}" || load_"${name}"_config "${SYSCONFDIR}"
+done
 
 opts='umh'
 

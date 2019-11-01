@@ -12,7 +12,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
+for name in base iso; do
+    . @libdir@/artools/util-"${name}".sh
+done
 
 connect(){
     echo "${ACCOUNT}@${FILE_HOST}:${FILE_HOME}"
@@ -32,7 +34,9 @@ sync_dir(){
 
 load_user_info
 
-load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+for name in base iso; do
+    load_"${name}"_config "${USER_CONF_DIR}" || load_"${name}"_config "${SYSCONFDIR}"
+done
 
 update=false
 verbose=false
