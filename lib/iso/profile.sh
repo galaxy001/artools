@@ -61,9 +61,7 @@ load_profile(){
         esac
     fi
 
-    if [[ -z ${SERVICES_LIVE[@]} ]];then
-        SERVICES_LIVE=('artix-live' 'pacman-init')
-    fi
+    SERVICES_LIVE=('artix-live' 'pacman-init')
 
     return 0
 }

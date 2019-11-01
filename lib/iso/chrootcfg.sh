@@ -117,18 +117,18 @@ write_services_conf(){
 }
 
 write_services_openrc_conf(){
-    local mods="$1"
-    write_services_conf 'initdDir' '/etc/init.d' 'runlevelsDir' '/etc/runlevels' > "$mods"/services-openrc.conf
+    local conf="$1"/services-openrc.conf
+    write_services_conf 'initdDir' '/etc/init.d' 'runlevelsDir' '/etc/runlevels' > "$conf"
 }
 
 write_services_runit_conf(){
-    local mods="$1"
-    write_services_conf 'svDir' '/etc/runit/sv' 'runsvDir' '/etc/runit/runsvdir' > "$mods"/services-runit.conf
+    local conf="$1"/services-runit.conf
+    write_services_conf 'svDir' '/etc/runit/sv' 'runsvDir' '/etc/runit/runsvdir' > "$conf"
 }
 
 write_services_s6_conf(){
-    local mods="$1"
-    write_services_conf 'svDir' '/etc/s6/sv' 'dbDir' '/etc/s6/rc/compiled' > "$mods"/services-s6.conf
+    local conf="$1"/services-s6.conf
+    write_services_conf 'svDir' '/etc/s6/sv' 'dbDir' '/etc/s6/rc/compiled' > "$conf"
 }
 
 configure_calamares(){
