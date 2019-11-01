@@ -41,20 +41,20 @@ PKG_BIN = \
 	bin/pkg/links-add \
 	bin/pkg/checkpkg \
 	bin/pkg/finddeps \
-	bin/pkg/find-libdeps \
-	bin/pkg/batchpkg
+	bin/pkg/find-libdeps
+# 	bin/pkg/batchpkg
 
-LN_BATCHPKG = \
-	core-batch \
-	extra-batch \
-	testing-batch \
-	staging-batch \
-	community-batch \
-	community-testing-batch \
-	community-staging-batch \
-	multilib-batch \
-	multilib-testing-batch \
-	multilib-staging-batch
+# LN_BATCHPKG = \
+# 	core-batch \
+# 	extra-batch \
+# 	testing-batch \
+# 	staging-batch \
+# 	community-batch \
+# 	community-testing-batch \
+# 	community-staging-batch \
+# 	multilib-batch \
+# 	multilib-testing-batch \
+# 	multilib-staging-batch
 
 LN_COMMITPKG = \
 	extrapkg \
@@ -187,7 +187,7 @@ install_pkg:
 	for l in $(LN_COMMITPKG); do $(LN) commitpkg $(DESTDIR)$(BINDIR)/$$l; done
 	for l in $(LN_BUILDPKG); do $(LN) buildpkg $(DESTDIR)$(BINDIR)/$$l; done
 	for l in $(LN_DEPLOYPKG); do $(LN) deploypkg $(DESTDIR)$(BINDIR)/$$l; done
-	for l in $(LN_BATCHPKG); do $(LN) batchpkg $(DESTDIR)$(BINDIR)/$$l; done
+# 	for l in $(LN_BATCHPKG); do $(LN) batchpkg $(DESTDIR)$(BINDIR)/$$l; done
 
 	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)/pkg
 	install $(FILEMODE) $(PKG_UTIL) $(DESTDIR)$(LIBDIR)/$(TOOLS)

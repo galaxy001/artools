@@ -53,6 +53,8 @@ compare(){
                             msg_row "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
                         else
                             msg_row_notify "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
+
+                            printf "$archshow;$artixshow;$pkg\n" >> "${USERCONFDIR}"/artools/pkgmoves.list
                         fi
                     ;;
                 esac
@@ -62,6 +64,8 @@ compare(){
 
             if [ $result -eq -1 ];then
                 msg_row_upgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
+
+                printf "$archshow;$pkg\n" >> "${USERCONFDIR}"/artools/pkgupgrades.list
             fi
 
         elif ${downgrades};then
@@ -162,6 +166,8 @@ show_version_table(){
         msg_table_header "${table}" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version" "Group"
     fi
 
+    [[ -f "${USERCONFDIR}"/artools/pkgmoves.list ]] && rm "${USERCONFDIR}"/artools/pkgmoves.list
+    [[ -f "${USERCONFDIR}"/artools/pkgupgrades.list ]] && rm "${USERCONFDIR}"/artools/pkgupgrades.list
     for tree in ${TREE_NAMES_ARTIX[@]};do
 
         local git=$(find ${TREE_DIR_ARTIX}/$tree/ -mindepth 1 -maxdepth 1 -type d)
