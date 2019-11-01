@@ -23,22 +23,24 @@ move=false
 upgrade=false
 
 batch_move() {
-    for entry in "${USERCONFDIR}"/artools/pkgmoves.list; do
-        local pkg=${entry##*;}
-        local src=${entry%*;}
-        src=${src#*;}
-        local dest=${entry%%*;}
-        echo "${dest}pkg -p $pkg -s ${src}"
-    done
+    [[ -f ${WORKSPACE_DIR}/pkg_moves.list ]] || die "pkg_moves.list does not exist!"
+    while read entry;do
+        local pkg=${entry##*:}
+        local src=${entry%:*}
+        src=${src#*:}
+        local dest=${entry%%:*}
+        echo "${dest}pkg -s ${src} -u -p ${pkg}"
+    done < ${WORKSPACE_DIR}/pkg_moves.list
 }
 
 batch_upgrade() {
-    for entry in "${USERCONFDIR}"/artools/pkgupgrades.list; do
-        pkg=${entry#*;}
-        dest=${entry%*;}
-        buildtree -i -p "$pkg"
-        echo "${REPO_DEST}pkg -p $pkg"
-    done
+    [[ -f ${WORKSPACE_DIR}/pkg_upgrades.list ]] || die "pkg_upgrades.list does not exist!"
+    while read entry;do
+        local pkg=${entry#*:}
+        local dest=${entry%:*}
+        echo "buildtree -i -p ${pkg}"
+        echo "${dest}pkg -u -p ${pkg}"
+    done < ${WORKSPACE_DIR}/pkg_upgrades.list
 }
 
 usage() {
