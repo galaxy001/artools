@@ -41,8 +41,8 @@ PKG_BIN = \
 	bin/pkg/links-add \
 	bin/pkg/checkpkg \
 	bin/pkg/finddeps \
-	bin/pkg/find-libdeps
-# 	bin/pkg/batchpkg
+	bin/pkg/find-libdeps \
+	bin/pkg/batchpkg
 
 # LN_BATCHPKG = \
 # 	core-batch \
