@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# Copyright (C) 2018-19 artoo@artixlinux.org
+# Copyright (C) 2018 Artix Linux Developers
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+. @libdir@/artools/util-base.sh
+. @libdir@/artools/util-pkg.sh
+
+load_user_info
+
+load_config "${USERCONFDIR}/artools/artools.conf" || load_config "${SYSCONFDIR}/artools.conf"
+
+REPO_SRC='trunk'
+
+cmd=${0##*/}
+REPO_DEST=${cmd%*-}
+
+move=false
+update=false
+
+usage() {
+    echo "Usage: ${0##*/} [options]"
+    echo "    -s <name>          Source repository [default:${REPO_SRC}]"
+    echo "    -m                 Batch move"
+    echo "    -u                 Batch update"
+    echo '    -h                 This help'
+    echo ''
+    echo ''
+    exit $1
+}
+
+opts='s:umh'
+
+while getopts "${opts}" arg; do
+    case "${arg}" in
+        s) REPO_SRC="$OPTARG" ;;
+        m) move=true ;;
+        u) update=true ;;
+        h|?) usage 0 ;;
+        *) echo "invalid argument '${arg}'"; usage 1 ;;
+    esac
+done
+
+shift $(($OPTIND - 1))
+
+if ${move}; then
+    for pkg in "${USERCONFDIR}"/artools/move.list; do
+        "${REPO_DEST}"pkg -s "${REPO_SRC}" -p "$pkg"
+    done
+fi
+
+if ${update};then
+    for pkg in "${USERCONFDIR}"/artools/update.list; do
+        buildtree -i -p "$pkg"
+        "${REPO_DEST}"pkg -p "$pkg"
+    done
+fi

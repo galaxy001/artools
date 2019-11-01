@@ -112,10 +112,6 @@ chroot_extra_mount() {
     chroot_add_resolv_conf "$1"
     chroot_mount "/etc/hosts" "$1/etc/hosts" -B
     chroot_mount "${cache_dirs[0]}" "$1${cache_dirs[0]}" -B
-#     if [[ -e /etc/localtime ]];then
-#         [[ -e $1/etc/localtime ]] || touch $1/etc/localtime
-#         chroot_mount "/etc/localtime" "$1/etc/localtime" -B
-#     fi
 
     for cache_dir in ${cache_dirs[@]:1}; do
         chroot_mount "$cache_dir" "$1${cache_dir}" -Br
@@ -137,6 +133,12 @@ chroot_extra_mount() {
     done
 }
 
+sync_host_localtime(){
+    if [[ ! -e "$1"/etc/localtime ]]; then
+        cp -L /etc/localtime "$1"/etc/localtime
+    fi
+}
+
 umask 0022
 
 # Sanity check
@@ -145,6 +147,8 @@ if [[ ! -f "$working_dir/.artools" ]]; then
 elif [[ $(cat "$working_dir/.artools") != ${CHROOTVERSION} ]]; then
     die "chroot '%s' is not at version %s. Please rebuild." "$working_dir" "${CHROOTVERSION}"
 fi
+
+sync_host_localtime "${working_dir}"
 
 chroot_api_mount "${working_dir}" || die "failed to setup API filesystems in chroot %s" "${working_dir}"
 
