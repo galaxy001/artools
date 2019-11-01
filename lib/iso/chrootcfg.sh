@@ -128,7 +128,7 @@ write_services_runit_conf(){
 
 write_services_s6_conf(){
     local mods="$1"
-    write_services_conf 'svDir' '/etc/s6/sv' 'rcDir' '/etc/s6/rc' > "$mods"/services-s6.conf
+    write_services_conf 'svDir' '/etc/s6/sv' 'dbDir' '/etc/s6/rc/compiled' > "$mods"/services-s6.conf
 }
 
 configure_calamares(){
