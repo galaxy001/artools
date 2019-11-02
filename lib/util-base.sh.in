@@ -44,7 +44,7 @@ load_user_info(){
 
 load_base_config(){
 
-    local conf="$1/base.conf"
+    local conf="$1/artools-base.conf"
 
     [[ -f "$conf" ]] || return 1
 

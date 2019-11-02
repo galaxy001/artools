@@ -18,7 +18,7 @@ done
 
 load_pkg_config(){
 
-    local conf="$1/pkg.conf"
+    local conf="$1/artools-pkg.conf"
 
     [[ -f "$conf" ]] || return 1
 

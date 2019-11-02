@@ -18,7 +18,7 @@ done
 
 load_iso_config(){
 
-    local conf="$1/iso.conf"
+    local conf="$1/artools-iso.conf"
 
     [[ -f "$conf" ]] || return 1
 
