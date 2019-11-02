@@ -12,18 +12,22 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-pkg.sh
+. /usr/lib/artools/util-pkg.sh
 
 batch_move() {
-    local name="$1"
+    local name="${1:-pkg_moves}"
     local pkglist=${TREE_DIR_ARTIX}/$name.list
-    [[ -f $pkglist ]] || die "${name}.list does not exist!"
+    [[ -f $pkglist ]] || die "${TREE_DIR_ARTIX}/${name}.list does not exist!"
     while read entry;do
         local pkg=${entry##*:}
         local src=${entry%:*}
         src=${src#*:}
         local dest=${entry%%:*}
-        echo "${dest}pkg -s ${src} -u -p ${pkg}"
+        if ${runlist}; then
+            ${dest}pkg -s ${src} -u -p ${pkg}
+        else
+            msg "%s" "${dest}pkg -s ${src} -u -p ${pkg}"
+        fi
     done < $pkglist
 }
 
@@ -40,24 +44,21 @@ batch_move() {
 
 usage() {
     echo "Usage: ${0##*/} [optional listname]"
-#     echo "    -m                 Batch move"
-#     echo "    -u                 Batch upgrade"
+    echo '    -r                 Run generated commands'
     echo '    -h                 This help'
     echo ''
     echo ''
     exit $1
 }
 
-# move=false
-# upgrade=false
-movelistname='pkg_moves'
+movelistname=pkg_moves
+runlist=false
 
-opts='h'
+opts='rh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-#         m) move=true ;;
-#         u) upgrade=true ;;
+        r) runlist=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -66,11 +67,5 @@ done
 shift $(($OPTIND - 1))
 
 movelistname="$1"; shift
-
-# if ${move}; then
-#     batch_move
-# elif ${upgrade};then
-#     batch_upgrade
-# fi
 
 batch_move "$movelistname"
