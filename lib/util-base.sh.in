@@ -44,11 +44,14 @@ load_user_info(){
 
 load_base_config(){
 
+    load_user_info
+
     local conf="$1/artools-base.conf"
 
     [[ -f "$conf" ]] || return 1
 
     [[ -r "$conf" ]] && . "$conf"
+
 
     ARCH=$(uname -m)
 
@@ -60,3 +63,5 @@ load_base_config(){
 
     return 0
 }
+
+load_base_config "${USER_CONF_DIR}" || load_base_config "${SYSCONFDIR}"

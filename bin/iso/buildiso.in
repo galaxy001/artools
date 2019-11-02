@@ -109,10 +109,6 @@ build(){
     show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }
 
-load_user_info
-
-load_iso_config "${USER_CONF_DIR}" || load_iso_config "${SYSCONFDIR}"
-
 clean_first=true
 pretend=false
 images_only=false

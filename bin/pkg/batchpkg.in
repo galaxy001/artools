@@ -48,10 +48,6 @@ usage() {
     exit $1
 }
 
-load_user_info
-
-load_pkg_config "${USER_CONF_DIR}" || load_pkg_config "${SYSCONFDIR}"
-
 # move=false
 # upgrade=false
 movelistname='pkg_moves'

@@ -14,10 +14,6 @@
 
 . @libdir@/artools/util-pkg.sh
 
-load_user_info
-
-load_pkg_config "${USER_CONF_DIR}" || load_pkg_config "${SYSCONFDIR}"
-
 create_first=false
 rebuild=false
 no_check=false

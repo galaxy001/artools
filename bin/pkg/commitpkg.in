@@ -141,10 +141,6 @@ symlink_commit_pkg(){
     fi
 }
 
-load_user_info
-
-load_pkg_config "${USER_CONF_DIR}" || load_pkg_config "${SYSCONFDIR}"
-
 load_vars "${XDG_CONFIG_HOME}/pacman/makepkg.conf" || load_vars "${USER_HOME}/.makepkg.conf"
 load_vars /etc/makepkg.conf
 

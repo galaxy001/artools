@@ -12,7 +12,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
+. @libdir@/artools/base/message.sh
+. @libdir@/artools/base/util.sh
 
 shopt -s nullglob
 
@@ -332,7 +333,11 @@ for arg in "${@:$OPTIND}"; do
     esac
 done
 
-load_user_info
+if [[ -n $SUDO_USER ]]; then
+	eval "USER_HOME=~$SUDO_USER"
+else
+	USER_HOME=$HOME
+fi
 
 umask 0022
 
