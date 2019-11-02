@@ -51,7 +51,7 @@ load_profile(){
     ADDGROUPS=${ADDGROUPS:-"video,power,optical,network,lp,scanner,wheel,users,log"}
 
     if [[ -z ${SERVICES[@]} ]];then
-        SERVICES=('acpid' 'bluetooth' 'cronie' 'cupsd' 'syslog-ng' 'connman')
+        SERVICES=('acpid' 'bluetoothd' 'cronie' 'cupsd' 'syslog-ng' 'connmand')
     fi
 
     if [[ ${DISPLAYMANAGER} != "none" ]];then
