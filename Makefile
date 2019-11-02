@@ -11,7 +11,7 @@ DATADIR = $(PREFIX)/share
 CPIODIR = $(SYSCONFDIR)/initcpio
 
 BASE_CONF = \
-	data/conf/base.conf
+	data/conf/artools-base.conf
 
 BASE_BIN = \
 	bin/base/signfile \
@@ -30,7 +30,7 @@ BASE_DATA = \
 	$(wildcard data/base/pacman*.conf)
 
 PKG_CONF = \
-	data/conf/pkg.conf
+	data/conf/artools-pkg.conf
 
 PKG_BIN = \
 	bin/pkg/buildpkg \
@@ -101,7 +101,7 @@ PATCHES = \
 	$(wildcard data/patches/*.patch)
 
 ISO_CONF = \
-	data/conf/iso.conf
+	data/conf/artools-iso.conf
 
 ISO_BIN = \
 	bin/iso/buildiso \
