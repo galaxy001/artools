@@ -24,7 +24,7 @@ batch_move() {
         src=${src#*:}
         local dest=${entry%%:*}
         if ${runlist}; then
-            ${dest}pkg -s ${src} -u -p ${pkg}
+            "${dest}"pkg -s "${src}" -u -p "${pkg}"
         else
             msg "%s" "${dest}pkg -s ${src} -u -p ${pkg}"
         fi
