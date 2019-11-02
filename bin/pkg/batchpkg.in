@@ -16,12 +16,10 @@ for name in base pkg; do
     . @libdir@/artools/util-"${name}".sh
 done
 
-move=false
-upgrade=false
-
 batch_move() {
-    local pkglist=${TREE_DIR_ARTIX}/pkg_moves.list
-    [[ -f $pkglist ]] || die "pkg_moves.list does not exist!"
+    local name="$1"
+    local pkglist=${TREE_DIR_ARTIX}/$name.list
+    [[ -f $pkglist ]] || die "${name}.list does not exist!"
     while read entry;do
         local pkg=${entry##*:}
         local src=${entry%:*}
@@ -31,21 +29,21 @@ batch_move() {
     done < $pkglist
 }
 
-batch_upgrade() {
-    local pkglist=${TREE_DIR_ARTIX}/pkg_upgrades.list
-    [[ -f $pkglist ]] || die "pkg_upgrades.list does not exist!"
-    while read entry;do
-        local pkg=${entry#*:}
-        local dest=${entry%:*}
-        echo "buildtree -i -p ${pkg}"
-        echo "${dest}pkg -u -p ${pkg}"
-    done < $pkglist
-}
+# batch_upgrade() {
+#     local pkglist=${TREE_DIR_ARTIX}/pkg_upgrades.list
+#     [[ -f $pkglist ]] || die "pkg_upgrades.list does not exist!"
+#     while read entry;do
+#         local pkg=${entry#*:}
+#         local dest=${entry%:*}
+#         echo "buildtree -i -p ${pkg}"
+#         echo "${dest}pkg -u -p ${pkg}"
+#     done < $pkglist
+# }
 
 usage() {
-    echo "Usage: ${0##*/} [options]"
-    echo "    -m                 Batch move"
-    echo "    -u                 Batch upgrade"
+    echo "Usage: ${0##*/} [optional listname]"
+#     echo "    -m                 Batch move"
+#     echo "    -u                 Batch upgrade"
     echo '    -h                 This help'
     echo ''
     echo ''
@@ -58,12 +56,16 @@ for name in base pkg; do
     load_"${name}"_config "${USER_CONF_DIR}" || load_"${name}"_config "${SYSCONFDIR}"
 done
 
-opts='umh'
+# move=false
+# upgrade=false
+movelistname='pkg_moves'
+
+opts='h'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        m) move=true ;;
-        u) upgrade=true ;;
+#         m) move=true ;;
+#         u) upgrade=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -71,10 +73,12 @@ done
 
 shift $(($OPTIND - 1))
 
-if ${move}; then
-    batch_move
-fi
+movelistname="$1"; shift
 
-if ${upgrade};then
-    batch_upgrade
-fi
+# if ${move}; then
+#     batch_move
+# elif ${upgrade};then
+#     batch_upgrade
+# fi
+
+batch_move "$movelistname"
