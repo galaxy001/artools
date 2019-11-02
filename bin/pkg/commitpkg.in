@@ -12,9 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-for name in base pkg; do
-    . @libdir@/artools/util-"${name}".sh
-done
+. @libdir@/artools/util-pkg.sh
 
 get_path(){
     local repo="$1" pkg=trunk/PKGBUILD
@@ -145,9 +143,7 @@ symlink_commit_pkg(){
 
 load_user_info
 
-for name in base pkg; do
-    load_"${name}"_config "${USER_CONF_DIR}" || load_"${name}"_config "${SYSCONFDIR}"
-done
+load_pkg_config "${USER_CONF_DIR}" || load_pkg_config "${SYSCONFDIR}"
 
 load_vars "${XDG_CONFIG_HOME}/pacman/makepkg.conf" || load_vars "${USER_HOME}/.makepkg.conf"
 load_vars /etc/makepkg.conf
