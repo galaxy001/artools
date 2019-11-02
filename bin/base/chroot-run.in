@@ -134,7 +134,7 @@ chroot_extra_mount() {
 }
 
 sync_host_localtime(){
-    if [[ ! -e "$1"/etc/localtime ]]; then
+    if [[ -e /etc/localtime ]]; then
         cp -L /etc/localtime "$1"/etc/localtime
     fi
 }
