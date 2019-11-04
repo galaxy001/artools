@@ -131,13 +131,26 @@ write_services_s6_conf(){
     write_services_conf 'svDir' '/etc/s6/sv' 'dbDir' '/etc/s6/rc/compiled' > "$conf"
 }
 
+write_postcfg(){
+    local yaml=$(write_yaml_header)
+    yaml+=$(write_empty_line)
+    yaml+=$(write_yaml_map 0 'keyrings')
+    for k in archlinux artix;do
+        yaml+=$(write_yaml_seq 2 "$k")
+    done
+    yaml+=$(write_empty_line)
+    printf '%s' "${yaml}"
+}
+
 configure_calamares(){
     local mods="$1/etc/calamares/modules"
     if [[ -d "$mods" ]];then
         msg2 "Configuring Calamares"
         write_users_conf > "$mods"/users.conf
         write_services_"${INITSYS}"_conf "$mods"
-        sed -e "s|services-openrc|services-${INITSYS}|" -i "$1"/etc/calamares/settings.conf
+        write_postcfg > "$mods"/postcfg.conf
+        sed -e "s|services-openrc|services-${INITSYS}|" \
+            -i "$1"/etc/calamares/settings.conf
     fi
 }
 
