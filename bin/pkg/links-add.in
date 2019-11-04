@@ -33,7 +33,7 @@ REPO_DB_PREFIX=
 REPO_DB_SUFFIX=
 LOCKFILE=
 CLEAN_LOCK=0
-PREVENT_DOWNGRADE=0
+# PREVENT_DOWNGRADE=0
 
 . @libdir@/artools/util-base.sh
 
@@ -53,7 +53,7 @@ Multiple packages to add can be specified on the command line.\n"
         printf -- "\n"
         printf -- "Options:\n"
         printf -- "  -n, --new         only add packages that are not already in the database\n"
-        printf -- "$(gettext "  -p, --prevent-downgrade  do not add package to database if a newer version is already present\n")"
+#         printf -- "$(gettext "  -p, --prevent-downgrade  do not add package to database if a newer version is already present\n")"
     elif [[ $cmd == "links-remove" ]] ; then
         printf -- "Usage: links-remove [options] <path-to-db> <packagename> ...\n"
         printf -- "\n"
@@ -201,18 +201,18 @@ db_write_entry() {
         if (( ONLYADDNEW )); then
             return 0
         fi
-    else
-        pkgentry=$(find_pkgentry "$pkgname")
-        if [[ -n $pkgentry ]]; then
-
-            local version=$(sed -n '/^%VERSION%$/ {n;p;q}' "$pkgentry/desc")
-            if (( $(vercmp "$version" "$pkgver") > 0 )); then
-                warning "$(gettext "A newer version for '%s' is already present in database")" "$pkgname"
-                if (( PREVENT_DOWNGRADE )); then
-                    return 0
-                fi
-            fi
-        fi
+#     else
+#         pkgentry=$(find_pkgentry "$pkgname")
+#         if [[ -n $pkgentry ]]; then
+#
+#             local version=$(sed -n '/^%VERSION%$/ {n;p;q}' "$pkgentry/desc")
+#             if (( $(vercmp "$version" "$pkgver") > 0 )); then
+#                 warning "$(gettext "A newer version for '%s' is already present in database")" "$pkgname"
+#                 if (( PREVENT_DOWNGRADE )); then
+#                     return 0
+#                 fi
+#             fi
+#         fi
     fi
 
     # remove an existing entry if it exists, ignore failures
@@ -473,7 +473,7 @@ while (( $# )); do
         -s|--sign) SIGN=1 ;;
         -k|--key) KEY=1 ; shift; GPGKEY=$1 ;;
         -v|--verify) VERIFY=1 ;;
-        -p|--prevent-downgrade) PREVENT_DOWNGRADE=1 ;;
+#         -p|--prevent-downgrade) PREVENT_DOWNGRADE=1 ;;
         *) args+=("$1") ;;
     esac
     shift

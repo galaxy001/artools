@@ -41,11 +41,6 @@ prepare_dir(){
     [[ ! -d $1 ]] && mkdir -p $1
 }
 
-get_disturl(){
-    . /usr/lib/os-release
-    echo "${HOME_URL}"
-}
-
 get_osname(){
     . /usr/lib/os-release
     echo "${NAME}"

@@ -97,16 +97,23 @@ make_sfs() {
     show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }
 
+get_disturl(){
+    . /usr/lib/os-release
+    echo "${HOME_URL}"
+}
+
 assemble_iso(){
     msg "Creating ISO image..."
     local mod_date=$(date -u +%Y-%m-%d-%H-%M-%S-00  | sed -e s/-//g)
+    local appid="$(get_osname) Live/Rescue CD"
+    local publisher="$(get_osname) <$(get_disturl)>"
 
     xorriso -as mkisofs \
         --modification-date=${mod_date} \
         --protective-msdos-label \
         -volid "${iso_label}" \
-        -appid "$(get_osname) Live/Rescue CD" \
-        -publisher "$(get_osname) <$(get_disturl)>" \
+        -appid "${appid}" \
+        -publisher "${publisher}" \
         -preparer "Prepared by artools/${0##*/}" \
         -r -graft-points -no-pad \
         --sort-weight 0 / \

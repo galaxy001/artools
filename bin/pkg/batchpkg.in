@@ -17,7 +17,7 @@
 batch_move() {
     local name="${1:-pkg_moves}"
     local pkglist=${TREE_DIR_ARTIX}/$name.list
-    [[ -f $pkglist ]] || die "${TREE_DIR_ARTIX}/${name}.list does not exist!"
+    [[ -f $pkglist ]] || die "%s does not exist!" "$pkglist"
     while read entry;do
         local pkg=${entry##*:}
         local src=${entry%:*}
@@ -33,7 +33,7 @@ batch_move() {
 
 # batch_upgrade() {
 #     local pkglist=${TREE_DIR_ARTIX}/pkg_upgrades.list
-#     [[ -f $pkglist ]] || die "pkg_upgrades.list does not exist!"
+#     [[ -f $pkglist ]] || die "%s does not exist!" "$pkglist"
 #     while read entry;do
 #         local pkg=${entry#*:}
 #         local dest=${entry%:*}
