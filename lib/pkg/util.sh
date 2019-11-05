@@ -20,55 +20,6 @@ get_compliant_name(){
     echo $gitname
 }
 
-patch_pkg(){
-    local pkg="$1"
-    case $pkg in
-        'glibc')
-            sed -e 's|{locale,systemd/system,tmpfiles.d}|{locale,tmpfiles.d}|' \
-                -e '/nscd.service/d' \
-                -i $pkg/trunk/PKGBUILD
-        ;;
-        'tp_smapi'|'acpi_call'|'r8168'|'bbswitch'|'broadcom-wl')
-            sed -e 's|-ARCH|-ARTIX|g' -i $pkg/trunk/PKGBUILD
-        ;;
-        'nvidia')
-            sed -e 's|-ARCH|-ARTIX|g'  -e 's|for Arch kernel|for Artix kernel|g' \
-                -e 's|for LTS Arch kernel|for LTS Artix kernel|g' \
-                -i $pkg/trunk/PKGBUILD
-        ;;
-        'linux')
-            sed -e 's|-ARCH|-ARTIX|g' -i $pkg/trunk/PKGBUILD
-            sed -e 's|CONFIG_DEFAULT_HOSTNAME=.*|CONFIG_DEFAULT_HOSTNAME="artixlinux"|' \
-                -e 's|CONFIG_CRYPTO_SPECK=.*|CONFIG_CRYPTO_SPECK=n|' \
-                -i $pkg/trunk/config
-            cd $pkg/trunk
-                updpkgsums
-            cd ../..
-
-        ;;
-        'licenses')
-            sed -e 's|https://www.archlinux.org/|https://www.artixlinux.org/|' -i $pkg/trunk/PKGBUILD
-        ;;
-        'bash')
-            sed -e 's|system.bash_logout)|system.bash_logout artix.bashrc)|' \
-            -e "s|etc/bash.|etc/bash/|g" \
-            -e 's|"$pkgdir/etc/skel/.bash_logout"|"$pkgdir/etc/skel/.bash_logout"\n  install -Dm644 artix.bashrc $pkgdir/etc/bash/bashrc.d/artix.bashrc|' \
-            -i $pkg/trunk/PKGBUILD
-
-
-            cd $pkg/trunk
-                patch -Np 1 -i ${DATADIR}/patches/artix-bash.patch
-                updpkgsums
-            cd ../..
-        ;;
-        gstreamer|gst-plugins-*)
-            sed -e 's|https://www.archlinux.org/|https://www.artixlinux.org/|' \
-                -e 's|(Arch Linux)|(Artix Linux)|' \
-                -i $pkg/trunk/PKGBUILD
-        ;;
-    esac
-}
-
 arch2artix(){
     local repo="$1" artix=none
     case "$repo" in

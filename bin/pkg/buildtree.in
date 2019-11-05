@@ -14,6 +14,37 @@
 
 . @libdir@/artools/util-pkg.sh
 
+patch_pkg(){
+    local pkg="$1"
+    case $pkg in
+        glibc)
+            sed -e 's|{locale,systemd/system,tmpfiles.d}|{locale,tmpfiles.d}|' \
+                -e '/nscd.service/d' \
+                -i $pkg/trunk/PKGBUILD
+        ;;
+        linux|linux-lts)
+            sed -e 's|KBUILD_BUILD_HOST=.*|KBUILD_BUILD_HOST=artixlinux|' -i $pkg/trunk/PKGBUILD
+            sed -e 's|CONFIG_DEFAULT_HOSTNAME=.*|CONFIG_DEFAULT_HOSTNAME="artixlinux"|' \
+                -i $pkg/trunk/config
+        ;;
+        bash)
+            sed -e 's|system.bash_logout)|system.bash_logout artix.bashrc)|' \
+            -e "s|etc/bash.|etc/bash/|g" \
+            -e 's|"$pkgdir/etc/skel/.bash_logout"|"$pkgdir/etc/skel/.bash_logout"\n  install -Dm644 artix.bashrc $pkgdir/etc/bash/bashrc.d/artix.bashrc|' \
+            -i $pkg/trunk/PKGBUILD
+            cd $pkg/trunk
+                patch -Np 1 -i ${DATADIR}/patches/artix-bash.patch
+                updpkgsums
+            cd ../..
+        ;;
+        gstreamer|gst-plugins-*|licenses)
+            sed -e 's|https://www.archlinux.org/|https://www.artixlinux.org/|' \
+                -e 's|(Arch Linux)|(Artix Linux)|' \
+                -i $pkg/trunk/PKGBUILD
+        ;;
+    esac
+}
+
 pull_tree_arch(){
     cd ${TREE_DIR_ARCH}
     for tree in ${TREE_NAMES_ARCH[@]};do
