@@ -80,7 +80,6 @@ configure_system(){
 
 write_users_conf(){
     local yaml=$(write_yaml_header)
-    yaml+=$(write_empty_line)
     yaml+=$(write_yaml_map 0 'defaultGroups')
     local IFS=','
     for g in ${ADDGROUPS[@]};do
@@ -105,7 +104,6 @@ write_users_conf(){
 write_services_conf(){
     local key1="$1" val1="$2" key2="$3" val2="$4"
     local yaml=$(write_yaml_header)
-    yaml+=$(write_empty_line)
     yaml+=$(write_yaml_map 0 "$key1" "$val1")
     yaml+=$(write_yaml_map 0 "$key2" "$val2")
     yaml+=$(write_yaml_map 0 'services')
@@ -133,7 +131,6 @@ write_services_s6_conf(){
 
 write_postcfg(){
     local yaml=$(write_yaml_header)
-    yaml+=$(write_empty_line)
     yaml+=$(write_yaml_map 0 'keyrings')
     for k in archlinux artix;do
         yaml+=$(write_yaml_seq 2 "$k")
