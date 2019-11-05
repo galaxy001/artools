@@ -39,15 +39,18 @@ artools
 
 #### Configuration
 
-artools.conf is the central configuration file for artools.
-By default, the config is installed in
+artools-{base,pkg,iso}.conf are the configuration files for artools.
+By default, the config files are installed in
 
-    /etc/artools/artools.conf
+```bash
+/etc/artools/artools-{base,pkg,iso}.conf
+```
 
-A user artools.conf can be placed in
+A user artools-{base,pkg,iso}.conf can be placed in
 
-    $HOME/.config/artools/artools.conf
-
+```bash
+$HOME/.config/artools/artools-{base,pkg,iso}.conf
+```
 
 If the userconfig is present, artools will load the userconfig values, however, if variables have been set in the systemwide
 
@@ -55,13 +58,17 @@ These values take precedence over the userconfig.
 Best practise is to leave systemwide file untouched.
 By default it is commented and shows just initialization values done in code.
 
-Tools configuration is done in artools.conf or by args.
-Specifying args will override artools.conf settings.
+Tools configuration is done in artools-{base,pkg,iso}.conf or by args.
+Specifying args will override artools-{base,pkg,iso}.conf settings.
 
 Both, pacman.conf and makepkg.conf for chroots are loaded from
 
-    /usr/share/artools/{makepkg,pacman-*}.conf
+```bash
+usr/share/artools/{makepkg,pacman-*}.conf
+```
 
 and can be overridden dropping them in
 
-    $HOME/.config/artools/
+```bash
+$HOME/.config/artools/
+```
