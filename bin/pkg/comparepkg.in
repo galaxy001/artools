@@ -115,7 +115,7 @@ check_db(){
                         is_entry=true
                     fi
                     if ! $is_entry; then
-                        msg_row "${table2}" "$repo" "$name" "$artixver" "$is_entry"
+                        msg_row "${tableU}" "$repo" "$name" "$artixver" "$is_entry"
                     fi
                 done
                 unset artixver is_entry pkgbuild pkgver epoch pkgname pkgbase
@@ -131,14 +131,13 @@ update_db_cache(){
         rm -rf "$cachedir"
         mkdir -p "$cachedir"
         msg2 "%s" "$repo"
-        curl -s "${REPOS_MIRROR}/${repo}/os/${ARCH}/${repo}.${LINKSDBEXT}" \
+        curl -L -s "${REPOS_MIRROR}/${repo}/os/${ARCH}/${repo}.${LINKSDBEXT}" \
             | bsdtar -xf - -C "$cachedir"
     done
     msg "Done"
 }
 
 query_db() {
-    msg_table_header "${table3}" "Repo" "Package" "Library"
     for repo in "${searchrepos[@]}"; do
         local prefix=
         local db=${USER_CACHE_DIR}/${LINKSDBEXT}/${ARCH}/${repo}/
@@ -148,7 +147,7 @@ query_db() {
                 pkg=${pkg#${db}}
                 pkg="${pkg%/*}"
 
-                msg_row "${table3}" "${repo}" "${pkg}" "${match}"
+                msg_row "${tableQ}" "${repo}" "${pkg}" "${match}"
             done < <(grep -rZ "${library}" "${db}") | sort -u
         fi
     done
@@ -159,20 +158,23 @@ show_version_table(){
 
     if ${check};then
         ${sync} && update_db_cache
-        msg_table_header "${table2}" "Repo" "Package" "Version" "Database"
+        msg_table_header "${tableU}" "Repo" "Package" "Version" "Database"
     elif ${query};then
         ${sync} && update_db_cache
+        msg_table_header "${tableQ}" "Repo" "Package" "Library"
         query_db
     else
         msg_table_header "${table}" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version" "Group"
     fi
 
-    [[ -f ${TREE_DIR_ARTIX}/pkg_moves.list ]] && rm ${TREE_DIR_ARTIX}/pkg_moves.list
-    [[ -f ${TREE_DIR_ARTIX}/pkg_upgrades.list ]] && rm ${TREE_DIR_ARTIX}/pkg_upgrades.list
+    if ${move} && [[ -f ${TREE_DIR_ARTIX}/pkg_moves.list ]]; then
+        rm ${TREE_DIR_ARTIX}/pkg_moves.list
+    elif ${upgrades} && [[ -f ${TREE_DIR_ARTIX}/pkg_upgrades.list ]]; then
+        rm ${TREE_DIR_ARTIX}/pkg_upgrades.list
+    fi
+
     for tree in ${TREE_NAMES_ARTIX[@]};do
-
         local git=$(find ${TREE_DIR_ARTIX}/$tree/ -mindepth 1 -maxdepth 1 -type d)
-
         for package in ${git[@]}; do
             if ${check};then
                 check_db "$package"
@@ -203,8 +205,8 @@ artix_repos=(
 )
 
 readonly table="%-18s %-18s %-25s %-27s %-27s %-10s"
-readonly table2="%-20s %-35s %-30s %-10s"
-readonly table3="%-20s %-45s %s"
+readonly tableU="%-20s %-35s %-30s %-10s"
+readonly tableQ="%-20s %-45s %s"
 
 searchrepos=(${artix_repos[@]})
 
