@@ -25,18 +25,6 @@ show_elapsed_time(){
     info "Time %s: %s minutes" "$1" "$(elapsed_time $2)"
 }
 
-load_vars() {
-    local var
-
-    [[ -f $1 ]] || return 1
-
-    for var in {SRC,SRCPKG,PKG,LOG}DEST MAKEFLAGS PACKAGER CARCH GPGKEY; do
-        [[ -z ${!var:-} ]] && eval "$(source "$1"; printf "%s='%s'" "$var" "${!var}")"
-    done
-
-    return 0
-}
-
 prepare_dir(){
     [[ ! -d $1 ]] && mkdir -p $1
 }

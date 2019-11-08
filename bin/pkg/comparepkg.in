@@ -185,8 +185,7 @@ show_version_table(){
     done
 }
 
-load_vars "${XDG_CONFIG_HOME}/pacman/makepkg.conf" || load_vars "${USER_HOME}/.makepkg.conf"
-load_vars /etc/makepkg.conf
+load_makepkg_config
 
 unstable=false
 staging=true

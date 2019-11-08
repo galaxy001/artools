@@ -144,6 +144,6 @@ PACKAGE="$1"/PKGBUILD; shift
 
 . "$PACKAGE"
 
-. /etc/makepkg.conf
+load_makepkg_config
 
 write_pkg_yaml

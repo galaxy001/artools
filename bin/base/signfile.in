@@ -14,10 +14,7 @@
 
 . @libdir@/artools/util-base.sh
 
-load_user_info
-
-load_vars "${XDG_CONFIG_HOME}/pacman/makepkg.conf" || load_vars "${USER_HOME}/.makepkg.conf"
-load_vars /etc/makepkg.conf
+load_makepkg_config
 
 file_to_sign="$1"
 
