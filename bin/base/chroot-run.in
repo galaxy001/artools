@@ -116,16 +116,14 @@ copy_hostconf () {
     sed -r "s|^#?\\s*CacheDir.+|CacheDir = ${cache_dirs[*]}|g" -i "${working_dir}/etc/pacman.conf"
 }
 
-mount_args+=("-B:${cache_dirs[0]//:/\\:}:${cache_dirs[0]//:/\\:}")
+mount_args+=("-B:${cache_dirs[0]//:/\\:}:${cache_dirs[0]//:/\\:}" "-B:/etc/hosts:/etc/hosts")
 
 for cache_dir in "${cache_dirs[@]:1}"; do
-	mount_args+=("-Br:${cache_dir//:/\\:}:${cache_dir//:/\\:}")
+    mount_args+=("-Br:${cache_dir//:/\\:}:${cache_dir//:/\\:}")
 done
 
 chroot_extra_mount() {
     chroot_add_resolv_conf "${working_dir}"
-    chroot_mount "/etc/hosts" "${working_dir}/etc/hosts" -B
-    chroot_mount "${cache_dirs[0]}" "${working_dir}${cache_dirs[0]}" -B
 
     for arg in ${mount_args[@]}; do
         local flag=${arg%%:*}
