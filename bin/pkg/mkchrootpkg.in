@@ -33,8 +33,7 @@ run_checkpkg=0
 temp_chroot=0
 run_nocheck=0
 
-bindmounts_ro=()
-bindmounts_rw=()
+bindmounts=()
 
 copy=$USER
 [[ -n ${SUDO_USER:-} ]] && copy=$SUDO_USER
@@ -147,8 +146,7 @@ install_packages() {
 
     cp -- "${install_pkgs[@]}" "$copydir/root/"
     chroot-run \
-        -r "${bindmounts_ro[@]}" \
-        -r "${bindmounts_rw[@]}" \
+        -b "${bindmounts[@]}" \
         "$copydir" \
         bash -c 'yes y | pacman -U -- "$@"' -bash "${pkgnames[@]/#//root/}"
     ret=$?
@@ -282,13 +280,12 @@ move_products() {
 
 orig_argv=("$0" "$@")
 
-opts='hcur:I:l:nNCTD:d:U:'
+opts='hcur:I:l:nNCTb:U:'
 
 while getopts "${opts}" arg; do
     case "$arg" in
         c) clean_first=1 ;;
-        D) bindmounts_ro+=("$OPTARG") ;;
-        d) bindmounts_rw+=("$OPTARG") ;;
+        b) bindmounts+=("$OPTARG") ;;
         u) update_first=1 ;;
         r) passeddir="$OPTARG" ;;
         I) install_pkgs+=("$OPTARG") ;;
@@ -332,16 +329,12 @@ for arg in "${@:$OPTIND}"; do
     esac
 done
 
-if [[ -n $SUDO_USER ]]; then
-	eval "USER_HOME=~$SUDO_USER"
-else
-	USER_HOME=$HOME
-fi
-
 umask 0022
 
-load_vars "${XDG_CONFIG_HOME}/pacman/makepkg.conf" || load_vars "${USER_HOME}/.makepkg.conf"
-load_vars /etc/makepkg.conf
+ORIG_HOME=$HOME
+IFS=: read -r _ _ _ _ _ HOME _ < <(getent passwd "${SUDO_USER:-$USER}")
+load_makepkg_config
+HOME=$ORIG_HOME
 
 # Use PKGBUILD directory if these don't exist
 [[ -d $PKGDEST ]]    || PKGDEST=$PWD
@@ -356,11 +349,10 @@ if [[ ! -d $copydir ]] || (( clean_first )); then
     sync_chroot "$chrootdir" "$copydir" "$copy"
 fi
 
-bindmounts_rw+=("${PWD}:/startdir" "${SRCDEST}:/srcdest")
+bindmounts+=("-B:${PWD}:/startdir" "-B:${SRCDEST}:/srcdest")
 
 (( update_first )) && chroot-run \
-        -r "${bindmounts_ro[*]}" \
-        -w "${bindmounts_rw[*]}" \
+        -b "${bindmounts[*]}" \
         "$copydir" \
         pacman -Syuu --noconfirm
 
@@ -381,8 +373,7 @@ download_sources
 prepare_chroot
 
 if chroot-run \
-    -r "${bindmounts_ro[*]}" \
-    -w "${bindmounts_rw[*]}" \
+    -b "${bindmounts[*]}" \
     "$copydir" \
     /chrootbuild "${makepkg_args[@]}"
 then

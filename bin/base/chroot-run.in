@@ -23,6 +23,8 @@ umask 0022
 working_dir=''
 files=()
 
+mount_args=()
+
 usage() {
     echo "Usage: ${0##*/} [options] working-dir [run arguments]"
     echo "A wrapper around chroot. Provides support for pacman."
@@ -33,16 +35,15 @@ usage() {
     echo '    -c <dir>      Set pacman cache'
     echo '    -f <file>     Copy file from the host to the chroot'
     echo '    -s            Do not run setarch'
-    echo '    -r <list>     Bind mountargs ro'
-    echo '    -w <list>     Bind mountargs rw'
-    echo '                  List format [src1:target1 ... srcN:targetN]'
+    echo '    -b <list>     Bind mountargs'
+    echo '                  List format [mntarg1:src1:dest1 ... mntargN:srcN:destN]'
     echo '    -h            This message'
     exit 1
 }
 
 orig_argv=("$0" "$@")
 
-opts='hC:M:c:r:w:f:s'
+opts='hC:M:c:b:f:s'
 
 while getopts ${opts} arg; do
     case "${arg}" in
@@ -51,8 +52,7 @@ while getopts ${opts} arg; do
         c) cache_dirs+=("$OPTARG") ;;
         f) files+=("$OPTARG") ;;
         s) nosetarch=1 ;;
-        r) bindmounts_ro=("$OPTARG") ;;
-        w) bindmounts_rw=("$OPTARG") ;;
+        b) bindmounts=("$OPTARG"); mount_args+=(${bindmounts[@]}) ;;
         h|?) usage ;;
         *) error "invalid argument '$arg'"; usage ;;
     esac
@@ -76,6 +76,14 @@ fi
 
 host_mirrors=($($pacconf_cmd --repo world Server 2> /dev/null | sed -r 's#(.*/)world/os/.*#\1$repo/os/$arch#'))
 
+for host_mirror in "${host_mirrors[@]}"; do
+    if [[ $host_mirror == *file://* ]]; then
+        host_mirror=$(echo "$host_mirror" | sed -r 's#file://(/.*)/\$repo/os/\$arch#\1#g')
+        info "host mirror: %s" "$host_mirror"
+        in_array "$host_mirror" "${cache_dirs[@]}" || cache_dirs+=("$host_mirror")
+    fi
+done
+
 while read -r line; do
     mapfile -t lines < <($pacconf_cmd --config "${pac_conf:-$working_dir/etc/pacman.conf}" \
         --repo $line Server | sed -r 's#(.*/)[^/]+/os/.+#\1$repo/os/$arch#')
@@ -95,9 +103,9 @@ copy_hostconf () {
 
     printf 'Server = %s\n' "${host_mirrors[@]}" >"$working_dir/etc/pacman.d/mirrorlist"
 
-    [[ -n $pacman_conf ]] && cp $pacman_conf "$1/etc/pacman.conf"
+    [[ -n $pacman_conf ]] && cp $pacman_conf "${working_dir}/etc/pacman.conf"
 
-    [[ -n $makepkg_conf ]] && cp $makepkg_conf "$1/etc/makepkg.conf"
+    [[ -n $makepkg_conf ]] && cp $makepkg_conf "${working_dir}/etc/makepkg.conf"
 
     local file
     for file in "${files[@]}"; do
@@ -105,37 +113,32 @@ copy_hostconf () {
         cp -T "$file" "$working_dir$file"
     done
 
-    sed -r "s|^#?\\s*CacheDir.+|CacheDir = ${cache_dirs[*]}|g" -i "$1/etc/pacman.conf"
+    sed -r "s|^#?\\s*CacheDir.+|CacheDir = ${cache_dirs[*]}|g" -i "${working_dir}/etc/pacman.conf"
 }
 
+mount_args+=("-B:${cache_dirs[0]//:/\\:}:${cache_dirs[0]//:/\\:}")
+
+for cache_dir in "${cache_dirs[@]:1}"; do
+	mount_args+=("-Br:${cache_dir//:/\\:}:${cache_dir//:/\\:}")
+done
+
 chroot_extra_mount() {
-    chroot_add_resolv_conf "$1"
-    chroot_mount "/etc/hosts" "$1/etc/hosts" -B
-    chroot_mount "${cache_dirs[0]}" "$1${cache_dirs[0]}" -B
+    chroot_add_resolv_conf "${working_dir}"
+    chroot_mount "/etc/hosts" "${working_dir}/etc/hosts" -B
+    chroot_mount "${cache_dirs[0]}" "${working_dir}${cache_dirs[0]}" -B
 
-    for cache_dir in ${cache_dirs[@]:1}; do
-        chroot_mount "$cache_dir" "$1${cache_dir}" -Br
-    done
-
-    for m in ${bindmounts_ro[@]}; do
-        chroot_mount "${m%%:*}" "$1${m##*:}" -Br
-    done
-
-    for m in ${bindmounts_rw[@]}; do
-        chroot_mount "${m%%:*}" "$1${m##*:}" -B
-    done
-
-    for host_mirror in "${host_mirrors[@]}"; do
-        if [[ $host_mirror == *file://* ]]; then
-            host_mirror_path=$(echo "$host_mirror" | sed -r 's#file://(/.*)/\$repo/os/\$arch#\1#g')
-            chroot_mount "$host_mirror_path" "$1$host_mirror_path" -Br
-        fi
+    for arg in ${mount_args[@]}; do
+        local flag=${arg%%:*}
+        local dest=${arg##*:}
+        local src=${arg%:*}
+        src=${src#*:}
+        chroot_mount "${src}" "${working_dir}${dest}" "${flag}"
     done
 }
 
 sync_host_localtime(){
     if [[ -e /etc/localtime ]]; then
-        cp -L /etc/localtime "$1"/etc/localtime
+        cp -L /etc/localtime "${working_dir}"/etc/localtime
     fi
 }
 
@@ -148,13 +151,13 @@ elif [[ $(cat "$working_dir/.artools") != ${CHROOTVERSION} ]]; then
     die "chroot '%s' is not at version %s. Please rebuild." "$working_dir" "${CHROOTVERSION}"
 fi
 
-sync_host_localtime "${working_dir}"
+sync_host_localtime
 
 chroot_api_mount "${working_dir}" || die "failed to setup API filesystems in chroot %s" "${working_dir}"
 
-chroot_extra_mount "${working_dir}"
+chroot_extra_mount
 
-copy_hostconf "${working_dir}"
+copy_hostconf
 
 eval $(grep '^CARCH=' "$working_dir/etc/makepkg.conf")
 
