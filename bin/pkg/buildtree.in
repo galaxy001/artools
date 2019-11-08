@@ -195,8 +195,7 @@ sync_repos(){
     fi
 }
 
-load_vars "${XDG_CONFIG_HOME}/pacman/makepkg.conf" || load_vars "${USER_HOME}/.makepkg.conf"
-load_vars /etc/makepkg.conf
+load_makepkg_config
 
 sync=false
 sync_arch=true
