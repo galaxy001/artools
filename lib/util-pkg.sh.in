@@ -43,6 +43,7 @@ load_pkg_config(){
             packages-kernel
             packages-openrc
             packages-runit
+            packages-s6
             packages-xorg
             packages-python
             packages-perl

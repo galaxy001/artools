@@ -85,7 +85,7 @@ compare(){
 
 is_db_entry() {
     local pkgname="$1" repo="$(arch2artix $2)"
-    if [[ -d ${USER_CACHE_DIR}/${LINKSDBEXT}/${ARCH}/$repo/$pkgname ]];then
+    if [[ -d ${db_cache_dir}/${LINKSDBEXT}/${ARCH}/$repo/$pkgname ]];then
         return 0
     fi
     return 1
@@ -127,7 +127,7 @@ check_db(){
 update_db_cache(){
     msg "Updating database cache"
     for repo in "${searchrepos[@]}"; do
-        local cachedir=${USER_CACHE_DIR}/${LINKSDBEXT}/${ARCH}/${repo}
+        local cachedir=${db_cache_dir}/${LINKSDBEXT}/${ARCH}/${repo}
         rm -rf "$cachedir"
         mkdir -p "$cachedir"
         msg2 "%s" "$repo"
@@ -140,7 +140,7 @@ update_db_cache(){
 query_db() {
     for repo in "${searchrepos[@]}"; do
         local prefix=
-        local db=${USER_CACHE_DIR}/${LINKSDBEXT}/${ARCH}/${repo}/
+        local db=${db_cache_dir}/${LINKSDBEXT}/${ARCH}/${repo}/
         if [[ -d ${db} ]]; then
             while read -rd '' pkg; do
                 read -r match
@@ -184,6 +184,8 @@ show_version_table(){
         done
     done
 }
+
+db_cache_dir="${XDG_CACHE_HOME:-$USER_HOME/.cache}/artools"
 
 load_makepkg_config
 
