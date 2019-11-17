@@ -8,36 +8,36 @@ _mnt_dmsnapshot() {
     local ro_dev ro_dev_size rw_dev
 
     ro_dev=$(losetup --find --show --read-only "${img}")
-    echo ${ro_dev} >> /run/artix/used_block_devices
+    echo ${ro_dev} >> ${live_root}/used_block_devices
     ro_dev_size=$(blockdev --getsz ${ro_dev})
 
     if [[ "${cow_persistent}" == "P" ]]; then
-        if [[ -f "/run/artix/cowspace/${cow_directory}/${img_name}.cow" ]]; then
-            msg ":: Found '/run/artix/cowspace/${cow_directory}/${img_name}.cow', using as persistent."
+        if [[ -f "${cow}/${cow_directory}/${img_name}.cow" ]]; then
+            msg ":: Found '${cow}/${cow_directory}/${img_name}.cow', using as persistent."
         else
-            msg ":: Creating '/run/artix/cowspace/${cow_directory}/${img_name}.cow' as persistent."
-            truncate -s "${cow_spacesize}" "/run/artix/cowspace/${cow_directory}/${img_name}.cow"
+            msg ":: Creating '${cow}/${cow_directory}/${img_name}.cow' as persistent."
+            truncate -s "${cow_spacesize}" "${cow}/${cow_directory}/${img_name}.cow"
         fi
     else
-        if [[ -f "/run/artix/cowspace/${cow_directory}/${img_name}.cow" ]]; then
-            msg ":: Found '/run/artix/cowspace/${cow_directory}/${img_name}.cow' but non-persistent requested, removing."
-            rm -f "/run/artix/cowspace/${cow_directory}/${img_name}.cow"
+        if [[ -f "${cow}/${cow_directory}/${img_name}.cow" ]]; then
+            msg ":: Found '${cow}/${cow_directory}/${img_name}.cow' but non-persistent requested, removing."
+            rm -f "${cow}/${cow_directory}/${img_name}.cow"
         fi
-        msg ":: Creating '/run/artix/cowspace/${cow_directory}/${img_name}.cow' as non-persistent."
-        truncate -s "${cow_spacesize}" "/run/artix/cowspace/${cow_directory}/${img_name}.cow"
+        msg ":: Creating '${cow}/${cow_directory}/${img_name}.cow' as non-persistent."
+        truncate -s "${cow_spacesize}" "${cow}/${cow_directory}/${img_name}.cow"
     fi
 
-    rw_dev=$(losetup --find --show "/run/artix/cowspace/${cow_directory}/${img_name}.cow")
-    echo ${rw_dev} >> /run/artix/used_block_devices
+    rw_dev=$(losetup --find --show "${cow}/${cow_directory}/${img_name}.cow")
+    echo ${rw_dev} >> ${live_root}/used_block_devices
 
     dmsetup create ${dm_snap_name} --table "0 ${ro_dev_size} snapshot ${ro_dev} ${rw_dev} ${cow_persistent} ${cow_chunksize}"
 
     if [[ "${cow_persistent}" != "P" ]]; then
-        rm -f "/run/artix/cowspace/${cow_directory}/${img_name}.cow"
+        rm -f "${cow}/${cow_directory}/${img_name}.cow"
     fi
 
     _mnt_dev "/dev/mapper/${dm_snap_name}" "${mnt}" "-w" "defaults"
-    echo $(readlink -f /dev/mapper/${dm_snap_name}) >> /run/artix/used_block_devices
+    echo $(readlink -f /dev/mapper/${dm_snap_name}) >> ${live_root}/used_block_devices
 }
 
 # args: source, newroot, mountpoint
@@ -45,8 +45,8 @@ _mnt_overlayfs() {
     local src="${1}"
     local newroot="${2}"
     local mnt="${3}"
-    local work_dir="/run/artix/overlay_root/work"
-    local upper_dir="/run/artix/overlay_root/upper"
+    local work_dir="${overlay_root}/work"
+    local upper_dir="${overlay_root}/upper"
 
     mkdir -p "${upper_dir}" "${work_dir}"
 
@@ -63,15 +63,15 @@ _mnt_sfs() {
 
     if [[ "${copytoram}" == "y" ]]; then
         msg -n ":: Copying squashfs image to RAM..."
-        if ! "${oper}" "${img}" "/run/artix/copytoram/${img_fullname}" ; then
-            echo "ERROR: while copy '${img}' to '/run/artix/copytoram/${img_fullname}'"
+        if ! "${oper}" "${img}" "${cp2ram}/${img_fullname}" ; then
+            echo "ERROR: while copy '${img}' to '${cp2ram}/${img_fullname}'"
             launch_interactive_shell
         fi
-        img="/run/artix/copytoram/${img_fullname}"
+        img="${cp2ram}/${img_fullname}"
         msg "done."
     fi
     sfs_dev=$(losetup --find --show --read-only "${img}")
-    echo ${sfs_dev} >> /run/artix/used_block_devices
+    echo ${sfs_dev} >> ${live_root}/used_block_devices
     _mnt_dev "${sfs_dev}" "${mnt}" "-r" "defaults"
 }
 
@@ -105,8 +105,8 @@ _mnt_dev() {
 
 _verify_checksum() {
     local _status
-    cd "/run/artix/bootmnt/${artixbasedir}/${arch}"
-    sha512sum -c $1.sha512 > /tmp/checksum.log 2>&1
+    cd "${bootmnt}/${root}"
+    sha512sum -c $1.img.sha512 > /tmp/checksum.log 2>&1
     _status=$?
     cd "${OLDPWD}"
     return ${_status}
@@ -114,20 +114,19 @@ _verify_checksum() {
 
 _verify_signature() {
     local _status
-    cd "/run/artix/bootmnt/${artixbasedir}/${arch}"
-    gpg --homedir /gpg --status-fd 1 --verify $1.sfs.sig 2>/dev/null | grep -qE '^\[GNUPG:\] GOODSIG'
+    cd "${bootmnt}/${root}"
+    gpg --homedir /gpg --status-fd 1 --verify $1.img.sig 2>/dev/null | grep -qE '^\[GNUPG:\] GOODSIG'
     _status=$?
     cd "${OLDPWD}"
     return ${_status}
 }
 
 run_hook() {
-    [[ -z "${arch}" ]] && arch="$(uname -m)"
     [[ -z "${copytoram_size}" ]] && copytoram_size="75%"
-    [[ -z "${artixbasedir}" ]] && artixbasedir="artix"
+    [[ -z "${root}" ]] && root="LiveOS"
 
-    [[ -z "${dm_snap_prefix}" ]] && dm_snap_prefix="arch"
-    [[ -z "${artixdevice}" ]] && artixdevice="/dev/disk/by-label/${artixlabel}"
+    [[ -z "${dm_snap_prefix}" ]] && dm_snap_prefix="artix"
+    [[ -z "${artixdevice}" ]] && artixdevice="/dev/disk/by-label/${label}"
     [[ -z "${cow_spacesize}" ]] && cow_spacesize="256M"
     [[ -z "${overlay_root_size}" ]] && overlay_root_size="75%"
 
@@ -141,11 +140,78 @@ run_hook() {
     fi
 
     [[ -z "${cow_flags}" ]] && cow_flags="defaults"
-    [[ -z "${cow_directory}" ]] && cow_directory="persistent_${artixlabel}/${arch}"
+    [[ -z "${cow_directory}" ]] && cow_directory="persistent_${label}"
     [[ -z "${cow_chunksize}" ]] && cow_chunksize="8"
-
     # set mount handler for artix
     mount_handler="artix_mount_handler"
+
+    lower_dir=''
+    live_root="/run/artix"
+    overlay_root="${live_root}/overlay_root"
+    cow="${live_root}/cowspace"
+    bootmnt="${live_root}/bootmnt"
+    cp2ram="${live_root}/copytoram"
+}
+
+_check_sum() {
+    local fs="$1"
+    if [[ -f "${bootmnt}/${root}/${fs}.img" ]]; then
+        if [[ -f "${bootmnt}/${root}/${fs}.img.sha512" ]]; then
+            msg -n ":: Self-test requested, please wait..."
+            if _verify_checksum "${fs}"; then
+                msg "done. Checksum is OK, continue booting."
+            else
+                echo "ERROR: one or more files are corrupted"
+                echo "see /tmp/checksum.log for details"
+                launch_interactive_shell
+            fi
+        else
+            echo "ERROR: checksum=y option specified but ${root}/${fs}.img.sha512 not found"
+            launch_interactive_shell
+        fi
+    fi
+}
+
+_check_sig() {
+
+    if [[ -f "${bootmnt}/${root}/${fs}.img" ]]; then
+        if [[ -f "${bootmnt}/${root}/${fs}.img.sig" ]]; then
+            msg -n ":: Signature verification requested, please wait..."
+            if _verify_signature "${fs}"; then
+                msg "done. Signature is OK, continue booting."
+            else
+                echo "ERROR: one or more files are corrupted"
+                launch_interactive_shell
+            fi
+        else
+            echo "ERROR: verify=y option specified but ${root}/${fs}.img.sig not found"
+            launch_interactive_shell
+        fi
+    fi
+}
+
+_gen_arg() {
+    local arg="$1"
+    echo "${lower_dir:-}${lower_dir:+:}${arg}"
+}
+
+_mount_root_overlay() {
+    local sfs="$1"
+    local src="${bootmnt}/${root}"
+    local dest_sfs="${live_root}/sfs"
+    local dest_img="${live_root}/img"
+
+    if [[ -f "${src}/${sfs}.img" ]]; then
+        _mnt_sfs "${src}/${sfs}.img" "${dest_sfs}/${sfs}"
+        local find_img="${dest_sfs}/${sfs}/LiveOS/${sfs}.img"
+        if [[ -f "${find_img}" ]]; then
+            mkdir -p ${dest_img}
+            lower_dir=$(_gen_arg "${dest_img}/${sfs}")
+            _mnt_dmsnapshot "${find_img}" "${dest_img}/${sfs}"
+        else
+            lower_dir=$(_gen_arg "${dest_sfs}/${sfs}")
+        fi
+    fi
 }
 
 # This function is called normally from init script, but it can be called
@@ -154,96 +220,54 @@ run_hook() {
 artix_mount_handler() {
     local newroot="${1}"
 
-    if ! mountpoint -q "/run/artix/bootmnt"; then
-        _mnt_dev "${artixdevice}" "/run/artix/bootmnt" "-r" "defaults"
+    if ! mountpoint -q "${bootmnt}"; then
+        _mnt_dev "${artixdevice}" "${bootmnt}" "-r" "defaults"
         if [[ "${copytoram}" != "y" ]]; then
-            echo $(readlink -f ${artixdevice}) >> /run/artix/used_block_devices
+            echo $(readlink -f ${artixdevice}) >> ${live_root}/used_block_devices
         fi
     fi
 
-    if [[ "${checksum}" == "y" ]]; then
-        for fs in rootfs livefs;do
-            if [[ -f "/run/artix/bootmnt/${artixbasedir}/${arch}/${fs}.sfs" ]]; then
-                if [[ -f "/run/artix/bootmnt/${artixbasedir}/${arch}/${fs}.sha512" ]]; then
-                    msg -n ":: Self-test requested, please wait..."
-                    if _verify_checksum "${fs}"; then
-                        msg "done. Checksum is OK, continue booting."
-                    else
-                        echo "ERROR: one or more files are corrupted"
-                        echo "see /tmp/checksum.log for details"
-                        launch_interactive_shell
-                    fi
-                else
-                    echo "ERROR: checksum=y option specified but ${artixbasedir}/${arch}/${fs}.sha512 not found"
-                    launch_interactive_shell
-                fi
-            fi
-        done
-    fi
+    for fs in rootfs livefs; do
+        if [[ "${checksum}" == "y" ]]; then
+            _check_sum "${fs}"
+        fi
 
-    if [[ "${verify}" == "y" ]]; then
-        for fs in rootfs livefs;do
-            if [[ -f "/run/artix/bootmnt/${artixbasedir}/${arch}/${fs}.sfs" ]]; then
-                if [[ -f "/run/artix/bootmnt/${artixbasedir}/${arch}/${fs}.sfs.sig" ]]; then
-                    msg -n ":: Signature verification requested, please wait..."
-                    if _verify_signature "${fs}"; then
-                        msg "done. Signature is OK, continue booting."
-                    else
-                        echo "ERROR: one or more files are corrupted"
-                        launch_interactive_shell
-                    fi
-                else
-                    echo "ERROR: verify=y option specified but ${artixbasedir}/${arch}/${fs}.sfs.sig not found"
-                    launch_interactive_shell
-                fi
-            fi
-        done
-    fi
+        if [[ "${verify}" == "y" ]]; then
+            _check_sig "${fs}"
+        fi
+    done
 
     if [[ "${copytoram}" == "y" ]]; then
-        msg ":: Mounting /run/artix/copytoram (tmpfs) filesystem, size=${copytoram_size}"
-        mkdir -p /run/artix/copytoram
-        mount -t tmpfs -o "size=${copytoram_size}",mode=0755 copytoram /run/artix/copytoram
+        msg ":: Mounting ${cp2ram} (tmpfs) filesystem, size=${copytoram_size}"
+        mkdir -p ${cp2ram}
+        mount -t tmpfs -o "size=${copytoram_size}",mode=0755 copytoram ${cp2ram}
     fi
 
     if [[ -n "${cow_device}" ]]; then
-        _mnt_dev "${cow_device}" "/run/artix/cowspace" "-r" "${cow_flags}"
-        echo $(readlink -f ${cow_device}) >> /run/artix/used_block_devices
-        mount -o remount,rw "/run/artix/cowspace"
+        _mnt_dev "${cow_device}" "${cow}" "-r" "${cow_flags}"
+        echo $(readlink -f ${cow_device}) >> ${live_root}/used_block_devices
+        mount -o remount,rw "${cow}"
     else
-        msg ":: Mounting /run/artix/cowspace (tmpfs) filesystem, size=${cow_spacesize}..."
-        mkdir -p /run/artix/cowspace
-        mount -t tmpfs -o "size=${cow_spacesize}",mode=0755 cowspace /run/artix/cowspace
+        msg ":: Mounting ${cow} (tmpfs) filesystem, size=${cow_spacesize}..."
+        mkdir -p ${cow}
+        mount -t tmpfs -o "size=${cow_spacesize}",mode=0755 cowspace ${cow}
     fi
-    mkdir -p -m 0700 "/run/artix/cowspace/${cow_directory}"
+    mkdir -p -m 0700 "${cow}/${cow_directory}"
 
     msg -n ":: Mounting overlay root (tmpfs) filesystem, size=${overlay_root_size}..."
-    mkdir -p /run/artix/overlay_root
-    mount -t tmpfs -o "size=${overlay_root_size}",mode=0755 overlay_root /run/artix/overlay_root
+    mkdir -p ${overlay_root}
+    mount -t tmpfs -o "size=${overlay_root_size}",mode=0755 overlay_root ${overlay_root}
 
-    local src="/run/artix/bootmnt/${artixbasedir}/${arch}"
-    local dest_sfs="/run/artix/sfs" dest_img="/run/artix/img"
-    local lower_dir
-
-    for sfs in livefs rootfs;do
-        if [[ -f "${src}/${sfs}.sfs" ]]; then
-            _mnt_sfs "${src}/${sfs}.sfs" "${dest_sfs}/${sfs}"
-            if [[ -f "${dest_sfs}/${sfs}/${sfs}.img" ]]; then
-                mkdir -p ${dest_img}
-                lower_dir=${lower_dir:-}${lower_dir:+:}"${dest_img}/${sfs}"
-                _mnt_dmsnapshot "${dest_sfs}/${sfs}/${sfs}.img" "${dest_img}/${sfs}"
-            else
-                lower_dir=${lower_dir:-}${lower_dir:+:}"${dest_sfs}/${sfs}"
-            fi
-        fi
+    for fs in livefs rootfs; do
+        _mount_root_overlay "${fs}"
     done
 
     _mnt_overlayfs "${lower_dir}" "${newroot}" "/"
 
     if [[ "${copytoram}" == "y" ]]; then
-        umount -d /run/artix/bootmnt
-        mkdir -p /run/artix/bootmnt/${artixbasedir}/${arch}
-        mount -o bind /run/artix/copytoram /run/artix/bootmnt/${artixbasedir}/${arch}
+        umount -d ${bootmnt}
+        mkdir -p ${bootmnt}/${root}
+        mount -o bind ${cp2ram} ${bootmnt}/${root}
     fi
 }
 

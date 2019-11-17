@@ -27,7 +27,7 @@ BASE_LIBS = \
 BASE_UTIL = lib/util-base.sh
 
 BASE_DATA = \
-	$(wildcard data/base/pacman*.conf)
+	$(wildcard data/pacman/pacman*.conf)
 
 PKG_CONF = \
 	data/conf/artools-pkg.conf
@@ -95,7 +95,7 @@ PKG_LIBS = \
 PKG_UTIL = lib/util-pkg.sh
 
 PKG_DATA = \
-	data/pkg/makepkg.conf
+	data/pacman/makepkg.conf
 
 PATCHES = \
 	$(wildcard data/patches/*.patch)
@@ -116,8 +116,6 @@ ISO_LIBS = \
 
 ISO_UTIL = lib/util-iso.sh
 
-ISO_DATA = \
-	data/iso/mkinitcpio.conf
 
 DIRMODE = -dm0755
 FILEMODE = -m0644
@@ -210,9 +208,6 @@ install_iso: install_cpio
 	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)/iso
 	install $(FILEMODE) $(ISO_UTIL) $(DESTDIR)$(LIBDIR)/$(TOOLS)
 	install $(FILEMODE) $(ISO_LIBS) $(DESTDIR)$(LIBDIR)/$(TOOLS)/iso
-
-	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)
-	install $(FILEMODE) $(ISO_DATA) $(DESTDIR)$(DATADIR)/$(TOOLS)
 
 install: install_base install_pkg install_iso
 

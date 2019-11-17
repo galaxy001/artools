@@ -17,13 +17,13 @@ run_hook() {
 # Fetch a file with CURL
 #
 # $1 URL
-# $2 Destination directory inside httpspace/${artixbasedir}
+# $2 Destination directory inside httpspace/${root}
 _curl_get() {
     local _url="${1}"
     local _dst="${2}"
 
     msg ":: Downloading '${_url}'"
-    if ! curl -L -f -o "/run/artix/httpspace/${artixbasedir}${_dst}/${_url##*/}" --create-dirs "${_url}"; then
+    if ! curl -L -f -o "/run/artix/httpspace/${root}${_dst}/${_url##*/}" --create-dirs "${_url}"; then
         echo "ERROR: Downloading '${_url}'"
         echo "   Falling back to interactive prompt"
         echo "   You can try to fix the problem manually, log out when you are finished"
@@ -38,7 +38,7 @@ artix_pxe_http_mount_handler () {
     mkdir -p "/run/artix/httpspace"
     mount -t tmpfs -o size="${artix_http_spc}",mode=0755 httpspace "/run/artix/httpspace"
 
-    local _src=${artix_http_srv}${artixbasedir}/${arch}
+    local _src=${artix_http_srv}${root}/${arch}
 
     for sfs in livefs rootfs;do
         if [[ ! -z "$( curl -s --head "${_src}/${sfs}.sfs" | grep "OK" )" ]]; then

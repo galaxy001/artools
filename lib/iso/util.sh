@@ -54,27 +54,6 @@ prepare_traps(){
 #     trap 'trap_exit USR1 "$(gettext "An unknown error has occurred. Exiting...")"' ERR
 }
 
-# Build ISO
-make_iso() {
-    msg "Start [Build ISO]"
-    touch "${iso_root}/.artix"
-    for sfs_dir in $(find "${work_dir}" -maxdepth 1 -type d); do
-        if [[ "${sfs_dir}" != "${work_dir}" ]]; then
-            make_sfs "${sfs_dir}"
-        fi
-    done
-
-    msg "Making bootable image"
-    # Sanity checks
-    [[ ! -d "${iso_root}" ]] && return 1
-    if [[ -f "${iso_dir}/${iso_file}" ]]; then
-        msg2 "Removing existing bootable image..."
-        rm -rf "${iso_dir}/${iso_file}"
-    fi
-    assemble_iso
-    msg "Done [Build ISO]"
-}
-
 copy_overlay(){
     local src="$1" dest="$2"
     if [[ -e "$src" ]];then

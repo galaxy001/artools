@@ -48,12 +48,15 @@ prepare_build(){
     iso_label="ARTIX_$(date +%Y%m)"
 
     basestrap_args+=(-C ${pacman_conf})
-    work_dir=${CHROOTS_ISO}/${PROFILE}/${ARCH}
+    work_dir=${CHROOTS_ISO}/${PROFILE}/artix
 
     iso_dir="${ISO_POOL}/${PROFILE}"
 
     iso_root=${CHROOTS_ISO}/${PROFILE}/iso
+    live_dir=/LiveOS
+
     mnt_dir=${CHROOTS_ISO}/${PROFILE}/mnt
+
     prepare_dir "${mnt_dir}"
     prepare_dir "${iso_dir}"
     prepare_dir "${iso_root}"
@@ -129,7 +132,7 @@ usage() {
     echo "                       [default: ${ISO_POOL}]"
     echo '    -i <name>          Init system to use'
     echo "                       [default: ${INITSYS}]"
-    echo '    -g <key>           The gpg key for sfs signing'
+    echo '    -g <key>           The gpg key for img signing'
     echo "                       [default: ${GPG_KEY}]"
     echo '    -m                 Set SquashFS image mode to persistence'
     echo '    -c                 Disable clean work dir'

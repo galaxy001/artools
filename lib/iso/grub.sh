@@ -12,21 +12,30 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+write_mkinitcpio_conf() {
+    local conf="$1/etc/mkinitcpio-artix.conf"
+    printf "%s\n" 'MODULES=(loop dm-snapshot)' > $conf
+    printf "%s\n" 'COMPRESSION="xz"' >> $conf
+    if [[ "${PROFILE}" == 'base' ]];then
+        printf "%s\n" 'HOOKS=(base udev artix_shutdown artix artix_loop_mnt artix_pxe_common artix_pxe_http artix_pxe_nbd artix_pxe_nfs artix_kms modconf block filesystems keyboard keymap)' >> $conf
+    else
+        printf "%s\n" 'HOOKS=(base udev artix_shutdown artix artix_loop_mnt artix_kms modconf block filesystems keyboard keymap)' >> $conf
+    fi
+}
+
 prepare_initcpio(){
     msg2 "Copying initcpio ..."
     local dest="$1"
     cp /etc/initcpio/hooks/artix* $dest/etc/initcpio/hooks
     cp /etc/initcpio/install/artix* $dest/etc/initcpio/install
     cp /etc/initcpio/artix_shutdown $dest/etc/initcpio
+
+    msg2 "Writing mkinitcpio.conf ..."
+    write_mkinitcpio_conf "$dest"
 }
 
 prepare_initramfs(){
     local mnt="$1"
-    cp ${DATADIR}/mkinitcpio.conf $mnt/etc/mkinitcpio-artix.conf
-
-    if [[ "${PROFILE}" != 'base' ]];then
-        sed -e 's/artix_pxe_common artix_pxe_http artix_pxe_nbd artix_pxe_nfs //' -i $mnt/etc/mkinitcpio-artix.conf
-    fi
 
     if [[ -n ${GPG_KEY} ]]; then
         su ${OWNER} -c "gpg --export ${GPG_KEY} >/tmp/GPG_KEY"
@@ -59,7 +68,9 @@ prepare_boot_extras(){
 }
 
 configure_grub(){
-    sed -e "s|@iso_label@|${iso_label}|" -i ${iso_root}/boot/grub/kernels.cfg
+    local kopts="root=LiveOS label=${iso_label}"
+    local popts=''
+    sed -e "s|@kopts@|${kopts}|" -e "s|@popts@|${popts}|" -i ${iso_root}/boot/grub/kernels.cfg
 }
 
 prepare_grub(){
@@ -103,7 +114,7 @@ prepare_grub(){
         grub-mkfont -o ${grub}/unicode.pf2 /usr/share/fonts/misc/unifont.bdf
     fi
 
-    local size=4M mnt="${mnt_dir}/efiboot" efi_img="${iso_root}/efi.img"
+    local size=4M mnt="${mnt_dir}/efiboot" efi_img="${iso_root}/boot/efi.img"
     msg2 "Creating fat image of %s ..." "${size}"
     truncate -s ${size} "${efi_img}"
     mkfs.fat -n ARTIX_EFI "${efi_img}" &>/dev/null

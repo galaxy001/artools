@@ -13,87 +13,101 @@
 # GNU General Public License for more details.
 
 make_sig () {
-    local idir="$1" file="$2"
+    local file="$1"
     msg2 "Creating signature file..."
-    cd "$idir"
-    chown "${OWNER}:$(id --group ${OWNER})" "$idir"
-    su ${OWNER} -c "gpg --detach-sign --default-key ${GPG_KEY} $file.sfs"
-    chown -R root "$idir"
+    cd ${iso_root}${live_dir}
+    chown "${OWNER}:$(id --group ${OWNER})" "${iso_root}${live_dir}"
+    su ${OWNER} -c "gpg --detach-sign --default-key ${GPG_KEY} $file"
+    chown -R root "${iso_root}${live_dir}"
     cd ${OLDPWD}
 }
 
 make_checksum(){
-    local idir="$1" file="$2"
+    local file="$1"
     msg2 "Creating sha512sum ..."
-    cd $idir
-    sha512sum $file.sfs > $file.sha512
+    cd ${iso_root}${live_dir}
+    sha512sum $file > $file.sha512
     cd ${OLDPWD}
+}
+
+make_ext_img(){
+    local src="$1"
+    local size=32G
+    local mnt="${mnt_dir}/${src##*/}"
+    mkdir -p ${work_dir}/embed${live_dir}
+    local extimg=${work_dir}/embed${live_dir}/${src##*/}.img
+
+    msg2 "Creating ext4 image of %s ..." "${size}"
+    truncate -s ${size} "${extimg}"
+    local ext4_args=()
+    ext4_args+=(-O ^has_journal,^resize_inode -E lazy_itable_init=0 -m 0)
+    mkfs.ext4 ${ext4_args[@]} -F "${extimg}" &>/dev/null
+    tune2fs -c 0 -i 0 "${extimg}" &> /dev/null
+    mount_img "${extimg}" "${mnt}"
+    msg2 "Copying %s ..." "${src}/"
+    cp -aT "${src}/" "${mnt}/"
+    umount_img "${mnt}"
+}
+
+has_changed(){
+    local src="$1" dest="$2"
+    if [[ -f "${dest}" ]]; then
+        local has_changes=$(find ${src} -newer ${dest})
+        if [[ -n "${has_changes}" ]]; then
+            msg2 "Possible changes for %s ..." "${src}"
+            msg2 "%s" "${has_changes}"
+            msg2 "SquashFS image %s is not up to date, rebuilding..." "${dest}"
+            rm "${dest}"
+        else
+            msg2 "SquashFS image %s is up to date, skipping." "${dest}"
+            return 1
+        fi
+    fi
 }
 
 # $1: image path
 make_sfs() {
-    local src="$1"
-    if [[ ! -e "${src}" ]]; then
-        error "The path %s does not exist" "${src}"
+    local sfs_in="$1"
+    if [[ ! -e "${sfs_in}" ]]; then
+        error "The path %s does not exist" "${sfs_in}"
         retrun 1
     fi
-    local timer=$(get_timer) dest=${iso_root}/artix/${ARCH}
-    local name=${1##*/}
-    local sfs="${dest}/${name}.sfs"
-    mkdir -p ${dest}
-    msg "Generating SquashFS image for %s" "${src}"
-    if [[ -f "${sfs}" ]]; then
-        local has_changed_dir=$(find ${src} -newer ${sfs})
-        msg2 "Possible changes for %s ..." "${src}"  >> /tmp/buildiso.debug
-        msg2 "%s" "${has_changed_dir}" >> /tmp/buildiso.debug
-        if [[ -n "${has_changed_dir}" ]]; then
-            msg2 "SquashFS image %s is not up to date, rebuilding..." "${sfs}"
-            rm "${sfs}"
+    local timer=$(get_timer)
+
+    mkdir -p ${iso_root}${live_dir}
+
+    local img_name=${sfs_in##*/}.img
+    local img_file=${sfs_in}.img
+
+    local sfs_out="${iso_root}${live_dir}/${img_name}"
+
+    if has_changed "${sfs_in}" "${sfs_out}"; then
+
+        msg "Generating SquashFS image for %s" "${sfs_in}"
+
+        local mksfs_args=()
+
+        if ${persist};then
+            make_ext_img "${sfs_in}"
+            mksfs_args+=("${work_dir}/embed")
         else
-            msg2 "SquashFS image %s is up to date, skipping." "${sfs}"
-            return
+            mksfs_args+=("${sfs_in}")
         fi
-    fi
 
-    if ${persist};then
-        local size=32G
-        local mnt="${mnt_dir}/${name}"
-        msg2 "Creating ext4 image of %s ..." "${size}"
-        truncate -s ${size} "${src}.img"
-        local ext4_args=()
-        ext4_args+=(-O ^has_journal,^resize_inode -E lazy_itable_init=0 -m 0)
-        mkfs.ext4 ${ext4_args[@]} -F "${src}.img" &>/dev/null
-        tune2fs -c 0 -i 0 "${src}.img" &> /dev/null
-        mount_img "${work_dir}/${name}.img" "${mnt}"
-        msg2 "Copying %s ..." "${src}/"
-        cp -aT "${src}/" "${mnt}/"
-        umount_img "${mnt}"
+        mksfs_args+=("${sfs_out}")
+
+        mksfs_args+=(-comp xz -b 256K -Xbcj x86 -noappend)
+
+        mksquashfs "${mksfs_args[@]}"
+
+        make_checksum "${img_name}"
+        ${persist} && rm -r "${work_dir}/embed"
+
+        if [[ -n ${GPG_KEY} ]];then
+            make_sig "${img_name}"
+        fi
 
     fi
-
-    msg2 "Creating SquashFS image, this may take some time..."
-    local mksfs_args=()
-    if ${persist};then
-        mksfs_args+=(${work_dir}/${name}.img)
-    else
-        mksfs_args+=(${src})
-    fi
-
-    mksfs_args+=(${sfs} -noappend)
-
-    local highcomp="-b 256K -Xbcj x86" comp='xz'
-
-    mksfs_args+=(-comp ${comp} ${highcomp})
-
-    mksquashfs "${mksfs_args[@]}"
-
-    make_checksum "${dest}" "${name}"
-    ${persist} && rm "${src}.img"
-
-    if [[ -n ${GPG_KEY} ]];then
-        make_sig "${dest}" "${name}"
-    fi
-
     show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }
 
@@ -124,10 +138,27 @@ assemble_iso(){
         -c boot.catalog \
         -no-emul-boot -boot-load-size 4 -boot-info-table --grub2-boot-info \
         -eltorito-alt-boot \
-        -append_partition 2 0xef ${iso_root}/efi.img \
+        -append_partition 2 0xef ${iso_root}/boot/efi.img \
         -e --interval:appended_partition_2:all:: -iso_mbr_part_type 0x00 \
         -no-emul-boot \
         -iso-level 3 \
         -o ${iso_dir}/${iso_file} \
         ${iso_root}/
+}
+
+make_iso() {
+    msg "Start [Build ISO]"
+    touch "${iso_root}/.artix"
+    make_sfs "${work_dir}/rootfs"
+    [[ -d "${work_dir}/livefs" ]] && make_sfs "${work_dir}/livefs"
+
+    msg "Making bootable image"
+    # Sanity checks
+    [[ ! -d "${iso_root}" ]] && return 1
+    if [[ -f "${iso_dir}/${iso_file}" ]]; then
+        msg2 "Removing existing bootable image..."
+        rm -rf "${iso_dir}/${iso_file}"
+    fi
+    assemble_iso
+    msg "Done [Build ISO]"
 }

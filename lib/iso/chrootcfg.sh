@@ -139,6 +139,21 @@ write_postcfg(){
     printf '%s' "${yaml}"
 }
 
+write_unpackfs() {
+    local yaml=$(write_yaml_header)
+    yaml+=$(write_yaml_map 0 'unpack')
+#     if ${persist}; then
+#         yaml+=$(write_yaml_seq_map 2 'source' '"/run/artix/bootmnt/LiveOS/rootfs.img"')
+#         yaml+=$(write_yaml_map 4 'sourcefs' '"ext4"')
+#     else
+    yaml+=$(write_yaml_seq_map 2 'source' '"/run/artix/bootmnt/LiveOS/rootfs.img"')
+    yaml+=$(write_yaml_map 4 'sourcefs' '"squashfs"')
+#     fi
+    yaml+=$(write_yaml_map 4 'destination' '""')
+    yaml+=$(write_empty_line)
+    printf '%s' "${yaml}"
+}
+
 configure_calamares(){
     local mods="$1/etc/calamares/modules"
     if [[ -d "$mods" ]];then
@@ -146,6 +161,7 @@ configure_calamares(){
         write_users_conf > "$mods"/users.conf
         write_services_"${INITSYS}"_conf "$mods"
         write_postcfg > "$mods"/postcfg.conf
+        write_unpackfs > "$mods"/unpackfs.conf
         sed -e "s|services-openrc|services-${INITSYS}|" \
             -i "$1"/etc/calamares/settings.conf
     fi
