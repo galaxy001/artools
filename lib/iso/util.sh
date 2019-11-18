@@ -148,21 +148,16 @@ make_livefs() {
 make_bootfs() {
     if [[ ! -e ${work_dir}/bootfs.lock ]]; then
         msg "Prepare [/iso/boot]"
-        local boot="${iso_root}/boot"
 
-        prepare_dir "${boot}"
+        prepare_dir "${iso_root}/boot"
 
-        cp ${work_dir}/rootfs/boot/vmlinuz* ${boot}/vmlinuz-${ARCH}
+        cp ${work_dir}/rootfs/boot/vmlinuz* ${iso_root}/boot/vmlinuz-${ARCH}
 
         local bootfs="${work_dir}/bootfs"
 
         mount_overlay "${bootfs}" "${work_dir}"
 
-        prepare_initcpio "${bootfs}"
         prepare_initramfs "${bootfs}"
-
-        cp ${bootfs}/boot/initramfs.img ${boot}/initramfs-${ARCH}.img
-        prepare_boot_extras "${bootfs}" "${boot}"
 
         umount_overlay
 

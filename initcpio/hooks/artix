@@ -142,6 +142,7 @@ run_hook() {
     [[ -z "${cow_flags}" ]] && cow_flags="defaults"
     [[ -z "${cow_directory}" ]] && cow_directory="persistent_${label}"
     [[ -z "${cow_chunksize}" ]] && cow_chunksize="8"
+    [[ -z "${overlay}" ]] && overlay=""
     # set mount handler for artix
     mount_handler="artix_mount_handler"
 
@@ -154,7 +155,7 @@ run_hook() {
 }
 
 _check_sum() {
-    local fs="$1"
+    local fs="${1}"
     if [[ -f "${bootmnt}/${root}/${fs}.img" ]]; then
         if [[ -f "${bootmnt}/${root}/${fs}.img.sha512" ]]; then
             msg -n ":: Self-test requested, please wait..."
@@ -173,7 +174,7 @@ _check_sum() {
 }
 
 _check_sig() {
-
+    local fs="${1}"
     if [[ -f "${bootmnt}/${root}/${fs}.img" ]]; then
         if [[ -f "${bootmnt}/${root}/${fs}.img.sig" ]]; then
             msg -n ":: Signature verification requested, please wait..."
@@ -191,12 +192,12 @@ _check_sig() {
 }
 
 _gen_arg() {
-    local arg="$1"
+    local arg="${1}"
     echo "${lower_dir:-}${lower_dir:+:}${arg}"
 }
 
-_mount_root_overlay() {
-    local sfs="$1"
+_mount_root_overlayfs() {
+    local sfs="${1}"
     local src="${bootmnt}/${root}"
     local dest_sfs="${live_root}/sfs"
     local dest_img="${live_root}/img"
@@ -227,15 +228,15 @@ artix_mount_handler() {
         fi
     fi
 
-    for fs in rootfs livefs; do
-        if [[ "${checksum}" == "y" ]]; then
-            _check_sum "${fs}"
-        fi
+    if [[ "${checksum}" == "y" ]]; then
+        _check_sum "rootfs"
+        [[ -n "${overlay}" ]] && _check_sum "${overlay}"
+    fi
 
-        if [[ "${verify}" == "y" ]]; then
-            _check_sig "${fs}"
-        fi
-    done
+    if [[ "${verify}" == "y" ]]; then
+        _check_sig "rootfs"
+        [[ -n "${overlay}" ]] && _check_sig "${overlay}"
+    fi
 
     if [[ "${copytoram}" == "y" ]]; then
         msg ":: Mounting ${cp2ram} (tmpfs) filesystem, size=${copytoram_size}"
@@ -258,9 +259,8 @@ artix_mount_handler() {
     mkdir -p ${overlay_root}
     mount -t tmpfs -o "size=${overlay_root_size}",mode=0755 overlay_root ${overlay_root}
 
-    for fs in livefs rootfs; do
-        _mount_root_overlay "${fs}"
-    done
+    [[ -n "${overlay}" ]] && _mount_root_overlayfs "${overlay}"
+    _mount_root_overlayfs "rootfs"
 
     _mnt_overlayfs "${lower_dir}" "${newroot}" "/"
 

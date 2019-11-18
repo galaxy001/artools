@@ -13,13 +13,17 @@
 # GNU General Public License for more details.
 
 write_mkinitcpio_conf() {
+    msg2 "Writing mkinitcpio.conf ..."
     local conf="$1/etc/mkinitcpio-artix.conf"
     printf "%s\n" 'MODULES=(loop dm-snapshot)' > $conf
     printf "%s\n" 'COMPRESSION="xz"' >> $conf
     if [[ "${PROFILE}" == 'base' ]];then
-        printf "%s\n" 'HOOKS=(base udev artix_shutdown artix artix_loop_mnt artix_pxe_common artix_pxe_http artix_pxe_nbd artix_pxe_nfs artix_kms modconf block filesystems keyboard keymap)' >> $conf
+        printf "%s\n" 'HOOKS=(base udev artix_shutdown artix artix_loop_mnt
+                            artix_pxe_common artix_pxe_http artix_pxe_nbd artix_pxe_nfs
+                            artix_kms modconf block filesystems keyboard keymap)' >> $conf
     else
-        printf "%s\n" 'HOOKS=(base udev artix_shutdown artix artix_loop_mnt artix_kms modconf block filesystems keyboard keymap)' >> $conf
+        printf "%s\n" 'HOOKS=(base udev artix_shutdown artix artix_loop_mnt
+                            artix_kms modconf block filesystems keyboard keymap)' >> $conf
     fi
 }
 
@@ -29,34 +33,10 @@ prepare_initcpio(){
     cp /etc/initcpio/hooks/artix* $dest/etc/initcpio/hooks
     cp /etc/initcpio/install/artix* $dest/etc/initcpio/install
     cp /etc/initcpio/artix_shutdown $dest/etc/initcpio
-
-    msg2 "Writing mkinitcpio.conf ..."
-    write_mkinitcpio_conf "$dest"
-}
-
-prepare_initramfs(){
-    local mnt="$1"
-
-    if [[ -n ${GPG_KEY} ]]; then
-        su ${OWNER} -c "gpg --export ${GPG_KEY} >/tmp/GPG_KEY"
-        exec 17<>/tmp/GPG_KEY
-    fi
-    local _kernel=$(<$mnt/usr/src/linux/version)
-    ARTIX_GNUPG_FD=${GPG_KEY:+17} artools-chroot $mnt \
-        /usr/bin/mkinitcpio -k ${_kernel} \
-        -c /etc/mkinitcpio-artix.conf \
-        -g /boot/initramfs.img
-
-    if [[ -n ${GPG_KEY} ]]; then
-        exec 17<&-
-    fi
-    if [[ -f /tmp/GPG_KEY ]]; then
-        rm /tmp/GPG_KEY
-    fi
 }
 
 prepare_boot_extras(){
-    local src="$1" dest="$2"
+    local src="$1" dest=${iso_root}/boot
 
     for u in intel amd;do
         cp $src/boot/$u-ucode.img $dest/$u-ucode.img
@@ -67,10 +47,45 @@ prepare_boot_extras(){
     cp $src/usr/share/licenses/common/GPL2/license.txt $dest/memtest.COPYING
 }
 
+prepare_initramfs(){
+    local mnt="$1"
+
+    prepare_initcpio "$mnt"
+
+    write_mkinitcpio_conf "$mnt"
+
+    if [[ -n ${GPG_KEY} ]]; then
+        su ${OWNER} -c "gpg --export ${GPG_KEY} >/tmp/GPG_KEY"
+        exec 17<>/tmp/GPG_KEY
+    fi
+    local _kernel=$(<"$mnt"/usr/src/linux/version)
+    ARTIX_GNUPG_FD=${GPG_KEY:+17} artools-chroot "$mnt" \
+        /usr/bin/mkinitcpio -k ${_kernel} \
+        -c /etc/mkinitcpio-artix.conf \
+        -g /boot/initramfs.img
+
+    if [[ -n ${GPG_KEY} ]]; then
+        exec 17<&-
+    fi
+    if [[ -f /tmp/GPG_KEY ]]; then
+        rm /tmp/GPG_KEY
+    fi
+
+    cp $mnt/boot/initramfs.img ${iso_root}/boot/initramfs-${ARCH}.img
+    prepare_boot_extras "$mnt"
+}
+
 configure_grub(){
-    local kopts="root=LiveOS label=${iso_label}"
-    local popts=''
-    sed -e "s|@kopts@|${kopts}|" -e "s|@popts@|${popts}|" -i ${iso_root}/boot/grub/kernels.cfg
+    local ro_opts=("label=${iso_label}")
+    local rw_opts=("cow_label=${iso_label}")
+    local kopts=()
+
+    [[ "${PROFILE}" != 'base' ]] && kopts+=('overlay=livefs')
+
+    sed -e "s|@kopts@|${kopts[*]}|" \
+        -e "s|@ro_opts@|${ro_opts[*]}|" \
+        -e "s|@rw_opts@|${rw_opts[*]}|" \
+        -i ${iso_root}/boot/grub/kernels.cfg
 }
 
 prepare_grub(){
