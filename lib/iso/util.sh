@@ -157,7 +157,11 @@ make_bootfs() {
 
         mount_overlay "${bootfs}" "${work_dir}"
 
-        prepare_initramfs "${bootfs}"
+        if ${use_dracut}; then
+            prepare_initramfs_dracut "${bootfs}"
+        else
+            prepare_initramfs "${bootfs}"
+        fi
 
         umount_overlay
 
@@ -176,7 +180,11 @@ make_grub(){
 
         prepare_grub "${work_dir}/rootfs" "$layer"
 
-        configure_grub
+        if ${use_dracut}; then
+            configure_grub_dracut
+        else
+            configure_grub
+        fi
 
         : > ${work_dir}/grub.lock
         msg "Done [/iso/boot/grub]"

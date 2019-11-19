@@ -100,13 +100,13 @@ make_sfs() {
 
         mksquashfs "${mksfs_args[@]}"
 
-        make_checksum "${img_name}"
-        ${persist} && rm -r "${work_dir}/embed"
-
-        if [[ -n ${GPG_KEY} ]];then
-            make_sig "${img_name}"
+        if ! ${use_dracut}; then
+            make_checksum "${img_name}"
+            if [[ -n ${GPG_KEY} ]];then
+                make_sig "${img_name}"
+            fi
         fi
-
+        ${persist} && rm -r "${work_dir}/embed"
     fi
     show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }

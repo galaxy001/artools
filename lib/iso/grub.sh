@@ -12,6 +12,58 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+prepare_boot_extras(){
+    local src="$1" dest=${iso_root}/boot
+
+    for u in intel amd;do
+        cp $src/boot/$u-ucode.img $dest/$u-ucode.img
+        cp $src/usr/share/licenses/$u-ucode/LICENSE $dest/$u-ucode.LICENSE
+    done
+
+    cp $src/boot/memtest86+/memtest.bin $dest/memtest
+    cp $src/usr/share/licenses/common/GPL2/license.txt $dest/memtest.COPYING
+}
+
+##################dracut##################
+
+prepare_initramfs_dracut(){
+    local mnt="$1"
+    local kver=$(<"$mnt"/usr/src/linux/version)
+
+    echo 'add_dracutmodules+=" dmsquash-live"' > "$mnt"/etc/dracut.conf.d/50-live.conf
+    artools-chroot "$mnt" dracut -fqM /boot/initramfs.img "$kver"
+
+    cp "$mnt"/boot/initramfs.img "${iso_root}"/boot/initramfs-"${ARCH}".img
+
+    prepare_boot_extras "$mnt"
+}
+
+configure_grub_dracut(){
+    local kopts=(
+        "root=live:LABEL=${iso_label}"
+        'rd.live.overlay.overlayfs=1'
+        'rd.live.image'
+        'rd.live.squashimg=rootfs.img'
+        'rootflags=auto'
+    )
+    local rw_opts=(
+        'rd.writable.fsimg=1'
+    )
+    local ro_opts=(
+#         'rd.live.overlay.readonly'
+    )
+    if [[ "${PROFILE}" != 'base' ]];then
+        kopts+=("rd.live.join=livefs.img")
+    fi
+
+    sed -e "s|@kopts@|${kopts[*]}|" \
+        -e "s|@ro_opts@|${ro_opts[*]}|" \
+        -e "s|@rw_opts@|${rw_opts[*]}|" \
+        -i ${iso_root}/boot/grub/kernels.cfg
+}
+
+#############################################
+
 write_mkinitcpio_conf() {
     msg2 "Writing mkinitcpio.conf ..."
     local conf="$1/etc/mkinitcpio-artix.conf"
@@ -33,18 +85,6 @@ prepare_initcpio(){
     cp /etc/initcpio/hooks/artix* $dest/etc/initcpio/hooks
     cp /etc/initcpio/install/artix* $dest/etc/initcpio/install
     cp /etc/initcpio/artix_shutdown $dest/etc/initcpio
-}
-
-prepare_boot_extras(){
-    local src="$1" dest=${iso_root}/boot
-
-    for u in intel amd;do
-        cp $src/boot/$u-ucode.img $dest/$u-ucode.img
-        cp $src/usr/share/licenses/$u-ucode/LICENSE $dest/$u-ucode.LICENSE
-    done
-
-    cp $src/boot/memtest86+/memtest.bin $dest/memtest
-    cp $src/usr/share/licenses/common/GPL2/license.txt $dest/memtest.COPYING
 }
 
 prepare_initramfs(){

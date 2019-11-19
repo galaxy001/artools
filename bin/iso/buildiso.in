@@ -117,6 +117,7 @@ pretend=false
 images_only=false
 iso_only=false
 persist=false
+use_dracut=false
 
 basestrap_args=(-GMc)
 cmd=${0##*/}
@@ -139,6 +140,7 @@ usage() {
     echo '    -x                 Build images only'
     echo '    -z                 Generate iso only'
     echo '                       Requires pre built images (-x)'
+    echo '    -d                 Use dracut instead of mkinitcpio for iso initramfs'
     echo '    -q                 Query settings and pretend build'
     echo '    -h                 This help'
     echo ''
@@ -148,7 +150,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:r:t:i:g:czxmqh'
+opts='p:r:t:i:g:czxmdqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -161,6 +163,7 @@ while getopts "${opts}" arg; do
         x) images_only=true ;;
         z) iso_only=true ;;
         m) persist=true ;;
+        d) use_dracut=true ;;
         q) pretend=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
