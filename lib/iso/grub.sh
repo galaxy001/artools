@@ -77,7 +77,7 @@ prepare_initramfs(){
 
 configure_grub(){
     local ro_opts=("label=${iso_label}")
-    local rw_opts=("cow_label=${iso_label}")
+    local rw_opts=("label=${iso_label}")
     local kopts=()
 
     [[ "${PROFILE}" != 'base' ]] && kopts+=('overlay=livefs')
