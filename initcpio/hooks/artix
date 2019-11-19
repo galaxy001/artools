@@ -143,21 +143,22 @@ run_hook() {
     [[ -z "${cow_directory}" ]] && cow_directory="persistent_${label}"
     [[ -z "${cow_chunksize}" ]] && cow_chunksize="8"
     [[ -z "${overlay}" ]] && overlay=""
-    # set mount handler for artix
-    mount_handler="artix_mount_handler"
 
     lower_dir=''
     live_root="/run/artix"
+    bootmnt="/run/bootmnt"
     overlay_root="${live_root}/overlay_root"
     cow="${live_root}/cowspace"
-    bootmnt="${live_root}/bootmnt"
     cp2ram="${live_root}/copytoram"
+
+    # set mount handler for artix
+    mount_handler="artix_mount_handler"
 }
 
 _check_sum() {
     local fs="${1}"
     if [[ -f "${bootmnt}/${root}/${fs}.img" ]]; then
-        if [[ -f "${bootmnt}/${root}/${fs}.img.sha512" ]]; then
+        if [[ -f "${bootmnt}/${root}/${fs}.img.md5" ]]; then
             msg -n ":: Self-test requested, please wait..."
             if _verify_checksum "${fs}"; then
                 msg "done. Checksum is OK, continue booting."
@@ -167,7 +168,7 @@ _check_sum() {
                 launch_interactive_shell
             fi
         else
-            echo "ERROR: checksum=y option specified but ${root}/${fs}.img.sha512 not found"
+            echo "ERROR: checksum=y option specified but ${root}/${fs}.img.md5 not found"
             launch_interactive_shell
         fi
     fi

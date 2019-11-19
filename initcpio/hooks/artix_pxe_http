@@ -23,7 +23,7 @@ _curl_get() {
     local _dst="${2}"
 
     msg ":: Downloading '${_url}'"
-    if ! curl -L -f -o "/run/artix/httpspace/${root}${_dst}/${_url##*/}" --create-dirs "${_url}"; then
+    if ! curl -L -f -o "${live_root}/httpspace/${root}${_dst}/${_url##*/}" --create-dirs "${_url}"; then
         echo "ERROR: Downloading '${_url}'"
         echo "   Falling back to interactive prompt"
         echo "   You can try to fix the problem manually, log out when you are finished"
@@ -31,29 +31,33 @@ _curl_get() {
     fi
 }
 
+_get_sfs() {
+    local _sfs="${2}"
+    local _src=${artix_http_srv}${root}
+    if [[ ! -z "$( curl -s --head "${_src}/${_sfs}.img" | grep "OK" )" ]]; then
+        _curl_get "${_src}/${_sfs}.img" "/"
+
+        if [[ "${checksum}" == "y" ]]; then
+            _curl_get "${_src}/${_sfs}.md5" "/"
+        fi
+        if [[ "${verify}" == "y" ]]; then
+            _curl_get "${_src}/${_sfs}.img.sig" "/"
+        fi
+    fi
+}
+
 artix_pxe_http_mount_handler () {
     newroot="${1}"
 
-    msg ":: Mounting /run/artix/httpspace (tmpfs) filesystem, size='${artix_http_spc}'"
-    mkdir -p "/run/artix/httpspace"
-    mount -t tmpfs -o size="${artix_http_spc}",mode=0755 httpspace "/run/artix/httpspace"
+    msg ":: Mounting ${live_root}/httpspace (tmpfs) filesystem, size='${artix_http_spc}'"
+    mkdir -p "${live_root}/httpspace"
+    mount -t tmpfs -o size="${artix_http_spc}",mode=0755 httpspace "${live_root}/httpspace"
 
-    local _src=${artix_http_srv}${root}/${arch}
+    _get_sfs "rootfs"
+    [[ -n "${overlay}" ]] && _mount_root_overlayfs "${overlay}"
 
-    for sfs in livefs rootfs;do
-        if [[ ! -z "$( curl -s --head "${_src}/${sfs}.sfs" | grep "OK" )" ]]; then
-            _curl_get "${_src}/${sfs}.sfs" "/${arch}"
-
-            if [[ "${checksum}" == "y" ]]; then
-                _curl_get "${_src}/${sfs}.md5" "/${arch}"
-            fi
-            if [[ "${verify}" == "y" ]]; then
-                _curl_get "${_src}/${sfs}.sfs.sig" "/${arch}"
-            fi
-        fi
-    done
-    mkdir -p "/run/artix/bootmnt"
-    mount -o bind /run/artix/httpspace /run/artix/bootmnt
+    mkdir -p "${bootmnt}"
+    mount -o bind ${live_root}/httpspace ${bootmnt}
 
     artix_mount_handler ${newroot}
 }

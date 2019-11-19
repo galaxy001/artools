@@ -6,7 +6,6 @@ run_hook () {
     if [[ -n "${img_dev}" && -n "${img_loop}" ]]; then
         mount_handler="artix_loop_mount_handler"
     fi
-    live_root="/run/artix"
 }
 
 artix_loop_mount_handler () {
