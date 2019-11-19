@@ -24,9 +24,9 @@ make_sig () {
 
 make_checksum(){
     local file="$1"
-    msg2 "Creating sha512sum ..."
+    msg2 "Creating md5sum ..."
     cd ${iso_root}${live_dir}
-    sha512sum $file > $file.sha512
+    md5sum $file > $file.md5
     cd ${OLDPWD}
 }
 
