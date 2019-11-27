@@ -30,8 +30,11 @@ prepare_initramfs_dracut(){
     local mnt="$1"
     local kver=$(<"$mnt"/usr/src/linux/version)
 
-    echo 'add_dracutmodules+=" dmsquash-live"' > "$mnt"/etc/dracut.conf.d/50-live.conf
+    printf "%s\n" 'add_dracutmodules+=" dmsquash-live"' > "$mnt"/etc/dracut.conf.d/50-live.conf
+
+    msg "Starting build: %s" "${kver}"
     artools-chroot "$mnt" dracut -fqM /boot/initramfs.img "$kver"
+    msg "Image generation successful"
 
     cp "$mnt"/boot/initramfs.img "${iso_root}"/boot/initramfs-"${ARCH}".img
 
@@ -39,22 +42,18 @@ prepare_initramfs_dracut(){
 }
 
 configure_grub_dracut(){
+    msg "Configuring grub kernel options ..."
     local kopts=(
         "root=live:LABEL=${iso_label}"
-        'rd.live.overlay.overlayfs=1'
-        'rd.live.image'
         'rd.live.squashimg=rootfs.img'
+        'rd.live.image'
         'rootflags=auto'
     )
-    local rw_opts=(
-        'rd.writable.fsimg=1'
-    )
-    local ro_opts=(
-#         'rd.live.overlay.readonly'
-    )
-    if [[ "${PROFILE}" != 'base' ]];then
-        kopts+=("rd.live.join=livefs.img")
-    fi
+    [[ "${PROFILE}" != 'base' ]] && kopts+=("rd.live.join=livefs.img")
+
+    local ro_opts=()
+    local rw_opts=()
+#         'rd.writable.fsimg=1'
 
     sed -e "s|@kopts@|${kopts[*]}|" \
         -e "s|@ro_opts@|${ro_opts[*]}|" \
@@ -116,9 +115,10 @@ prepare_initramfs(){
 }
 
 configure_grub(){
-    local ro_opts=("label=${iso_label}")
-    local rw_opts=("label=${iso_label}")
-    local kopts=()
+    msg "Configuring grub kernel options ..."
+    local ro_opts=()
+    local rw_opts=()
+    local kopts=("label=${iso_label}")
 
     [[ "${PROFILE}" != 'base' ]] && kopts+=('overlay=livefs')
 
