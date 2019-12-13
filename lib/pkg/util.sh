@@ -12,6 +12,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+shopt -s extglob
+
 get_compliant_name(){
     local gitname="$1"
     case $gitname in
