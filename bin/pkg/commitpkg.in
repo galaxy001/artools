@@ -14,6 +14,8 @@
 
 . @libdir@/artools/util-pkg.sh
 
+prepare_artools
+
 get_path(){
     local repo="$1" pkg=trunk/PKGBUILD
     if [[ $repo != trunk ]]; then

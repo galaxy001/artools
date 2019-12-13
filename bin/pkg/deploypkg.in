@@ -14,6 +14,8 @@
 
 . @libdir@/artools/util-pkg.sh
 
+prepare_artools
+
 find_cached_pkgfile() {
     local searchdirs=("$PKGDEST" "$PWD") results=()
     local pkg="$1"

@@ -30,8 +30,6 @@ load_iso_config(){
 
     ISO_POOL=${ISO_POOL:-"${WORKSPACE_DIR}/iso"}
 
-    prepare_dir "${ISO_POOL}"
-
     PROFILE='base'
 
     ISO_VERSION=${ISO_VERSION:-"$(date +%Y%m%d)"}

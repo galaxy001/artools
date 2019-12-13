@@ -14,6 +14,8 @@
 
 . @libdir@/artools/util-iso.sh
 
+prepare_artools
+
 gen_iso_fn(){
     local vars=("artix") name
     vars+=("${PROFILE}")
@@ -49,6 +51,8 @@ prepare_build(){
 
     basestrap_args+=(-C ${pacman_conf})
     work_dir=${CHROOTS_ISO}/${PROFILE}/artix
+
+    prepare_dir "${ISO_POOL}"
 
     iso_dir="${ISO_POOL}/${PROFILE}"
 

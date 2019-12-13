@@ -14,6 +14,8 @@
 
 . @libdir@/artools/util-iso.sh
 
+prepare_artools
+
 connect(){
     echo "${ACCOUNT}@${FILE_HOST}:${FILE_HOME}"
 }

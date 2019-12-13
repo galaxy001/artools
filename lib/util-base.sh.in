@@ -34,7 +34,10 @@ for baselib in ${LIBDIR}/base/*.sh; do
     . $baselib
 done
 
-prepare_dir "${USER_CONF_DIR}"
+prepare_artools(){
+    prepare_dir "${WORKSPACE_DIR}"
+    prepare_dir "${USER_CONF_DIR}"
+}
 
 load_base_config(){
 
@@ -49,8 +52,6 @@ load_base_config(){
     CHROOTS_DIR=${CHROOTS_DIR:-'/var/lib/artools'}
 
     WORKSPACE_DIR=${WORKSPACE_DIR:-"/home/${OWNER}/artools-workspace"}
-
-    prepare_dir "${WORKSPACE_DIR}"
 
     return 0
 }

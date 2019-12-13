@@ -14,6 +14,8 @@
 
 . /usr/lib/artools/util-pkg.sh
 
+prepare_artools
+
 batch_move() {
     local name="${1:-pkg_moves}"
     local pkglist=${TREE_DIR_ARTIX}/$name.list

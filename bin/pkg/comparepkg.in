@@ -14,6 +14,8 @@
 
 . @libdir@/artools/util-pkg.sh
 
+prepare_artools
+
 compare(){
     local pkgpath="$1" group="$2"
     local pkg=${pkgpath##*/}
