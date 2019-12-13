@@ -46,6 +46,7 @@ newroot=/mnt
 hostcache=0
 copykeyring=1
 copymirrorlist=1
+pacmode=-Sy
 
 usage() {
     echo "usage: ${0##*/} [options] root [packages...]"
@@ -54,6 +55,7 @@ usage() {
     echo " -G               Avoid copying the host's pacman keyring to the target"
     echo " -i               Avoid auto-confirmation of package selections"
     echo " -M               Avoid copying the host's mirrorlist to the target"
+    echo ' -U               Use pacman -U to install packages'
     echo " -h               Print this help message"
     echo ''
     echo ' basestrap installs packages to the specified new root directory.'
@@ -65,7 +67,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts=':C:cGiM'
+opts=':C:cGiMU'
 
 while getopts ${opts} arg; do
     case "${arg}" in
@@ -74,6 +76,7 @@ while getopts ${opts} arg; do
         i) interactive=1 ;;
         G) copykeyring=0 ;;
         M) copymirrorlist=0 ;;
+        U) pacmode=-U ;;
         :) echo "invalid argument ${arg}:$OPTARG"; usage 1;;
         ?) usage 0 ;;
     esac
@@ -109,7 +112,7 @@ if (( copykeyring ));then
 fi
 
 msg2 'Installing packages to %s' "$newroot"
-if ! pacman -r "$newroot" -Sy "${pacman_args[@]}"; then
+if ! unshare --fork --pid pacman -r "$newroot" $pacmode "${pacman_args[@]}"; then
     die 'Failed to install packages to new root'
 fi
 

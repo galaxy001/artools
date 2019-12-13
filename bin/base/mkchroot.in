@@ -15,6 +15,7 @@
 . @libdir@/artools/util-base.sh
 
 working_dir=''
+umode=''
 
 files=()
 chroot_args=()
@@ -22,6 +23,7 @@ chroot_args=()
 usage() {
     echo "Usage: ${0##*/} [options] working-dir package-list..."
     echo ' options:'
+    echo '    -U            Use pacman -U to install packages'
     echo '    -C <file>     Location of a pacman config file'
     echo '    -M <file>     Location of a makepkg config file'
     echo '    -c <dir>      Set pacman cache'
@@ -33,10 +35,11 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='hC:M:c:f:s'
+opts='hUC:M:c:f:s'
 
 while getopts ${opts} arg; do
     case "${arg}" in
+        U) umode=U ;;
         C) pacman_conf="$OPTARG" ;;
         M) makepkg_conf="$OPTARG" ;;
         c) cache_dir="$OPTARG" ;;
@@ -45,8 +48,10 @@ while getopts ${opts} arg; do
         h|?) usage ;;
         *) error "invalid argument '%s'" "$arg"; usage ;;
     esac
-    chroot_args+=("-$arg")
-    [[ -v OPTARG ]] && chroot_args+=("$OPTARG")
+    if [[ $arg != U ]]; then
+        chroot_args+=("-$arg")
+        [[ -v OPTARG ]] && chroot_args+=("$OPTARG")
+    fi
 done
 shift $(($OPTIND - 1))
 
@@ -88,7 +93,7 @@ for f in "${files[@]}"; do
     cp "$f" "$working_dir$f"
 done
 
-basestrap -Mc ${pacman_conf:+-C "$pacman_conf"} "$working_dir" \
+basestrap -${umode}Mc ${pacman_conf:+-C "$pacman_conf"} "$working_dir" \
     ${cache_dirs[@]/#/--cachedir=} "$@" || die 'Failed to install all packages'
 
 printf '%s.UTF-8 UTF-8\n' en_US de_DE > "$working_dir/etc/locale.gen"

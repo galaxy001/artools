@@ -90,7 +90,7 @@ if ${create_first} || [[ ! -d "${CHROOTS_PKG}/${repo}-${ARCH}" ]];then
     lock_close 9
 
     rm -rf --one-file-system "${CHROOTS_PKG}/${repo}-${ARCH}"
-    mkdir -p "${CHROOTS_PKG}/${repo}-${ARCH}"
+    (umask 0022; mkdir -p "${CHROOTS_PKG}/${repo}-${ARCH}")
     setarch "${ARCH}" mkchroot \
         -C "${pacman_conf}" \
         -M "${makepkg_conf}" \

@@ -15,7 +15,7 @@
 # export LC_MESSAGES=C
 export LANG=C
 
-if [[ -t 2 ]]; then
+if [[ -t 2 && "$TERM" != dumb ]]; then
     colorize
 else
     declare -gr ALL_OFF='' BOLD='' BLUE='' GREEN='' RED='' YELLOW=''
