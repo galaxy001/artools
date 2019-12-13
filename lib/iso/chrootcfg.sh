@@ -167,7 +167,7 @@ configure_calamares(){
     fi
 }
 
-configure_image(){
+configure_chroot(){
     local fs="$1"
     msg "Configuring [%s]" "${fs##*/}"
     configure_hosts "$fs"
@@ -178,4 +178,41 @@ configure_image(){
     msg2 "Writing live.conf"
     write_live_session_conf > "$fs/etc/artools/live.conf"
     msg "Done configuring [%s]" "${fs##*/}"
+}
+
+clean_up_chroot(){
+    local path mnt="$1"
+    msg2 "Cleaning [%s]" "${mnt##*/}"
+
+    path=$mnt/boot
+    if [[ -d "$path" ]]; then
+        find "$path" -name 'initramfs*.img' -delete &> /dev/null
+    fi
+    path=$mnt/var/lib/pacman/sync
+    if [[ -d $path ]];then
+        find "$path" -type f -delete &> /dev/null
+    fi
+    path=$mnt/var/cache/pacman/pkg
+    if [[ -d $path ]]; then
+        find "$path" -type f -delete &> /dev/null
+    fi
+    path=$mnt/var/log
+    if [[ -d $path ]]; then
+        find "$path" -type f -delete &> /dev/null
+    fi
+    path=$mnt/var/tmp
+    if [[ -d $path ]];then
+        find "$path" -mindepth 1 -delete &> /dev/null
+    fi
+    path=$mnt/tmp
+    if [[ -d $path ]];then
+        find "$path" -mindepth 1 -delete &> /dev/null
+    fi
+    find "$mnt" -name *.pacnew -name *.pacsave -name *.pacorig -delete
+    if [[ -f "$mnt/boot/grub/grub.cfg" ]]; then
+        rm $mnt/boot/grub/grub.cfg
+    fi
+    if [[ -f "$mnt/etc/machine-id" ]]; then
+        rm $mnt/etc/machine-id
+    fi
 }

@@ -37,7 +37,7 @@ track_fs() {
     mount "$@" && FS_ACTIVE_MOUNTS=("$5" "${FS_ACTIVE_MOUNTS[@]}")
 }
 
-mount_overlay(){
+mount_overlayfs(){
     FS_ACTIVE_MOUNTS=()
     local lower= upper="$1" work="$2"
     mkdir -p "${mnt_dir}/work"
@@ -52,7 +52,7 @@ mount_overlay(){
     track_fs -t overlay overlay -olowerdir="$lower",upperdir="$upper",workdir="${mnt_dir}/work" "$upper"
 }
 
-umount_overlay(){
+umount_overlayfs(){
     if [[ -n ${FS_ACTIVE_MOUNTS[@]} ]];then
         info "overlayfs umount: [%s]" "${FS_ACTIVE_MOUNTS[@]}"
         umount "${FS_ACTIVE_MOUNTS[@]}"

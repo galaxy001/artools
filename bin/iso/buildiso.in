@@ -75,6 +75,44 @@ display_settings(){
     show_profile
 }
 
+mk_squash(){
+    local timer=$(get_timer)
+    make_sfs "${work_dir}/rootfs"
+    [[ -d "${work_dir}/livefs" ]] && make_sfs "${work_dir}/livefs"
+    show_elapsed_time "${FUNCNAME}" "${timer}"
+}
+
+mk_iso(){
+    touch "${iso_root}/.artix"
+    msg "Making bootable image"
+    # Sanity checks
+    [[ ! -d "${iso_root}" ]] && return 1
+    if [[ -f "${iso_dir}/${iso_file}" ]]; then
+        msg2 "Removing existing bootable image..."
+        rm -rf "${iso_dir}/${iso_file}"
+    fi
+    assemble_iso
+    chown -R "${OWNER}:$(id --group ${OWNER})" "${iso_dir}"
+}
+
+mk_boot(){
+    local timer=$(get_timer)
+    run_safe "make_bootfs"
+    run_safe "make_grub"
+    show_elapsed_time "${FUNCNAME}" "${timer}"
+}
+
+mk_chroots(){
+    local timer=$(get_timer)
+    load_pkgs "${ROOT_LIST}" "${INITSYS}"
+    run_safe "make_rootfs"
+    if [[ -n ${LIVE_LIST} ]]; then
+        load_pkgs "${LIVE_LIST}" "${INITSYS}"
+        run_safe "make_livefs"
+    fi
+    show_elapsed_time "${FUNCNAME}" "${timer}"
+}
+
 build(){
     msg "Start building [%s]" "${PROFILE}"
     if ${clean_first};then
@@ -95,29 +133,45 @@ build(){
         rm -rf --one-file-system "${iso_root}"
     fi
 
-    if ${iso_only}; then
-        [[ ! -d ${work_dir} ]] && die "Create images: %s -p %s -x" "${cmd}" "${PROFILE}"
-        compress_images
-        exit 1
-    fi
-    if ${images_only}; then
-        prepare_images
-        warning "Continue compress: %s -p %s -zc ..." "${cmd}" "${PROFILE}"
-        exit 1
-    else
-        prepare_images
-        compress_images
-    fi
+    case true in
+        ${chroot_only})
+            mk_chroots
+            warning "Continue squash: %s -p %s -sc ..." "${cmd}" "${PROFILE}"
+            exit 1
+        ;;
+        ${boot_only})
+            mk_boot
+            warning "Continue boot: %s -p %s -zc ..." "${cmd}" "${PROFILE}"
+            exit 1
+        ;;
+        ${squash_only})
+            mk_squash
+            warning "Continue boot: %s -p %s -bc ..." "${cmd}" "${PROFILE}"
+            exit 1
+        ;;
+        ${iso_only})
+            [[ ! -d ${work_dir} ]] && die "Create chroot: %s -p %s -x" "${cmd}" "${PROFILE}"
+            mk_iso
+        ;;
+        *)
+            mk_chroots
+            mk_squash
+            mk_boot
+            mk_iso
+        ;;
+    esac
     msg "Finished building [%s]" "${PROFILE}"
     show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }
 
 clean_first=true
 pretend=false
-images_only=false
+chroot_only=false
 iso_only=false
 persist=false
 use_dracut=false
+squash_only=false
+boot_only=false
 
 basestrap_args=(-GMc)
 cmd=${0##*/}
@@ -137,7 +191,9 @@ usage() {
     echo "                       [default: ${GPG_KEY}]"
     echo '    -m                 Set SquashFS image mode to persistence'
     echo '    -c                 Disable clean work dir'
-    echo '    -x                 Build images only'
+    echo '    -x                 Build chroot only'
+    echo '    -s                 Squash chroot only'
+    echo '    -b                 Generate iso boot only'
     echo '    -z                 Generate iso only'
     echo '                       Requires pre built images (-x)'
     echo '    -d                 Use dracut instead of mkinitcpio for iso initramfs'
@@ -150,7 +206,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:r:t:i:g:czxmdqh'
+opts='p:r:t:i:g:czsbxmdqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -160,8 +216,10 @@ while getopts "${opts}" arg; do
         i) INITSYS="$OPTARG" ;;
         g) GPG_KEY="$OPTARG" ;;
         c) clean_first=false ;;
-        x) images_only=true ;;
+        x) chroot_only=true ;;
         z) iso_only=true ;;
+        s) squash_only=true ;;
+        b) boot_only=true ;;
         m) persist=true ;;
         d) use_dracut=true ;;
         q) pretend=true ;;

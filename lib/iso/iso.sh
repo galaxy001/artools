@@ -72,7 +72,6 @@ make_sfs() {
         error "The path %s does not exist" "${sfs_in}"
         retrun 1
     fi
-    local timer=$(get_timer)
 
     mkdir -p ${iso_root}${live_dir}
 
@@ -108,7 +107,6 @@ make_sfs() {
         fi
         ${persist} && rm -r "${work_dir}/embed"
     fi
-    show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }
 
 get_disturl(){
@@ -146,19 +144,3 @@ assemble_iso(){
         ${iso_root}/
 }
 
-make_iso() {
-    msg "Start [Build ISO]"
-    touch "${iso_root}/.artix"
-    make_sfs "${work_dir}/rootfs"
-    [[ -d "${work_dir}/livefs" ]] && make_sfs "${work_dir}/livefs"
-
-    msg "Making bootable image"
-    # Sanity checks
-    [[ ! -d "${iso_root}" ]] && return 1
-    if [[ -f "${iso_dir}/${iso_file}" ]]; then
-        msg2 "Removing existing bootable image..."
-        rm -rf "${iso_dir}/${iso_file}"
-    fi
-    assemble_iso
-    msg "Done [Build ISO]"
-}

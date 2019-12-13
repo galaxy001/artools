@@ -146,7 +146,7 @@ run_hook() {
 
     lower_dir=''
     live_root="/run/artix"
-    bootmnt="/run/bootmnt"
+    bootmnt="${live_root}/bootmnt"
     overlay_root="${live_root}/overlay_root"
     cow="${live_root}/cowspace"
     cp2ram="${live_root}/copytoram"

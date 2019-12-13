@@ -62,43 +62,6 @@ copy_overlay(){
     fi
 }
 
-clean_up_image(){
-    local path mnt="$1"
-    msg2 "Cleaning [%s]" "${mnt##*/}"
-
-    path=$mnt/boot
-    if [[ -d "$path" ]]; then
-        find "$path" -name 'initramfs*.img' -delete &> /dev/null
-    fi
-    path=$mnt/var/lib/pacman/sync
-    if [[ -d $path ]];then
-        find "$path" -type f -delete &> /dev/null
-    fi
-    path=$mnt/var/cache/pacman/pkg
-    if [[ -d $path ]]; then
-        find "$path" -type f -delete &> /dev/null
-    fi
-    path=$mnt/var/log
-    if [[ -d $path ]]; then
-        find "$path" -type f -delete &> /dev/null
-    fi
-    path=$mnt/var/tmp
-    if [[ -d $path ]];then
-        find "$path" -mindepth 1 -delete &> /dev/null
-    fi
-    path=$mnt/tmp
-    if [[ -d $path ]];then
-        find "$path" -mindepth 1 -delete &> /dev/null
-    fi
-    find "$mnt" -name *.pacnew -name *.pacsave -name *.pacorig -delete
-    if [[ -f "$mnt/boot/grub/grub.cfg" ]]; then
-        rm $mnt/boot/grub/grub.cfg
-    fi
-    if [[ -f "$mnt/etc/machine-id" ]]; then
-        rm $mnt/etc/machine-id
-    fi
-}
-
 make_rootfs() {
     if [[ ! -e ${work_dir}/rootfs.lock ]]; then
         msg "Prepare [Base installation] (rootfs)"
@@ -110,9 +73,9 @@ make_rootfs() {
 
         copy_overlay "${ROOT_OVERLAY}" "${rootfs}"
 
-        [[ -z ${LIVE_LIST} ]] && configure_image "${rootfs}"
+        [[ -z ${LIVE_LIST} ]] && configure_chroot "${rootfs}"
 
-        clean_up_image "${rootfs}"
+        clean_up_chroot "${rootfs}"
 
         : > ${work_dir}/rootfs.lock
 
@@ -127,17 +90,17 @@ make_livefs() {
 
         prepare_dir "${livefs}"
 
-        mount_overlay "${livefs}" "${work_dir}"
+        mount_overlayfs "${livefs}" "${work_dir}"
 
         basestrap "${basestrap_args[@]}" "${livefs}" "${packages[@]}"
 
         copy_overlay "${LIVE_OVERLAY}" "${livefs}"
 
-        configure_image "${livefs}"
+        configure_chroot "${livefs}"
 
-        umount_overlay
+        umount_overlayfs
 
-        clean_up_image "${livefs}"
+        clean_up_chroot "${livefs}"
 
         : > ${work_dir}/livefs.lock
 
@@ -155,7 +118,7 @@ make_bootfs() {
 
         local bootfs="${work_dir}/bootfs"
 
-        mount_overlay "${bootfs}" "${work_dir}"
+        mount_overlayfs "${bootfs}" "${work_dir}"
 
         if ${use_dracut}; then
             prepare_initramfs_dracut "${bootfs}"
@@ -163,7 +126,7 @@ make_bootfs() {
             prepare_initramfs "${bootfs}"
         fi
 
-        umount_overlay
+        umount_overlayfs
 
         rm -R ${bootfs}
         : > ${work_dir}/bootfs.lock
@@ -189,25 +152,4 @@ make_grub(){
         : > ${work_dir}/grub.lock
         msg "Done [/iso/boot/grub]"
     fi
-}
-
-compress_images(){
-    local timer=$(get_timer)
-    run_safe "make_iso"
-    chown -R "${OWNER}:$(id --group ${OWNER})" "${iso_dir}"
-    show_elapsed_time "${FUNCNAME}" "${timer}"
-}
-
-prepare_images(){
-    local timer=$(get_timer)
-    load_pkgs "${ROOT_LIST}" "${INITSYS}"
-    run_safe "make_rootfs"
-    if [[ -n ${LIVE_LIST} ]]; then
-        load_pkgs "${LIVE_LIST}" "${INITSYS}"
-        run_safe "make_livefs"
-    fi
-    run_safe "make_bootfs"
-    run_safe "make_grub"
-
-    show_elapsed_time "${FUNCNAME}" "${timer}"
 }
