@@ -141,7 +141,7 @@ build(){
         ;;
         ${boot_only})
             mk_boot
-            warning "Continue boot: %s -p %s -zc ..." "${cmd}" "${PROFILE}"
+            warning "Continue iso: %s -p %s -zc ..." "${cmd}" "${PROFILE}"
             exit 1
         ;;
         ${squash_only})
@@ -155,8 +155,8 @@ build(){
         ;;
         *)
             mk_chroots
-            mk_squash
             mk_boot
+            mk_squash
             mk_iso
         ;;
     esac
