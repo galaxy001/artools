@@ -143,10 +143,10 @@ write_unpackfs() {
     local yaml=$(write_yaml_header)
     yaml+=$(write_yaml_map 0 'unpack')
 #     if ${persist}; then
-#         yaml+=$(write_yaml_seq_map 2 'source' '"/run/bootmnt/LiveOS/rootfs.img"')
+#         yaml+=$(write_yaml_seq_map 2 'source' '"/run/artix/bootmnt/LiveOS/rootfs.img"')
 #         yaml+=$(write_yaml_map 4 'sourcefs' '"ext4"')
 #     else
-    yaml+=$(write_yaml_seq_map 2 'source' '"/run/bootmnt/LiveOS/rootfs.img"')
+    yaml+=$(write_yaml_seq_map 2 'source' '"/run/artix/bootmnt/LiveOS/rootfs.img"')
     yaml+=$(write_yaml_map 4 'sourcefs' '"squashfs"')
 #     fi
     yaml+=$(write_yaml_map 4 'destination' '""')
