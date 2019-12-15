@@ -130,12 +130,15 @@ configure_grub(){
 
 prepare_grub(){
     local platform=i386-pc img='core.img' prefix=/boot/grub
-    local lib=$1/usr/lib/grub theme=$2/usr/share/grub
+    local lib="$1"/usr/lib/grub
+    local theme="$1"/usr/share/grub
+    local livecfg="$2"/usr/share/grub
     local grub=${iso_root}/boot/grub efi=${iso_root}/efi/boot
+
 
     prepare_dir ${grub}/${platform}
 
-    cp ${theme}/cfg/*.cfg ${grub}
+    cp ${livecfg}/cfg/*.cfg ${grub}
 
     cp ${lib}/${platform}/* ${grub}/${platform}
 
@@ -158,8 +161,9 @@ prepare_grub(){
     grub-mkimage -d ${grub}/${platform} -o ${efi}/${img} -O ${platform} -p ${prefix} iso9660
 
     prepare_dir ${grub}/themes
-    cp -r ${theme}/themes/artix ${grub}/themes/
-    cp -r ${theme}/{locales,tz} ${grub}
+
+    cp -r ${theme}/themes/artix ${grub}/themes
+    cp -r ${livecfg}/{locales,tz} ${grub}
 
     if [[ -f /usr/share/grub/unicode.pf2 ]];then
         msg2 "Copying %s ..." "unicode.pf2"
