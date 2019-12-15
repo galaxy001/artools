@@ -19,7 +19,7 @@ error_function() {
         error "A failure occurred in %s()." "$func"
         plain "Aborting..."
     fi
-    umount_overlay
+    umount_overlayfs
     umount_img
     exit 2
 }
@@ -41,7 +41,7 @@ run_safe() {
 trap_exit() {
     local sig=$1; shift
     error "$@"
-    umount_overlay
+    umount_overlayfs
     trap -- "$sig"
     kill "-$sig" "$$"
 }
