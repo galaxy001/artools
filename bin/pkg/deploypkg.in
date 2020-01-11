@@ -19,9 +19,10 @@ prepare_artools
 find_cached_pkgfile() {
     local searchdirs=("$PKGDEST" "$PWD") results=()
     local pkg="$1"
+    local search=${pkg%.*}
     for dir in "${searchdirs[@]}"; do
         [[ -d $dir ]] || continue
-        results+=$(find "$dir" -type f -name "$pkg")
+        results+=$(find "$dir" -type f -name "$search.*" ! -path '*.sig')
     done
     case ${#results[*]} in
         0)
