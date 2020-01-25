@@ -45,7 +45,7 @@ add_svc_s6(){
 
     # rebuild s6-linux-init binaries
     chroot $mnt rm -r /etc/s6/current
-    chroot $mnt s6-linux-init-maker -1 -N -f etc/s6/skel -G "/usr/bin/agetty -L -8 tty1 115200" -c /etc/s6/current /etc/s6/current
+    chroot $mnt s6-linux-init-maker -1 -N -f /etc/s6/skel -G "/usr/bin/agetty -L -8 tty1 115200" -c /etc/s6/current /etc/s6/current
     chroot $mnt mv /etc/s6/current/bin/init /etc/s6/current/bin/s6-init
     chroot $mnt cp -a /etc/s6/current/bin /usr
 }
