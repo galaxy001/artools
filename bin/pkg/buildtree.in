@@ -22,19 +22,19 @@ patch_pkg(){
         glibc)
             sed -e 's|{locale,systemd/system,tmpfiles.d}|{locale,tmpfiles.d}|' \
                 -e '/nscd.service/d' \
-                -i $pkg/trunk/PKGBUILD
+                -i $pkg/PKGBUILD
         ;;
         linux|linux-lts)
-            sed -e 's|KBUILD_BUILD_HOST=.*|KBUILD_BUILD_HOST=artixlinux|' -i $pkg/trunk/PKGBUILD
+            sed -e 's|KBUILD_BUILD_HOST=.*|KBUILD_BUILD_HOST=artixlinux|' -i $pkg/PKGBUILD
             sed -e 's|CONFIG_DEFAULT_HOSTNAME=.*|CONFIG_DEFAULT_HOSTNAME="artixlinux"|' \
-                -i $pkg/trunk/config
+                -i $pkg/config
         ;;
         bash)
             sed -e 's|system.bash_logout)|system.bash_logout artix.bashrc)|' \
             -e "s|etc/bash.|etc/bash/|g" \
             -e 's|"$pkgdir/etc/skel/.bash_logout"|"$pkgdir/etc/skel/.bash_logout"\n  install -Dm644 artix.bashrc $pkgdir/etc/bash/bashrc.d/artix.bashrc|' \
-            -i $pkg/trunk/PKGBUILD
-            cd $pkg/trunk
+            -i $pkg/PKGBUILD
+            cd $pkg
                 patch -Np 1 -i ${DATADIR}/patches/artix-bash.patch
                 updpkgsums
             cd ../..
@@ -42,7 +42,7 @@ patch_pkg(){
         gstreamer|gst-plugins-*|licenses)
             sed -e 's|https://www.archlinux.org/|https://www.artixlinux.org/|' \
                 -e 's|(Arch Linux)|(Artix Linux)|' \
-                -i $pkg/trunk/PKGBUILD
+                -i $pkg/PKGBUILD
         ;;
     esac
 }
@@ -84,7 +84,7 @@ sync_pkg(){
 }
 
 show_deps(){
-    local src="$1" repo="$2"
+    local src="$1"
 
     . $src/PKGBUILD 2>/dev/null
 
@@ -92,7 +92,6 @@ show_deps(){
 
     local archver=$(get_full_version)
 
-    msg2 "repo: %s" "$repo"
     [[ -n ${pkgbase} ]] && msg2 "pkgbase: %s" "${pkgbase}"
     msg2 "pkgname: %s" "${pkgname[*]}"
     [[ -n $pkgdesc ]] && msg2 "pkgdesc: %s" "${pkgdesc}"
@@ -111,6 +110,9 @@ subrepo_new(){
 
     cd ${TREE_DIR_ARTIX}/$group
 
+    msg2 "team: %s" "$team"
+    msg2 "group: %s" "$group"
+
     local org=$(get_pkg_org "${PACKAGE}")
 
     create_repo "${PACKAGE}" "$org"
@@ -125,65 +127,59 @@ subrepo_new(){
 }
 
 from_arch(){
-    local src= dest=
-
     cd ${TREE_DIR_ARTIX}
 
-    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "${PACKAGE}")
-    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "${PACKAGE}"
+    local srcpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
+    [[ -z $srcpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
 
-    local package=${TREE_DIR_ARCH}/$git_tree_arch/${PACKAGE}
-    local repo=$(find_repo "$package" "${staging}" "${unstable}")
+    local repo=$(find_repo "$srcpath" "${testing}" "${staging}" "${unstable}")
 
-    src=$package/repos/$repo
+    archpath=$srcpath/repos/$repo
+    local artixpath=$(find_pkg ${TREE_DIR_ARTIX} ${PACKAGE})
+    local tree=${srcpath%/*}
+    local tree=${tree##*/}
+    local group=$(get_group "${PACKAGE}" "$tree")
 
-    local git_tree_artix=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
-    local tree_dir=$(get_artix_tree "${PACKAGE}" "$git_tree_artix" "$git_tree_arch")
+    msg "repo: %s" "$repo"
+    artixpath=$artixpath/trunk
 
-    dest=${TREE_DIR_ARTIX}/$tree_dir/${PACKAGE}/trunk
+    show_deps "$archpath"
 
-    msg "tree: %s" "$tree_dir"
-    show_deps "$src" "$repo"
+    if [[ -f $artixpath/PKGBUILD ]];then
 
-    if [[ -d $dest ]];then
-
-        cd ${TREE_DIR_ARTIX}/$git_tree_artix
-
-        . $dest/PKGBUILD 2>/dev/null
+        . $artixpath/PKGBUILD 2>/dev/null
         local artixver=$(get_full_version)
 
         msg2 "Artix Version: %s" "$artixver"
     else
-        subrepo_new "$tree_dir" "$git_tree_arch"
+        artixpath=${TREE_DIR_ARTIX}/$group/${PACKAGE}/trunk
+        subrepo_new "${group}" "${repo%-*}"
     fi
 
-    msg "Sync (%s) from [%s] to [%s]" "${PACKAGE}" "$git_tree_arch" "$tree_dir"
+    msg "Sync (%s) from Arch [%s] to Artix [%s]" "${PACKAGE}" "${archpath##*archlinux/}" "${artixpath##*artixlinux/}"
 
-    sync_pkg "$src" "$dest"
-    patch_pkg "${PACKAGE}"
+    sync_pkg "$archpath" "$artixpath"
+    patch_pkg "$artixpath"
 }
 
 view_build(){
-    local src=
-    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "${PACKAGE}")
-    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "${PACKAGE}"
-
-    local pkg_path=${TREE_DIR_ARCH}/$git_tree_arch/${PACKAGE}
-    local repo=$(find_repo "$pkg_path" "${staging}" "${unstable}")
-
-    src=$pkg_path/repos/$repo
-
-    show_deps "$src" "$repo"
+    local archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
+    [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
+    local repo=$(find_repo "${archpath}" "${testing}" "${staging}" "${unstable}")
+    archpath=$archpath/repos/$repo
+    msg2 "repo: %s" "$repo"
+    show_deps "$archpath"
 }
 
 check_tree(){
-    local git_tree_arch=$(find_tree "${TREE_DIR_ARCH}" "${PACKAGE}")
-    [[ -z $git_tree_arch ]] && die "Package '%s' does not exist!" "${PACKAGE}"
-    local git_tree_artix=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
-    local tree_dir=$(get_artix_tree "${PACKAGE}" "$git_tree_artix" "$git_tree_arch")
-    msg "tree_dir: %s" "$tree_dir"
-    [[ -z $git_tree_artix ]] && msg2 "exists: %s" "no"
-    [[ -n $git_tree_artix ]] && msg2 "exists: %s" "yes"
+    local archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
+    [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
+    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" ${PACKAGE})
+    local group=${artixpath%/*}
+    msg "group: %s" "${group##*/}"
+
+    [[ -z $artixpath ]] && msg2 "exists: %s" "no"
+    [[ -n $artixpath ]] && msg2 "exists: %s" "yes"
 }
 
 sync_repos(){
@@ -208,18 +204,20 @@ createnew=false
 conf=false
 unstable=false
 staging=true
+testing=true
 sync_group=false
 check=false
 
 PACKAGE=''
 
-TEAM=${TREE_NAMES_ARTIX[0]}
+TEAM='community'
 GROUP=${TREE_NAMES_ARTIX[0]}
 
 usage() {
     echo "Usage: ${0##*/} [options]"
     echo '    -p <pkg>      Package name'
     echo '    -t <team>     Team name (only with -n)'
+    echo '                  Possible values: core,extra,community,multilib'
     echo "                  [default: ${TEAM}]"
     echo '    -g <group>    Group name, the superrepo (only with -n or -s)'
     echo "                  [default: ${GROUP}]"
@@ -230,6 +228,7 @@ usage() {
     echo '    -n            Make new remote subrepo and clone it'
     echo '    -u            Include kde & gnome unstable (only with -i)'
     echo '    -w            Exclude staging (only with -i)'
+    echo '    -x            Exclude testing (only with -i)'
     echo '    -v            Check if a package is in the artix tree(s)'
     echo '    -c            View package depends'
     echo '    -h            This help'
@@ -240,7 +239,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:t:g:uwsinzycvh'
+opts='p:t:g:uwsinxzycvh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -253,6 +252,7 @@ while getopts "${opts}" arg; do
         i) import=true ;;
         n) createnew=true ;;
         w) staging=false ;;
+        x) testing=false ;;
         u) unstable=true ;;
         c) check=true ;;
         v) view=true ;;

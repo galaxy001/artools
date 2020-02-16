@@ -90,7 +90,7 @@ LN_DEPLOYPKG = \
 	deploypkg-gnome-wobble
 
 PKG_LIBS = \
-	$(wildcard lib/pkg/*)
+	$(wildcard lib/pkg/*.sh)
 
 PKG_UTIL = lib/util-pkg.sh
 

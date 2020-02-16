@@ -32,15 +32,30 @@ prepare_commit(){
     [[ ! -d repos/$dest ]] && mkdir repos/$dest
 }
 
-commit_pkg(){
-    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
-    if [[ -n ${git_tree} ]];then
+check_team(){
+    if [[ ${REPO_SRC} == "core" && ${REPO_DEST} == "extra" ]] || \
+        [[ ${REPO_SRC} == "extra" && ${REPO_DEST} == "core" ]] || \
+        [[ ${REPO_SRC} == "extra" && ${REPO_DEST} == "community" ]] || \
+        [[ ${REPO_SRC} == "community" && ${REPO_DEST} == "extra" ]] ;then
 
-        cd ${TREE_DIR_ARTIX}/${git_tree}
+        local org=$(get_pkg_org "${PACKAGE}")
+        add_repo_to_team "${PACKAGE}" "$org" "${REPO_DEST}"
+        remove_repo_from_team "${PACKAGE}" "$org" "${REPO_SRC}"
+    fi
+}
+
+commit_pkg(){
+    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
+
+    if [[ -n ${artixpath} ]];then
+
+        local group=${artixpath%/*}
+
+        cd ${group}
 
         local head=$(get_local_head)
 
-        cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
+        cd ${artixpath}
 
         local pkgbuild=$(get_path "${REPO_SRC}")
 
@@ -67,19 +82,18 @@ commit_pkg(){
             commit_msg="[${REPO_SRC}] '${PACKAGE}-$version' ${action}"
             msg "Action: %s" "$commit_msg"
             git add .
-
         fi
         git commit -m "$commit_msg"
 
-        cd ${TREE_DIR_ARTIX}/${git_tree}
+        cd ${group}
 
-        ${push} && pull_tree "${git_tree}" "$head"
+        ${push} && pull_tree "${group##*/}" "$head"
 
 #         subrepo_pull "${PACKAGE}"
         subrepo_push "${PACKAGE}"
         subrepo_clean "${PACKAGE}"
 
-        ${push} && push_tree "${git_tree}"
+        ${push} && push_tree "${group##*/}"
 
         git prune
     else
@@ -87,15 +101,17 @@ commit_pkg(){
     fi
 }
 
-symlink_commit_pkg(){
-    local git_tree=$(find_tree "${TREE_DIR_ARTIX}" "${PACKAGE}")
-    if [[ -n ${git_tree} ]];then
+repo_commit_pkg(){
+    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    if [[ -n ${artixpath} ]];then
 
-        cd ${TREE_DIR_ARTIX}/${git_tree}
+        local group=${artixpath%/*}
+
+        cd ${group}
 
         local head=$(get_local_head)
 
-        cd ${TREE_DIR_ARTIX}/${git_tree}/${PACKAGE}
+        cd ${artixpath}
 
         local pkgbuild=$(get_path "${REPO_SRC}")
 
@@ -127,17 +143,19 @@ symlink_commit_pkg(){
         git add .
         git commit -m "$commit_msg"
 
-        cd ${TREE_DIR_ARTIX}/${git_tree}
+        cd ${group}
 
-        ${push} && pull_tree "${git_tree}" "$head"
+        ${push} && pull_tree "${group##*/}" "$head"
 
 #         subrepo_pull "${PACKAGE}"
         subrepo_push "${PACKAGE}"
         subrepo_clean "${PACKAGE}"
 
-        ${push} && push_tree "${git_tree}"
+        ${push} && push_tree "${group##*/}"
 
         git prune
+
+        check_team
     else
         error "Package '%s' does not exist!" "${PACKAGE}"
     fi
@@ -186,7 +204,7 @@ if $(is_valid_repo "${REPO_SRC}");then
     if [[ "${cmd}" == 'commitpkg' ]];then
         commit_pkg
     else
-        symlink_commit_pkg
+        repo_commit_pkg
     fi
 else
     error "source repository '%s' is not valid!" "${REPO_SRC}"

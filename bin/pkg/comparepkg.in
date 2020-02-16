@@ -16,114 +16,121 @@
 
 prepare_artools
 
-compare(){
-    local pkgpath="$1" group="$2"
+get_import_path(){
+    local pkg="$1" import_path=
+
+    for tree in ${TREE_NAMES_ARCH[@]};do
+        [[ -d ${TREE_DIR_ARCH}/$tree/$pkg/repos ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg
+    done
+    echo $import_path
+}
+
+compare_m(){
+    local result=$(vercmp "$artixver" "$archver")
+    local artixver="$1" artixrepo="$2" archver="$3" archrepo="$4"
+    if [[ $artixrepo == *testing* ]] || [[ $artixrepo == *staging* ]]; then
+        if [[ "$archrepo" == "$artixrepo"  ]]; then
+            msg_row "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
+        else
+            msg_row_notify "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
+            if [[ -n "$archrepo" ]]; then
+                printf "%s\n" "${archrepo%-*}:${artixrepo%-*}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_moves.list
+            fi
+        fi
+
+    fi
+}
+
+compare_u(){
+    local result=$(vercmp "$artixver" "$archver")
+    local artixver="$1" artixrepo="$2" archver="$3" archrepo="$4"
+    if [ $result -eq -1 ];then
+        msg_row_upgrade "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
+        printf "%s\n" "${archrepo%-*}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_upgrades.list
+    fi
+}
+
+compare_d(){
+    local result=$(vercmp "$artixver" "$archver")
+    local artixver="$1" artixrepo="$2" archver="$3" archrepo="$4"
+    if [ $result -eq 1 ];then
+        if [[ -n "$archver" ]] && [[ -n "$archrepo" ]];then
+            msg_row_downgrade "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
+        fi
+    fi
+}
+
+pre_compare(){
+    local func="$1" pkgpath="$2"
+    local group="${pkgpath%/*}"
+    group=${group##*/}
     local pkg=${pkgpath##*/}
-    local artixrepo=$(find_repo "$pkgpath" "${staging}" "${unstable}")
-    local artixshow=${artixrepo%-*}
+    local artixrepo=$(find_repo "$pkgpath" "${testing}" "${staging}" "${unstable}")
     local pkgbuild=$pkgpath/repos/$artixrepo/PKGBUILD
 
     if [[ -f $pkgbuild ]];then
-
         . $pkgbuild 2>/dev/null
         local artixver=$(get_full_version)
 
         local archpath=$(get_import_path $pkg)
-
-        local archrepo=$(find_repo "$archpath" "${staging}" "${unstable}")
-
-        local archshow=${archrepo%-*}
+        local archrepo=$(find_repo "${archpath}" "${testing}" "${staging}" "${unstable}")
         pkgbuild=$archpath/repos/$archrepo/PKGBUILD
 
-        if [[ -f $pkgbuild ]];then
+        if [[ -f "$pkgbuild" ]];then
             . $pkgbuild 2>/dev/null
             local archver=$(get_full_version)
         fi
 
-        local result=$(vercmp "$artixver" "$archver")
+        "$func" "$artixver" "$artixrepo" "$archver" "$archrepo"
 
-        local repomatch=false
-        [[ "$archrepo" == "$artixrepo" ]] && repomatch=true
-
-        if ${move};then
-
-            if [ $result -gt -1 ];then
-                case $artixrepo in
-                    *testing*|*staging*)
-                        if $repomatch;then
-                            msg_row "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
-                        else
-                            msg_row_notify "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
-
-                            if [[ -n "$archshow" ]]; then
-                                printf "%s\n" "$archshow:$artixshow:$pkg" >> ${TREE_DIR_ARTIX}/pkg_moves.list
-                            fi
-                        fi
-                    ;;
-                esac
-            fi
-
-        elif ${upgrades};then
-
-            if [ $result -eq -1 ];then
-                msg_row_upgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
-
-                printf "%s\n" "$archshow:$pkg" >> ${TREE_DIR_ARTIX}/pkg_upgrades.list
-            fi
-
-        elif ${downgrades};then
-
-            if [ $result -eq 1 ];then
-                if [[ -n $archver ]] && [[ -n $archrepo ]];then
-                    msg_row_downgrade "${table}" "$archshow" "$artixshow" "$pkg" "$archver" "$artixver" "${group#*-}"
-                fi
-            fi
-
-        fi
         unset pkgver epoch pkgrel artixver archver pkgbuild archpath
-
     fi
 }
 
-is_db_entry() {
-    local pkgname="$1" repo="$(arch2artix $2)"
-    if [[ -d ${db_cache_dir}/${LINKSDBEXT}/${ARCH}/$repo/$pkgname ]];then
-        return 0
-    fi
-    return 1
+compare_upgrades(){
+    local pkgpath="${1%/*}"
+    pre_compare compare_u "$pkgpath"
 }
 
-check_db(){
-    local pkgpath="$1"
-    local pkg=${pkgpath##*/}
-    local sarch=(any ${ARCH})
-    local arch_repos=$(arch_repos "${staging}" "${unstable}")
+compare_downgrades(){
+    local pkgpath="${1%/*}"
+    pre_compare compare_d "$pkgpath"
+}
 
-    for repo in ${arch_repos[@]};do
+compare_move(){
+    local pkgpath="${1%/*}"
+    pre_compare compare_m "$pkgpath"
+}
 
-        for a in ${sarch[@]};do
-
-            local pkgbuild=$pkgpath/repos/$repo-$a/PKGBUILD
-
-            if [[ -f $pkgbuild ]];then
-
-                . $pkgbuild 2>/dev/null
-                local artixver=$(get_full_version)
-                local is_entry=false
-
-                for name in ${pkgname[@]};do
-
-                    if is_db_entry "$name-$artixver" "$repo";then
-                        is_entry=true
-                    fi
-                    if ! $is_entry; then
-                        msg_row "${tableU}" "$repo" "$name" "$artixver" "$is_entry"
-                    fi
-                done
-                unset artixver is_entry pkgbuild pkgver epoch pkgname pkgbase
-            fi
+tree_loop(){
+    local func="$1"
+    for tree in ${TREE_NAMES_ARTIX[@]};do
+        local pkgs=$(find ${TREE_DIR_ARTIX}/$tree -name trunk)
+        for package in ${pkgs[@]}; do
+            "$func" "$package"
         done
     done
+}
+
+show_compare_header(){
+    msg_table_header "${table}" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version" "Group"
+}
+
+show_upgrades_table(){
+    show_compare_header
+    [[ -f ${TREE_DIR_ARTIX}/pkg_upgrades.list ]] && rm ${TREE_DIR_ARTIX}/pkg_upgrades.list
+    tree_loop compare_upgrades
+}
+
+show_downgrades_table(){
+    show_compare_header
+    tree_loop compare_downgrades
+}
+
+show_move_table(){
+    show_compare_header
+    [[ -f ${TREE_DIR_ARTIX}/pkg_moves.list ]] && rm ${TREE_DIR_ARTIX}/pkg_moves.list
+    tree_loop compare_move
 }
 
 update_db_cache(){
@@ -153,38 +160,61 @@ query_db() {
             done < <(grep -rZ "${library}" "${db}") | sort -u
         fi
     done
-    exit 0
 }
 
-show_version_table(){
+show_lib_table() {
+    ${sync} && update_db_cache
+    msg_table_header "${tableQ}" "Repo" "Package" "Library"
+    query_db
+}
 
-    if ${check};then
-        ${sync} && update_db_cache
-        msg_table_header "${tableU}" "Repo" "Package" "Version" "Database"
-    elif ${query};then
-        ${sync} && update_db_cache
-        msg_table_header "${tableQ}" "Repo" "Package" "Library"
-        query_db
-    else
-        msg_table_header "${table}" "Arch Repo" "Artix Repo" "Package" "Arch version" "Artix version" "Group"
+is_db_entry() {
+    local pkgname="$1" repo="${REPOS[$2]}"
+
+    if [[ -d ${db_cache_dir}/${LINKSDBEXT}/${ARCH}/$repo/$pkgname ]];then
+        return 0
     fi
+    return 1
+}
 
-    if ${move} && [[ -f ${TREE_DIR_ARTIX}/pkg_moves.list ]]; then
-        rm ${TREE_DIR_ARTIX}/pkg_moves.list
-    elif ${upgrades} && [[ -f ${TREE_DIR_ARTIX}/pkg_upgrades.list ]]; then
-        rm ${TREE_DIR_ARTIX}/pkg_upgrades.list
-    fi
+check_db(){
+    local pkgpath="${1%/*}"
+    local pkg=${pkgpath##*/}
+    local sarch=(any ${ARCH})
 
-    for tree in ${TREE_NAMES_ARTIX[@]};do
-        local git=$(find ${TREE_DIR_ARTIX}/$tree/ -mindepth 1 -maxdepth 1 -type d)
-        for package in ${git[@]}; do
-            if ${check};then
-                check_db "$package"
-            else
-                compare "$package" "$tree"
+    local repos=$(arch_repos "${testing}" "${staging}" "${unstable}")
+
+    for repo in ${repos[@]};do
+        for a in ${sarch[@]};do
+
+            local pkgbuild=$pkgpath/repos/$repo-$a/PKGBUILD
+
+            if [[ -f $pkgbuild ]];then
+
+                . $pkgbuild 2>/dev/null
+                local artixver=$(get_full_version)
+
+                local is_entry=false
+
+                for name in ${pkgname[@]};do
+
+                    if is_db_entry "$name-$artixver" "$repo";then
+                        is_entry=true
+                    fi
+                    if ! $is_entry;then
+                        msg_row "${tableU}" "$repo" "$name" "$artixver" "$is_entry"
+                    fi
+                done
+                unset artixver is_entry pkgbuild pkgver epoch pkgname pkgbase
             fi
         done
     done
+}
+
+show_db_table(){
+    ${sync} && update_db_cache
+    msg_table_header "${tableU}" "Repo" "Package" "Version" "Database"
+    tree_loop check_db
 }
 
 db_cache_dir="${XDG_CACHE_HOME:-$USER_HOME/.cache}/artools"
@@ -199,25 +229,33 @@ move=false
 check=false
 sync=false
 query=false
-
-artix_repos=(
-    'goblins' 'gremlins' 'system' 'world'
-    'galaxy-goblins' 'galaxy-gremlins' 'galaxy'
-    'lib32-goblins' 'lib32-gremlins' 'lib32'
-    'gnome-wobble' 'kde-wobble'
-)
+testing=true
 
 readonly table="%-18s %-18s %-25s %-27s %-27s %-10s"
 readonly tableU="%-20s %-35s %-30s %-10s"
 readonly tableQ="%-20s %-45s %s"
 
-searchrepos=(${artix_repos[@]})
+searchrepos=(
+    ${REPOS[staging]}
+    ${REPOS[testing]}
+    ${REPOS[core]}
+    ${REPOS[extra]}
+    ${REPOS[community-staging]}
+    ${REPOS[community-testing]}
+    ${REPOS[community]}
+    ${REPOS[multilib-staging]}
+    ${REPOS[multilib-testing]}
+    ${REPOS[multilib]}
+    ${REPOS[kde-unstable]}
+    ${REPOS[gnome-unstable]}
+)
 
 usage() {
     echo "Usage: ${0##*/} [options] (with -q [libname])"
     echo '    -u            Show upgrade packages'
     echo '    -d            Show downgrade packages'
     echo '    -m            Show packages to move'
+    echo "    -z            Don't inlcude testing packages"
     echo "    -x            Don't inlcude staging packages"
     echo '    -y            Include unstable kde and gnome'
     echo '    -c            Check repos'
@@ -233,7 +271,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='r:qcsudmxyh'
+opts='r:qcsudmzxyh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -242,6 +280,7 @@ while getopts "${opts}" arg; do
         m) move=true ;;
         x) staging=false ;;
         y) unstable=true ;;
+        z) testing=false ;;
         c) check=true ;;
         s) sync=true ;;
         q) query=true ;;
@@ -255,4 +294,12 @@ shift $(($OPTIND - 1))
 
 library="$1"; shift
 
-show_version_table
+${move} && show_move_table
+
+${upgrades} && show_upgrades_table
+
+${downgrades} && show_downgrades_table
+
+${check} && show_db_table
+
+${query} && show_lib_table

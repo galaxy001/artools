@@ -14,6 +14,21 @@
 
 shopt -s extglob
 
+declare -A REPOS=(
+    [core]=system
+    [extra]=world
+    [community]=galaxy
+    [multilib]=lib32
+    [testing]=gremlins
+    [staging]=goblins
+    [community-testing]=galaxy-gremlins
+    [community-staging]=galaxy-goblins
+    [multilib-testing]=lib32-gremlins
+    [multilib-staging]=lib32-goblins
+    [kde-unstable]=kde-wobble
+    [gnome-unstable]=gnome-wobble
+)
+
 get_compliant_name(){
     local gitname="$1"
     case $gitname in
@@ -22,64 +37,7 @@ get_compliant_name(){
     echo $gitname
 }
 
-arch2artix(){
-    local repo="$1" artix=none
-    case "$repo" in
-        core) artix=system ;;
-        extra) artix=world ;;
-        community) artix=galaxy ;;
-        multilib) artix=lib32 ;;
-        staging) artix=goblins ;;
-        testing) artix=gremlins ;;
-        community-staging) artix=galaxy-goblins ;;
-        community-testing) artix=galaxy-gremlins ;;
-        multilib-staging) artix=lib32-goblins ;;
-        multilib-testing) artix=lib32-gremlins ;;
-        kde-unstable) artix=kde-wobble ;;
-        gnome-unstable) artix=gnome-wobble ;;
-    esac
-    echo $artix
-}
-
-find_tree(){
-    local tree="$1" pkg="$2"
-    local result=$(find $tree -mindepth 2 -maxdepth 2 -type d -name "$pkg")
-    result=${result%/*}
-    echo ${result##*/}
-}
-
-arch_repos(){
-    local stag="$1" unst="$2"
-    local repos=(core extra testing community community-testing multilib multilib-testing)
-
-    $stag && repos+=(staging community-staging multilib-staging)
-    $unst && repos+=(gnome-unstable kde-unstable)
-
-    echo ${repos[@]}
-}
-
-find_repo(){
-    local pkg="$1" stag="$2" unst="$3" repo=
-
-    for r in $(arch_repos "$stag" "$unst");do
-        [[ -f $pkg/repos/$r-${ARCH}/PKGBUILD ]] && repo=$r-${ARCH}
-        [[ -f $pkg/repos/$r-any/PKGBUILD ]] && repo=$r-any
-    done
-    echo $repo
-}
-
-is_valid_repo(){
-    local src="$1" cases=
-    for r in $(arch_repos true true);do
-        cases=${cases:-}${cases:+|}${r}
-    done
-    eval "case $src in
-        ${cases}|trunk) return 0 ;;
-        *) return 1 ;;
-    esac"
-}
-
-get_cases(){
+get_group_packages(){
     local pkglist="${SYSCONFDIR}/pkglist.d/$1.list"
 
     local _space="s| ||g" _clean=':a;N;$!ba;s/\n/ /g' _com_rm="s|#.*||g"
@@ -93,40 +51,70 @@ get_cases(){
     echo $cases
 }
 
-get_artix_tree(){
-    local pkg="$1" artix_tree="${2:-$3}" tree
+get_group(){
+    local pkg="$1" fallback="${2##*/}" tree=
     eval "case $pkg in
-        $(get_cases kernel)) tree=packages-kernel ;;
-        $(get_cases python)) tree=packages-python ;;
-        $(get_cases perl)) tree=packages-perl ;;
-        $(get_cases ruby)) tree=packages-ruby ;;
-        $(get_cases openrc)) tree=packages-openrc ;;
-        $(get_cases runit)) tree=packages-runit ;;
-        $(get_cases s6)) tree=packages-s6 ;;
-        $(get_cases media)) tree=packages-media ;;
-        $(get_cases xorg)) tree=packages-xorg ;;
-        $(get_cases qt5)) tree=packages-qt5 ;;
-        $(get_cases gtk)) tree=packages-gtk ;;
-        $(get_cases java)) tree=packages-java ;;
-        $(get_cases haskell)) tree=packages-haskell ;;
-        $(get_cases devel)) tree=packages-devel ;;
-        $(get_cases lxqt)) tree=packages-lxqt ;;
-        $(get_cases cinnamon)) tree=packages-cinnamon ;;
-        $(get_cases kde)) tree=packages-kde ;;
-        $(get_cases gnome)) tree=packages-gnome ;;
-        $(get_cases mate)) tree=packages-mate ;;
-        $(get_cases xfce)) tree=packages-xfce ;;
-        *) tree=$artix_tree
+        $(get_group_packages kernel)) tree=packages-kernel ;;
+        $(get_group_packages python)) tree=packages-python ;;
+        $(get_group_packages perl)) tree=packages-perl ;;
+        $(get_group_packages ruby)) tree=packages-ruby ;;
+        $(get_group_packages openrc)) tree=packages-openrc ;;
+        $(get_group_packages runit)) tree=packages-runit ;;
+        $(get_group_packages s6)) tree=packages-s6 ;;
+        $(get_group_packages media)) tree=packages-media ;;
+        $(get_group_packages xorg)) tree=packages-xorg ;;
+        $(get_group_packages qt5)) tree=packages-qt5 ;;
+        $(get_group_packages gtk)) tree=packages-gtk ;;
+        $(get_group_packages java)) tree=packages-java ;;
+        $(get_group_packages haskell)) tree=packages-haskell ;;
+        $(get_group_packages devel)) tree=packages-devel ;;
+        $(get_group_packages lxqt)) tree=packages-lxqt ;;
+        $(get_group_packages cinnamon)) tree=packages-cinnamon ;;
+        $(get_group_packages kde)) tree=packages-kde ;;
+        $(get_group_packages gnome)) tree=packages-gnome ;;
+        $(get_group_packages mate)) tree=packages-mate ;;
+        $(get_group_packages xfce)) tree=packages-xfce ;;
+        *) tree=$fallback ;;
     esac"
     echo $tree
 }
 
-get_import_path(){
-    local pkg="$1" import_path=
-    for tree in ${TREE_NAMES_ARCH[@]};do
-        [[ -d ${TREE_DIR_ARCH}/$tree/$pkg/repos ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg
+arch_repos(){
+    local testing="$1" staging="$2" unstable="$3"
+    local repos=(core extra community multilib)
+
+    $testing && repos=(core extra testing community community-testing multilib multilib-testing)
+    $staging && repos+=(staging community-staging multilib-staging)
+    $unstable && repos+=(gnome-unstable kde-unstable)
+
+    echo ${repos[@]}
+}
+
+find_repo(){
+    local pkg="$1" testing="$2" staging="$3" unstable="$4" repo=
+
+    for r in $(arch_repos "$testing" "$staging" "$unstable");do
+        [[ -f $pkg/repos/$r-${ARCH}/PKGBUILD ]] && repo=$r-${ARCH}
+        [[ -f $pkg/repos/$r-any/PKGBUILD ]] && repo=$r-any
     done
-    echo $import_path
+    echo $repo
+}
+
+find_pkg(){
+    local searchdir="$1" pkg="$2"
+    local result=$(find $searchdir -mindepth 2 -maxdepth 2 -type d -name "$pkg")
+    echo $result
+}
+
+is_valid_repo(){
+    local src="$1" cases=
+    for r in $(arch_repos true true true);do
+        cases=${cases:-}${cases:+|}${r}
+    done
+    eval "case $src in
+        ${cases}|trunk) return 0 ;;
+        *) return 1 ;;
+    esac"
 }
 
 pkgver_equal() {
