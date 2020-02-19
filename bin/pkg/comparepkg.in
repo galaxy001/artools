@@ -65,7 +65,7 @@ pre_compare(){
     local group="${pkgpath%/*}"
     group=${group##*/}
     local pkg=${pkgpath##*/}
-    local artixrepo=$(find_repo "$pkgpath" "${testing}" "${staging}" "${unstable}")
+    local artixrepo=$(find_repo "$pkgpath")
     local pkgbuild=$pkgpath/repos/$artixrepo/PKGBUILD
 
     if [[ -f $pkgbuild ]];then
@@ -73,7 +73,7 @@ pre_compare(){
         local artixver=$(get_full_version)
 
         local archpath=$(get_import_path $pkg)
-        local archrepo=$(find_repo "${archpath}" "${testing}" "${staging}" "${unstable}")
+        local archrepo=$(find_repo "${archpath}")
         pkgbuild=$archpath/repos/$archrepo/PKGBUILD
 
         if [[ -f "$pkgbuild" ]];then
@@ -155,7 +155,6 @@ query_db() {
                 read -r match
                 pkg=${pkg#${db}}
                 pkg="${pkg%/*}"
-
                 msg_row "${tableQ}" "${repo}" "${pkg}" "${match}"
             done < <(grep -rZ "${library}" "${db}") | sort -u
         fi
@@ -182,9 +181,7 @@ check_db(){
     local pkg=${pkgpath##*/}
     local sarch=(any ${ARCH})
 
-    local repos=$(arch_repos "${testing}" "${staging}" "${unstable}")
-
-    for repo in ${repos[@]};do
+    for repo in ${ARCH_REPOS[@]};do
         for a in ${sarch[@]};do
 
             local pkgbuild=$pkgpath/repos/$repo-$a/PKGBUILD
@@ -221,21 +218,25 @@ db_cache_dir="${XDG_CACHE_HOME:-$USER_HOME/.cache}/artools"
 
 load_makepkg_config
 
-unstable=false
+testing=true
 staging=true
+unstable=false
+
 upgrades=false
 downgrades=false
 move=false
-check=false
+
 sync=false
+check=false
 query=false
-testing=true
 
 readonly table="%-18s %-18s %-25s %-27s %-27s %-10s"
 readonly tableU="%-20s %-35s %-30s %-10s"
 readonly tableQ="%-20s %-45s %s"
 
 searchrepos=(
+    ${REPOS[kde-unstable]}
+    ${REPOS[gnome-unstable]}
     ${REPOS[staging]}
     ${REPOS[testing]}
     ${REPOS[core]}
@@ -246,8 +247,6 @@ searchrepos=(
     ${REPOS[multilib-staging]}
     ${REPOS[multilib-testing]}
     ${REPOS[multilib]}
-    ${REPOS[kde-unstable]}
-    ${REPOS[gnome-unstable]}
 )
 
 usage() {
@@ -255,11 +254,11 @@ usage() {
     echo '    -u            Show upgrade packages'
     echo '    -d            Show downgrade packages'
     echo '    -m            Show packages to move'
-    echo "    -z            Don't inlcude testing packages"
-    echo "    -x            Don't inlcude staging packages"
-    echo '    -y            Include unstable kde and gnome'
-    echo '    -c            Check repos'
+    echo "    -x            Don't inlcude testing packages"
+    echo "    -y            Don't inlcude staging packages"
+    echo '    -z            Include unstable kde and gnome'
     echo "    -s            Sync repo databases"
+    echo '    -c            Check repos'
     echo "    -q            Query repo databases for so libs"
     echo '    -r <repo>     Repo name to query'
     echo '                  [default: all]'
@@ -271,20 +270,20 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='r:qcsudmzxyh'
+opts='r:qcsudmxyzh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         u) upgrades=true ;;
         d) downgrades=true ;;
         m) move=true ;;
-        x) staging=false ;;
-        y) unstable=true ;;
-        z) testing=false ;;
-        c) check=true ;;
         s) sync=true ;;
+        c) check=true ;;
         q) query=true ;;
         r) searchrepos=("$OPTARG") ;;
+        x) testing=false ;;
+        y) staging=false ;;
+        z) unstable=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -293,6 +292,8 @@ done
 shift $(($OPTIND - 1))
 
 library="$1"; shift
+
+set_arch_repos "$testing" "$staging" "$unstable"
 
 ${move} && show_move_table
 

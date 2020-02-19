@@ -29,6 +29,13 @@ declare -A REPOS=(
     [gnome-unstable]=gnome-wobble
 )
 
+ARCH_REPOS=(
+    core
+    extra
+    community
+    multilib
+)
+
 get_compliant_name(){
     local gitname="$1"
     case $gitname in
@@ -79,21 +86,17 @@ get_group(){
     echo $tree
 }
 
-arch_repos(){
-    local testing="$1" staging="$2" unstable="$3"
-    local repos=(core extra community multilib)
+set_arch_repos(){
+    local x="$1" y="$2" z="$3"
 
-    $testing && repos=(core extra testing community community-testing multilib multilib-testing)
-    $staging && repos+=(staging community-staging multilib-staging)
-    $unstable && repos+=(gnome-unstable kde-unstable)
-
-    echo ${repos[@]}
+    $x && ARCH_REPOS+=(testing community-testing multilib-testing)
+    $y && ARCH_REPOS+=(staging community-staging multilib-staging)
+    $z && ARCH_REPOS+=(gnome-unstable kde-unstable)
 }
 
 find_repo(){
-    local pkg="$1" testing="$2" staging="$3" unstable="$4" repo=
-
-    for r in $(arch_repos "$testing" "$staging" "$unstable");do
+    local pkg="$1" repo=
+    for r in ${ARCH_REPOS[@]};do
         [[ -f $pkg/repos/$r-${ARCH}/PKGBUILD ]] && repo=$r-${ARCH}
         [[ -f $pkg/repos/$r-any/PKGBUILD ]] && repo=$r-any
     done
@@ -104,17 +107,6 @@ find_pkg(){
     local searchdir="$1" pkg="$2"
     local result=$(find $searchdir -mindepth 2 -maxdepth 2 -type d -name "$pkg")
     echo $result
-}
-
-is_valid_repo(){
-    local src="$1" cases=
-    for r in $(arch_repos true true true);do
-        cases=${cases:-}${cases:+|}${r}
-    done
-    eval "case $src in
-        ${cases}|trunk) return 0 ;;
-        *) return 1 ;;
-    esac"
 }
 
 pkgver_equal() {

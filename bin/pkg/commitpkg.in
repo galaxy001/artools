@@ -161,6 +161,18 @@ repo_commit_pkg(){
     fi
 }
 
+is_valid_repo(){
+    local src="$1" cases=
+    set_arch_repos true true true
+    for r in ${ARCH_REPOS[@]};do
+        cases=${cases:-}${cases:+|}${r}
+    done
+    eval "case $src in
+        ${cases}|trunk) return 0 ;;
+        *) return 1 ;;
+    esac"
+}
+
 load_makepkg_config
 
 REPO_SRC='trunk'

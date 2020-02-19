@@ -132,7 +132,7 @@ from_arch(){
     local srcpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
     [[ -z $srcpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
 
-    local repo=$(find_repo "$srcpath" "${testing}" "${staging}" "${unstable}")
+    local repo=$(find_repo "$srcpath")
 
     archpath=$srcpath/repos/$repo
     local artixpath=$(find_pkg ${TREE_DIR_ARTIX} ${PACKAGE})
@@ -165,7 +165,7 @@ from_arch(){
 view_build(){
     local archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
     [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
-    local repo=$(find_repo "${archpath}" "${testing}" "${staging}" "${unstable}")
+    local repo=$(find_repo "${archpath}")
     archpath=$archpath/repos/$repo
     msg2 "repo: %s" "$repo"
     show_deps "$archpath"
@@ -195,16 +195,16 @@ sync_repos(){
 
 load_makepkg_config
 
+testing=true
+staging=true
+unstable=false
+
 sync=false
 sync_arch=true
 sync_artix=true
 import=false
 view=false
 createnew=false
-conf=false
-unstable=false
-staging=true
-testing=true
 sync_group=false
 check=false
 
@@ -222,15 +222,15 @@ usage() {
     echo '    -g <group>    Group name, the superrepo (only with -n or -s)'
     echo "                  [default: ${GROUP}]"
     echo "    -s            Clone or pull repos"
-    echo "    -z            Don't clone or pull arch repos"
-    echo "    -y            Don't clone or pull artix repos"
+    echo "    -a            Don't clone or pull arch repos"
+    echo "    -b            Don't clone or pull artix repos"
     echo '    -i            Import a package from arch repos'
     echo '    -n            Make new remote subrepo and clone it'
-    echo '    -u            Include kde & gnome unstable (only with -i)'
-    echo '    -w            Exclude staging (only with -i)'
-    echo '    -x            Exclude testing (only with -i)'
     echo '    -v            Check if a package is in the artix tree(s)'
     echo '    -c            View package depends'
+    echo '    -x            Exclude testing (only with -i)'
+    echo '    -y            Exclude staging (only with -i)'
+    echo '    -z            Include kde & gnome unstable (only with -i)'
     echo '    -h            This help'
     echo ''
     echo ''
@@ -239,7 +239,7 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='p:t:g:uwsinxzycvh'
+opts='p:t:g:sinabcvxyzh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -247,15 +247,15 @@ while getopts "${opts}" arg; do
         t) TEAM="$OPTARG" ;;
         g) GROUP="$OPTARG"; sync_group=true ;;
         s) sync=true ;;
-        z) sync_arch=false ;;
-        y) sync_artix=false ;;
+        a) sync_arch=false ;;
+        b) sync_artix=false ;;
         i) import=true ;;
         n) createnew=true ;;
-        w) staging=false ;;
-        x) testing=false ;;
-        u) unstable=true ;;
         c) check=true ;;
         v) view=true ;;
+        x) testing=false ;;
+        y) staging=false ;;
+        z) unstable=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -265,6 +265,8 @@ shift $(($OPTIND - 1))
 
 prepare_dir "${TREE_DIR_ARTIX}"
 prepare_dir "${TREE_DIR_ARCH}"
+
+set_arch_repos "$testing" "$staging" "$unstable"
 
 ${sync} && sync_repos
 
