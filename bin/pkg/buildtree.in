@@ -17,32 +17,38 @@
 prepare_artools
 
 patch_pkg(){
-    local pkg="$1"
+    local pkgpath="$1"
+    local pkg=${pkgpath%/*}
+    pkg=${pkg##*/}
     case $pkg in
         glibc)
+            msg2 "Patching %s" "$pkg"
             sed -e 's|{locale,systemd/system,tmpfiles.d}|{locale,tmpfiles.d}|' \
                 -e '/nscd.service/d' \
-                -i $pkg/PKGBUILD
+                -i $pkgpath/PKGBUILD
         ;;
         linux|linux-lts)
-            sed -e 's|KBUILD_BUILD_HOST=.*|KBUILD_BUILD_HOST=artixlinux|' -i $pkg/PKGBUILD
+            msg2 "Patching %s" "$pkg"
+            sed -e 's|KBUILD_BUILD_HOST=.*|KBUILD_BUILD_HOST=artixlinux|' -i $pkgpath/PKGBUILD
             sed -e 's|CONFIG_DEFAULT_HOSTNAME=.*|CONFIG_DEFAULT_HOSTNAME="artixlinux"|' \
-                -i $pkg/config
+                -i $pkgpath/config
         ;;
         bash)
+            msg2 "Patching %s" "$pkg"
             sed -e 's|system.bash_logout)|system.bash_logout artix.bashrc)|' \
             -e "s|etc/bash.|etc/bash/|g" \
             -e 's|"$pkgdir/etc/skel/.bash_logout"|"$pkgdir/etc/skel/.bash_logout"\n  install -Dm644 artix.bashrc $pkgdir/etc/bash/bashrc.d/artix.bashrc|' \
-            -i $pkg/PKGBUILD
-            cd $pkg
+            -i $pkgpath/PKGBUILD
+            cd $pkgpath
                 patch -Np 1 -i ${DATADIR}/patches/artix-bash.patch
                 updpkgsums
             cd ../..
         ;;
         gstreamer|gst-plugins-*|licenses)
+            msg2 "Patching %s" "$pkg"
             sed -e 's|https://www.archlinux.org/|https://www.artixlinux.org/|' \
                 -e 's|(Arch Linux)|(Artix Linux)|' \
-                -i $pkg/PKGBUILD
+                -i $pkgpath/PKGBUILD
         ;;
     esac
 }
