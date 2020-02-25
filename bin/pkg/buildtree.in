@@ -132,6 +132,19 @@ subrepo_new(){
     commit_jenkins_files "${PACKAGE}"
 }
 
+get_team(){
+    local repo="$1" team=
+    case $repo in
+        *testing*|*staging*)
+            set_arch_repos false false false
+            team=$(find_repo "$srcpath")
+            team=${team%-*}
+        ;;
+        *) team=${repo%-*} ;;
+    esac
+    echo $team
+}
+
 from_arch(){
     cd ${TREE_DIR_ARTIX}
 
@@ -159,7 +172,7 @@ from_arch(){
         msg2 "Artix Version: %s" "$artixver"
     else
         artixpath=${TREE_DIR_ARTIX}/$group/${PACKAGE}/trunk
-        subrepo_new "${group}" "${repo%-*}"
+        subrepo_new "${group}" "$(get_team $repo)"
     fi
 
     msg "Sync (%s) from Arch [%s] to Artix [%s]" "${PACKAGE}" "${archpath##*archlinux/}" "${artixpath##*artixlinux/}"
