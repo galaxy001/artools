@@ -407,7 +407,7 @@ else
         for remotepkg in "${remotepkgs[@]}"; do
             if [[ $remotepkg != file://* ]]; then
                 msg2 "Downloading current versions"
-                arch-nspawn "$copydir" pacman --noconfirm -Swdd "${pkgnames[@]}"
+                chroot-run "$copydir" pacman --noconfirm -Swdd "${pkgnames[@]}"
                 mapfile -t remotepkgs < <(pacman --config "$copydir"/etc/pacman.conf \
                     --dbpath "$copydir"/var/lib/pacman \
                     -Sddp "${pkgnames[@]}")
