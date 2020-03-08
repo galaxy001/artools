@@ -26,8 +26,9 @@ get_import_path(){
 }
 
 compare_m(){
-    local result=$(vercmp "$artixver" "$archver")
     local artixver="$1" artixrepo="$2" archver="$3" archrepo="$4"
+
+    local result=$(vercmp "$artixver" "$archver")
     if [[ $artixrepo == *testing* ]] || [[ $artixrepo == *staging* ]]; then
         if [[ "$archrepo" == "$artixrepo"  ]]; then
             msg_row "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
@@ -42,8 +43,9 @@ compare_m(){
 }
 
 compare_u(){
-    local result=$(vercmp "$artixver" "$archver")
     local artixver="$1" artixrepo="$2" archver="$3" archrepo="$4"
+
+    local result=$(vercmp "$artixver" "$archver")
     if [ $result -eq -1 ];then
         msg_row_upgrade "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
         printf "%s\n" "${archrepo%-*}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_upgrades.list
@@ -51,8 +53,9 @@ compare_u(){
 }
 
 compare_d(){
-    local result=$(vercmp "$artixver" "$archver")
     local artixver="$1" artixrepo="$2" archver="$3" archrepo="$4"
+
+    local result=$(vercmp "$artixver" "$archver")
     if [ $result -eq 1 ];then
         if [[ -n "$archver" ]] && [[ -n "$archrepo" ]];then
             msg_row_downgrade "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
@@ -233,6 +236,21 @@ query=false
 readonly table="%-18s %-18s %-25s %-27s %-27s %-10s"
 readonly tableU="%-20s %-35s %-30s %-10s"
 readonly tableQ="%-20s %-45s %s"
+
+declare -A REPOS=(
+    [core]=system
+    [extra]=world
+    [community]=galaxy
+    [multilib]=lib32
+    [testing]=gremlins
+    [staging]=goblins
+    [community-testing]=galaxy-gremlins
+    [community-staging]=galaxy-goblins
+    [multilib-testing]=lib32-gremlins
+    [multilib-staging]=lib32-goblins
+    [kde-unstable]=kde-wobble
+    [gnome-unstable]=gnome-wobble
+)
 
 searchrepos=(
     ${REPOS[kde-unstable]}

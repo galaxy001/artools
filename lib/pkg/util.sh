@@ -14,28 +14,6 @@
 
 shopt -s extglob
 
-declare -A REPOS=(
-    [core]=system
-    [extra]=world
-    [community]=galaxy
-    [multilib]=lib32
-    [testing]=gremlins
-    [staging]=goblins
-    [community-testing]=galaxy-gremlins
-    [community-staging]=galaxy-goblins
-    [multilib-testing]=lib32-gremlins
-    [multilib-staging]=lib32-goblins
-    [kde-unstable]=kde-wobble
-    [gnome-unstable]=gnome-wobble
-)
-
-ARCH_REPOS=(
-    core
-    extra
-    community
-    multilib
-)
-
 get_compliant_name(){
     local gitname="$1"
     case $gitname in
@@ -44,50 +22,9 @@ get_compliant_name(){
     echo $gitname
 }
 
-get_group_packages(){
-    local pkglist="${SYSCONFDIR}/pkglist.d/$1.list"
-
-    local _space="s| ||g" _clean=':a;N;$!ba;s/\n/ /g' _com_rm="s|#.*||g"
-
-    local pkgs=($(sed "$_com_rm" "$pkglist" | sed "$_space" | sed "$_clean"))
-
-    local cases=
-    for p in ${pkgs[@]};do
-        cases=${cases:-}${cases:+|}${p}
-    done
-    echo $cases
-}
-
-get_group(){
-    local pkg="$1" fallback="${2##*/}" tree=
-    eval "case $pkg in
-        $(get_group_packages kernel)) tree=packages-kernel ;;
-        $(get_group_packages python)) tree=packages-python ;;
-        $(get_group_packages perl)) tree=packages-perl ;;
-        $(get_group_packages ruby)) tree=packages-ruby ;;
-        $(get_group_packages openrc)) tree=packages-openrc ;;
-        $(get_group_packages runit)) tree=packages-runit ;;
-        $(get_group_packages s6)) tree=packages-s6 ;;
-        $(get_group_packages media)) tree=packages-media ;;
-        $(get_group_packages xorg)) tree=packages-xorg ;;
-        $(get_group_packages qt5)) tree=packages-qt5 ;;
-        $(get_group_packages gtk)) tree=packages-gtk ;;
-        $(get_group_packages java)) tree=packages-java ;;
-        $(get_group_packages haskell)) tree=packages-haskell ;;
-        $(get_group_packages devel)) tree=packages-devel ;;
-        $(get_group_packages lxqt)) tree=packages-lxqt ;;
-        $(get_group_packages cinnamon)) tree=packages-cinnamon ;;
-        $(get_group_packages kde)) tree=packages-kde ;;
-        $(get_group_packages gnome)) tree=packages-gnome ;;
-        $(get_group_packages mate)) tree=packages-mate ;;
-        $(get_group_packages xfce)) tree=packages-xfce ;;
-        *) tree=$fallback ;;
-    esac"
-    echo $tree
-}
-
 set_arch_repos(){
     local x="$1" y="$2" z="$3"
+    ARCH_REPOS=(core extra community multilib)
 
     $x && ARCH_REPOS+=(testing community-testing multilib-testing)
     $y && ARCH_REPOS+=(staging community-staging multilib-staging)
