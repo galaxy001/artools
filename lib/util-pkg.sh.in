@@ -59,6 +59,7 @@ load_pkg_config(){
             packages-mate
             packages-kde
             packages-xfce
+            packages-wm
 #             packages-haskell
     )
 

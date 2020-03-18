@@ -170,6 +170,7 @@ get_group(){
         $(get_group_packages gnome)) tree=packages-gnome ;;
         $(get_group_packages mate)) tree=packages-mate ;;
         $(get_group_packages xfce)) tree=packages-xfce ;;
+        $(get_group_packages wm)) tree=packages-wm ;;
         *) tree=$fallback ;;
     esac"
     echo $tree
