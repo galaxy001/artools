@@ -22,7 +22,7 @@ find_cached_pkgfile() {
     local search=${pkg%.*}
     for dir in "${searchdirs[@]}"; do
         [[ -d $dir ]] || continue
-        results+=$(find "$dir" -type f -name "$search.*" ! -path '*.sig')
+        results+=$(find "$dir" -type f -name "$search.*" ! -path '*.sig' ! -path '*.log')
     done
     case ${#results[*]} in
         0)
