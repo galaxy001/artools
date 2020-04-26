@@ -147,7 +147,7 @@ elif [[ $(cat "$working_dir/.artools") != ${CHROOTVERSION} ]]; then
     die "chroot '%s' is not at version %s. Please rebuild." "$working_dir" "${CHROOTVERSION}"
 fi
 
-sync_host_localtime
+#sync_host_localtime
 
 chroot_api_mount "${working_dir}" || die "failed to setup API filesystems in chroot %s" "${working_dir}"
 
