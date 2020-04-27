@@ -36,7 +36,9 @@ add_svc_runit(){
 add_svc_s6(){
     local mnt="$1" names="$2" valid="" rlvl="${3:-default}"
     for svc in $names; do
-        if [[ -d $mnt/etc/s6/sv/$svc ]]; then
+        error=false
+        chroot $mnt s6-rc-db -c /etc/s6/rc/compiled type $svc &> /dev/null || error=true
+        if [ $? == 0 ] && [[ $error == false ]]; then
             msg2 "Setting %s ..." "$svc"
             valid=${valid:-}${valid:+' '}${svc}
         fi
