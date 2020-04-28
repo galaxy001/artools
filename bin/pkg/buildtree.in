@@ -151,6 +151,7 @@ get_group(){
     eval "case $pkg in
         $(get_group_packages kernel)) tree=packages-kernel ;;
         $(get_group_packages net)) tree=packages-net ;;
+        $(get_group_packages gfx)) tree=packages-gfx ;;
         $(get_group_packages python)) tree=packages-python ;;
         $(get_group_packages perl)) tree=packages-perl ;;
         $(get_group_packages ruby)) tree=packages-ruby ;;
