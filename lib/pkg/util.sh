@@ -16,10 +16,10 @@ shopt -s extglob
 
 get_compliant_name(){
     local gitname="$1"
-    case $gitname in
+    case "$gitname" in
         *+) gitname=${gitname//+/plus}
     esac
-    echo $gitname
+    echo "$gitname"
 }
 
 set_arch_repos(){
@@ -42,17 +42,16 @@ find_repo(){
 
 find_pkg(){
     local searchdir="$1" pkg="$2"
-    local result=$(find $searchdir -mindepth 2 -maxdepth 2 -type d -name "$pkg")
-    echo $result
+    local result=$(find "$searchdir" -mindepth 2 -maxdepth 2 -type d -name "$pkg")
+    echo "$result"
 }
 
 find_cached_pkgfile() {
     local searchdirs=("$PKGDEST" "$PWD") results=()
     local pkg="$1"
     for dir in "${searchdirs[@]}"; do
-        [[ -d $dir ]] || continue
-        #results+=$(find "$dir" -type f -name "$pkg" ! -path '*.sig' ! -path '*.log')
-        [[ -e $dir/$pkg ]] && results+=($dir/$pkg)
+        [[ -d "$dir" ]] || continue
+        [[ -e "$dir/$pkg" ]] && results+=("$dir/$pkg")
     done
     case ${#results[*]} in
         0)
