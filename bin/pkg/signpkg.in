@@ -20,10 +20,27 @@ load_makepkg_config
 
 passfiles="$@"
 
-for name in ${passfiles[@]}; do
-    if pkgfile=$(find_cached_pkgfile "$name");then
+sign_pkg(){
+    local file_to_sign="$1"
+
+    if [ ! -e "$file_to_sign" ]; then
+        error "%s does not exist!" "$file_to_sign"
+        exit 1
+    fi
+
+    if [[ -n "${BUILDBOT_GPGP}" ]]; then
+        msg2 "Signing [%s]" "${file_to_sign##*/}"
+        gpg --batch --passphrase "${BUILDBOT_GPGP}" --detach-sign "$file_to_sign"
+    else
+        msg2 "Signing [%s] with key %s" "${file_to_sign##*/}" "${GPGKEY}..."
+        gpg --detach-sign --use-agent -u "${GPGKEY}" "$file_to_sign"
+    fi
+}
+
+for pkg in ${passfiles[@]}; do
+    if pkgfile=$(find_cached_pkgfile "$pkg");then
         msg "Found: %s" "${pkgfile}"
-        [[ -e ${pkgfile}.sig ]] && rm ${pkgfile}.sig
-        [[ -e ${pkgfile} ]] && signfile ${pkgfile}
+        [[ -e "${pkgfile}".sig ]] && rm "${pkgfile}".sig
+        sign_pkg "${pkgfile}"
     fi
 done

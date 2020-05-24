@@ -14,7 +14,6 @@ BASE_CONF = \
 	data/conf/artools-base.conf
 
 BASE_BIN = \
-	bin/base/signfile \
 	bin/base/chroot-run \
 	bin/base/mkchroot \
 	bin/base/basestrap \
