@@ -33,7 +33,7 @@ subrepo_init() {
 subrepo_push(){
     local pkg="$1"
     msg2 "Subrepo push (%s)" "$pkg"
-    git subrepo push "$pkg"
+    git subrepo push "$pkg" || die "%s push failed" "$pkg"
 }
 
 subrepo_clean(){

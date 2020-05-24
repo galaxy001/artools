@@ -16,35 +16,11 @@
 
 prepare_artools
 
-find_cached_pkgfile() {
-    local searchdirs=("$PKGDEST" "$PWD") results=()
-    local pkg="$1"
-    local search=${pkg%.*}
-    for dir in "${searchdirs[@]}"; do
-        [[ -d $dir ]] || continue
-        results+=$(find "$dir" -type f -name "$search.*" ! -path '*.sig' ! -path '*.log')
-    done
-    case ${#results[*]} in
-        0)
-            return 1
-        ;;
-        1)
-            printf '%s\n' "${results[0]}"
-            return 0
-        ;;
-        *)
-            error 'Multiple packages found:'
-            printf '\t%s\n' "${results[@]}" >&2
-            return 1
-        ;;
-    esac
-}
-
 get_pkgbasename(){
     local pkg="$1"
     local pkgbasename name ver rel arch
 
-    pkgbasename=${pkg%.pkg.tar.?z}
+    pkgbasename=${pkg%.pkg.tar*}
     arch=${pkgbasename##*-}
     pkgbasename=${pkgbasename%-"$arch"}
 
@@ -57,86 +33,42 @@ get_pkgbasename(){
     echo $name
 }
 
-update_repo2(){
-    local repo="$1"
-    local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
-
-    for name in ${passfiles[@]}; do
-        if pkgfile=$(find_cached_pkgfile "$name");then
-            info "Found: %s" "$name"
-            if ${add_pkg};then
-                local action='add'
-                packages+=("$name")
-                if ${sign_pkg};then
-                    [[ -e ${pkgfile}.sig ]] && rm ${pkgfile}.sig
-                    signfile ${pkgfile}
-                fi
-                ln -sf ${pkgfile}{,.sig} $repo_path/
-            elif ${del_pkg};then
-                local action='remove'
-                packages+=("$(get_pkgbasename "$name")")
-                [[ -e $repo_path/$name ]] && rm $repo_path/$name
-                [[ -e $repo_path/$name.sig ]] && rm $repo_path/$name.sig
-            fi
-        fi
-    done
-    cd $repo_path
-    if [[ -n $action ]]; then
-        repo-$action -R $repo.${PKGDBEXT} ${packages[@]}
-        ${linksdb} && links-$action $repo.${LINKSDBEXT} ${packages[@]}
+add(){
+    packages+=("$pkg")
+    if [[ -e "${pkgfile}" ]]; then
+        action='add'
+        ln -sf "${pkgfile}"{,.sig} "$repo_path"/
     fi
-
-    return 0
 }
 
-update_repo(){
-    local repo="$1" pkgfile ver
-    local repo_path=${REPOS_ROOT}/$repo/os/${ARCH} packages=()
-
-    . PKGBUILD
-
-    local pkgsearch=(${pkgname[@]})
-    if check_option "debug" "y"; then
-        pkgbase=${pkgbase:-${pkgname[@]}}
-        pkgsearch+=("${pkgbase}-debug")
+remove(){
+    packages+=("$(get_pkgbasename "$pkg")")
+    if [[ -e "$repo_path"/"$pkg" ]]; then
+        action='remove'
+        rm "$repo_path"/"$pkg"
     fi
+    [[ -e "$repo_path"/"$pkg".sig ]] && rm "$repo_path"/"$pkg".sig
+}
 
-    for name in ${pkgsearch[@]}; do
-        pkgarch=$(get_pkg_arch "$name")
-        ver=$(get_full_version)
-        if pkgfile=$(find_cached_package "$name" "$ver" "$pkgarch");then
-            local pkg=${pkgfile##*/}
-            info "Found: %s" "$pkg"
-            if ${add_pkg};then
-                local action='add'
-                packages+=("$pkg")
-                if ${sign_pkg};then
-                    [[ -e ${pkgfile}.sig ]] && rm ${pkgfile}.sig
-                    signfile ${pkgfile}
-                fi
-                ln -sf ${pkgfile}{,.sig} $repo_path/
-            elif ${del_pkg};then
-                local action='remove'
-                packages+=("$name")
-                [[ -e $repo_path/$pkg ]] && rm $repo_path/$pkg
-                [[ -e $repo_path/$pkg.sig ]] && rm $repo_path/$pkg.sig
-            fi
+repo_action(){
+    local packages=() action= func="$1"
+    for pkg in ${passfiles[@]}; do
+        if pkgfile=$(find_cached_pkgfile "$pkg");then
+            msg "Found: %s" "${pkgfile}"
+            "$func"
         fi
     done
     cd $repo_path
-    if [[ -n $action ]]; then
-        repo-$action -R $repo.${PKGDBEXT} ${packages[@]}
-        ${linksdb} && links-$action $repo.${LINKSDBEXT} ${packages[@]}
+    if [[ -n "$action" ]]; then
+        repo-"$action" -R "${dest_repo}"."${PKGDBEXT}" "${packages[@]}"
+        ${linksdb} && links-"$action" "${dest_repo}"."${LINKSDBEXT}" "${packages[@]}"
     fi
-
-    return 0
 }
 
 load_makepkg_config
 
 add_pkg=false
-del_pkg=false
-sign_pkg=false
+rm_pkg=false
 linksdb=false
 
 cmd=${0##*/}
@@ -144,24 +76,24 @@ dest_repo=${cmd#*-}
 
 usage() {
     echo "Usage: ${cmd} [options]"
+    echo '    -d <dest>          Destination repository'
     echo '    -a                 Add package(s) to repository'
     echo '    -r                 Remove package(s) from repository'
     echo '    -l                 Use links db'
-    echo '    -s                 Sign package(s)'
     echo '    -h                 This help'
     echo ''
     echo ''
     exit $1
 }
 
-opts='arlsh'
+opts='arlhd:'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        a) add_pkg=true; del_pkg=false ;;
-        r) del_pkg=true; add_pkg=false ;;
+        d) dest_repo="$OPTARG" ;;
+        a) add_pkg=true; rm_pkg=false ;;
+        r) rm_pkg=true; add_pkg=false ;;
         l) linksdb=true ;;
-        s) sign_pkg=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -173,8 +105,13 @@ passfiles="$@"
 
 prepare_dir "${REPOS_ROOT}"
 
+repo_path=${REPOS_ROOT}/${dest_repo}/os/${ARCH}
+
 if [[ -n ${passfiles[@]} ]]; then
-    update_repo2 "${dest_repo}"
-else
-    update_repo "${dest_repo}"
+    if ${add_pkg}; then
+        repo_action add
+    fi
+    if ${rm_pkg}; then
+        repo_action remove
+    fi
 fi

@@ -30,6 +30,7 @@ base_devel=('base-devel')
 usage() {
     echo "Usage: ${0##*/} [options] -- [mkchrootpkg_args]"
     echo "    -r <dir>           Create chroots in this directory"
+    echo "    -d <dir>           Destination repo chroot"
     echo '    -c                 Recreate the chroot before building'
     echo '    -m                 Major rebuild'
     echo '    -N                 Disable check() function'
@@ -43,11 +44,12 @@ usage() {
 
 orig_argv=("$0" "$@")
 
-opts='hcCNmr:'
+opts='hcCNmr:d:'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         r) CHROOTS_PKG="$OPTARG" ;;
+        d) repo="$OPTARG" ;;
         c) create_first=true ;;
         m) rebuild=true ;;
         C) is_checkpkg=true; mkchrootpkg_args+=(-C) ;;

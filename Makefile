@@ -1,4 +1,4 @@
-VERSION=0.17
+VERSION=0.18
 
 CHROOT_VERSION=0.10
 
@@ -45,7 +45,8 @@ PKG_BIN = \
 	bin/pkg/checkpkg \
 	bin/pkg/finddeps \
 	bin/pkg/find-libdeps \
-	bin/pkg/batchpkg
+	bin/pkg/batchpkg \
+	bin/pkg/signpkg
 
 LN_COMMITPKG = \
 	extrapkg \

@@ -46,52 +46,14 @@ find_pkg(){
     echo $result
 }
 
-pkgver_equal() {
-    if [[ $1 = *-* && $2 = *-* ]]; then
-        # if both versions have a pkgrel, then they must be an exact match
-        [[ $1 = "$2" ]]
-    else
-        # otherwise, trim any pkgrel and compare the bare version.
-        [[ ${1%%-*} = "${2%%-*}" ]]
-    fi
-}
-
-find_cached_package() {
+find_cached_pkgfile() {
     local searchdirs=("$PKGDEST" "$PWD") results=()
-    local targetname=$1 targetver=$2 targetarch=$3
-    local dir pkg pkgbasename name ver rel arch r results
-
+    local pkg="$1"
     for dir in "${searchdirs[@]}"; do
         [[ -d $dir ]] || continue
-
-        for pkg in "$dir"/*.pkg.tar?(.!(sig|*.*)); do
-            [[ -f $pkg ]] || continue
-
-            # avoid adding duplicates of the same inode
-            for r in "${results[@]}"; do
-                [[ $r -ef $pkg ]] && continue 2
-            done
-
-            # split apart package filename into parts
-            pkgbasename=${pkg##*/}
-            pkgbasename=${pkgbasename%.pkg.tar*}
-
-            arch=${pkgbasename##*-}
-            pkgbasename=${pkgbasename%-"$arch"}
-
-            rel=${pkgbasename##*-}
-            pkgbasename=${pkgbasename%-"$rel"}
-
-            ver=${pkgbasename##*-}
-            name=${pkgbasename%-"$ver"}
-
-            if [[ $targetname = "$name" && $targetarch = "$arch" ]] &&
-                pkgver_equal "$targetver" "$ver-$rel"; then
-                results+=("$pkg")
-            fi
-        done
+        #results+=$(find "$dir" -type f -name "$pkg" ! -path '*.sig' ! -path '*.log')
+        [[ -e $dir/$pkg ]] && results+=($dir/$pkg)
     done
-
     case ${#results[*]} in
         0)
             return 1
