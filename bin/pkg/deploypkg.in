@@ -34,29 +34,28 @@ get_pkgbasename(){
 }
 
 add(){
-    packages+=("$pkg")
-    if [[ -e "${pkgfile}" ]]; then
-        action='add'
-        ln -sf "${pkgfile}"{,.sig} "$repo_path"/
-    fi
+    packages+=("$pkg.$ext")
+    action='add'
+    ln -sf "${pkgfile}"{,.sig} "$repo_path"/
 }
 
 remove(){
-    packages+=("$(get_pkgbasename "$pkg")")
-    if [[ -e "$repo_path"/"$pkg" ]]; then
-        action='remove'
-        rm "$repo_path"/"$pkg"
-    fi
-    [[ -e "$repo_path"/"$pkg".sig ]] && rm "$repo_path"/"$pkg".sig
+    local to_remove=$(get_pkgbasename "$pkg.$ext")
+    packages+=("$to_remove")
+    action='remove'
+    rm "$repo_path"/"$to_remove"*pkg.tar*
 }
 
 repo_action(){
     local packages=() action= func="$1"
-    for pkg in ${passfiles[@]}; do
-        if pkgfile=$(find_cached_pkgfile "$pkg");then
-            msg "Found: %s" "${pkgfile}"
-            "$func"
-        fi
+    for pkgname in ${passfiles[@]}; do
+        pkg=${pkgname%.*}
+        for ext in zst xz;do
+            if pkgfile=$(find_cached_pkgfile "$pkg.$ext");then
+                msg "Found: %s" "${pkgfile}"
+                "$func"
+            fi
+        done
     done
     cd $repo_path
     if [[ -n "$action" ]]; then
