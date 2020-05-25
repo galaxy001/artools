@@ -113,9 +113,6 @@ show_deps(){
 subrepo_new(){
     cd ${TREE_DIR_ARTIX}/${GROUP}
 
-    msg2 "team: %s" "${TEAM}"
-    msg2 "group: %s" "${GROUP}"
-
     local org=$(get_pkg_org "${PACKAGE}")
 
     create_repo "${PACKAGE}" "$org"
@@ -146,15 +143,14 @@ from_arch(){
     if [[ -f "$artixpath"/.gitrepo ]]; then
         artixpath=$artixpath/trunk
 
-        if [[ -f $artixpath/PKGBUILD ]];then
-
-            . $artixpath/PKGBUILD 2>/dev/null
-            local artixver=$(get_full_version)
-
-            msg2 "Artix Version: %s" "$artixver"
-
+        if [[ -d $artixpath ]];then
             sync_pkg "$archpath" "$artixpath"
             patch_pkg "$artixpath"
+            if [[ -f $artixpath/PKGBUILD ]];then
+                . $artixpath/PKGBUILD 2>/dev/null
+                local artixver=$(get_full_version)
+                msg2 "Artix Version: %s" "$artixver"
+            fi
         fi
     else
         die "Package '%s' does not exist!" "${PACKAGE}"
