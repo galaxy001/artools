@@ -85,7 +85,7 @@ pull_tree_artix(){
 sync_pkg(){
     local rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
     local src="$1" dest="$2"
-
+    msg "Sync from Arch [%s] to Artix [%s]" "${src##*archlinux/}" "${dest##*artixlinux/}"
     rsync "${rsync_args[@]}" $src/ $dest/
 }
 
@@ -111,83 +111,22 @@ show_deps(){
 }
 
 subrepo_new(){
-    local group="${1:-$GROUP}" team="${2:-$TEAM}"
-    local dest=${TREE_DIR_ARTIX}/$group/${PACKAGE}/trunk
+    cd ${TREE_DIR_ARTIX}/${GROUP}
 
-    cd ${TREE_DIR_ARTIX}/$group
-
-    msg2 "team: %s" "$team"
-    msg2 "group: %s" "$group"
+    msg2 "team: %s" "${TEAM}"
+    msg2 "group: %s" "${GROUP}"
 
     local org=$(get_pkg_org "${PACKAGE}")
 
     create_repo "${PACKAGE}" "$org"
 
-    add_repo_to_team "${PACKAGE}" "$org" "$team"
+    add_repo_to_team "${PACKAGE}" "$org" "${TEAM}"
 
     subrepo_clone "${PACKAGE}" "$org"
 
-    prepare_dir "$dest"
+    prepare_dir "${TREE_DIR_ARTIX}/${GROUP}/${PACKAGE}/trunk"
 
     commit_jenkins_files "${PACKAGE}"
-}
-
-get_group_packages(){
-    local pkglist="${SYSCONFDIR}/pkglist.d/$1.list"
-
-    local _space="s| ||g" _clean=':a;N;$!ba;s/\n/ /g' _com_rm="s|#.*||g"
-
-    local pkgs=($(sed "$_com_rm" "$pkglist" | sed "$_space" | sed "$_clean"))
-
-    local cases=
-    for p in ${pkgs[@]};do
-        cases=${cases:-}${cases:+|}${p}
-    done
-    echo $cases
-}
-
-get_group(){
-    local pkg="$1" fallback="${2##*/}" tree=
-    eval "case $pkg in
-        $(get_group_packages kernel)) tree=packages-kernel ;;
-        $(get_group_packages net)) tree=packages-net ;;
-        $(get_group_packages gfx)) tree=packages-gfx ;;
-        $(get_group_packages python)) tree=packages-python ;;
-        $(get_group_packages perl)) tree=packages-perl ;;
-        $(get_group_packages ruby)) tree=packages-ruby ;;
-        $(get_group_packages openrc)) tree=packages-openrc ;;
-        $(get_group_packages runit)) tree=packages-runit ;;
-        $(get_group_packages s6)) tree=packages-s6 ;;
-        $(get_group_packages media)) tree=packages-media ;;
-        $(get_group_packages xorg)) tree=packages-xorg ;;
-        $(get_group_packages qt5)) tree=packages-qt5 ;;
-        $(get_group_packages gtk)) tree=packages-gtk ;;
-        $(get_group_packages java)) tree=packages-java ;;
-        $(get_group_packages haskell)) tree=packages-haskell ;;
-        $(get_group_packages devel)) tree=packages-devel ;;
-        $(get_group_packages lxqt)) tree=packages-lxqt ;;
-        $(get_group_packages cinnamon)) tree=packages-cinnamon ;;
-        $(get_group_packages kde)) tree=packages-kde ;;
-        $(get_group_packages gnome)) tree=packages-gnome ;;
-        $(get_group_packages mate)) tree=packages-mate ;;
-        $(get_group_packages xfce)) tree=packages-xfce ;;
-        $(get_group_packages wm)) tree=packages-wm ;;
-        *) tree=$fallback ;;
-    esac"
-    echo $tree
-}
-
-get_team(){
-    local repo="$1" team=
-    case $repo in
-        *testing*|*staging*)
-            set_arch_repos false false false
-            team=$(find_repo "$srcpath")
-            team=${team%-*}
-        ;;
-        *) team=${repo%-*} ;;
-    esac
-    echo $team
 }
 
 from_arch(){
@@ -197,33 +136,29 @@ from_arch(){
     [[ -z $srcpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
 
     local repo=$(find_repo "$srcpath")
-
-    archpath=$srcpath/repos/$repo
-    local artixpath=$(find_pkg ${TREE_DIR_ARTIX} ${PACKAGE})
-    local tree=${srcpath%/*}
-    local tree=${tree##*/}
-    local group=$(get_group "${PACKAGE}" "$tree")
-
     msg "repo: %s" "$repo"
-    artixpath=$artixpath/trunk
+
+    local archpath=$srcpath/repos/$repo
+    local artixpath=$(find_pkg ${TREE_DIR_ARTIX} ${PACKAGE})
 
     show_deps "$archpath"
 
-    if [[ -f $artixpath/PKGBUILD ]];then
+    if [[ -f "$artixpath"/.gitrepo ]]; then
+        artixpath=$artixpath/trunk
 
-        . $artixpath/PKGBUILD 2>/dev/null
-        local artixver=$(get_full_version)
+        if [[ -f $artixpath/PKGBUILD ]];then
 
-        msg2 "Artix Version: %s" "$artixver"
+            . $artixpath/PKGBUILD 2>/dev/null
+            local artixver=$(get_full_version)
+
+            msg2 "Artix Version: %s" "$artixver"
+
+            sync_pkg "$archpath" "$artixpath"
+            patch_pkg "$artixpath"
+        fi
     else
-        artixpath=${TREE_DIR_ARTIX}/$group/${PACKAGE}/trunk
-        subrepo_new "${group}" "$(get_team $repo)"
+        die "Package '%s' does not exist!" "${PACKAGE}"
     fi
-
-    msg "Sync (%s) from Arch [%s] to Artix [%s]" "${PACKAGE}" "${archpath##*archlinux/}" "${artixpath##*artixlinux/}"
-
-    sync_pkg "$archpath" "$artixpath"
-    patch_pkg "$artixpath"
 }
 
 view_build(){
@@ -289,7 +224,7 @@ usage() {
     echo "    -a            Don't clone or pull arch repos"
     echo "    -b            Don't clone or pull artix repos"
     echo '    -i            Import a package from arch repos'
-    echo '    -n            Make new remote subrepo and clone it'
+    echo '    -n            New remote subrepo and clone it'
     echo '    -v            Check if a package is in the artix tree(s)'
     echo '    -c            View package depends'
     echo '    -x            Exclude testing (only with -i)'
