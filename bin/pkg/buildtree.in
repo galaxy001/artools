@@ -136,21 +136,16 @@ from_arch(){
     msg "repo: %s" "$repo"
 
     local archpath=$srcpath/repos/$repo
-    local artixpath=$(find_pkg ${TREE_DIR_ARTIX} ${PACKAGE})
+    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
 
     show_deps "$archpath"
 
     if [[ -f "$artixpath"/.gitrepo ]]; then
-        artixpath=$artixpath/trunk
+        artixpath="$artixpath"/trunk
 
-        if [[ -d $artixpath ]];then
+        if [[ -d "$artixpath" ]];then
             sync_pkg "$archpath" "$artixpath"
             patch_pkg "$artixpath"
-            if [[ -f $artixpath/PKGBUILD ]];then
-                . $artixpath/PKGBUILD 2>/dev/null
-                local artixver=$(get_full_version)
-                msg2 "Artix Version: %s" "$artixver"
-            fi
         fi
     else
         die "Package '%s' does not exist!" "${PACKAGE}"
@@ -169,7 +164,7 @@ view_build(){
 check_tree(){
     local archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
     [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
-    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" ${PACKAGE})
+    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
     local group=${artixpath%/*}
     msg "group: %s" "${group##*/}"
 
