@@ -27,7 +27,10 @@ get_path(){
 
 prepare_commit(){
     local dest="$1" to_rm="${2:-none}"
-    [[ -d repos/$to_rm ]] && git rm -r repos/$to_rm
+    if [[ -d repos/$to_rm ]]; then
+        git rm -r repos/$to_rm
+        git commit -m "change of package arch"
+    fi
     [[ -d repos/$dest ]] && git rm -r repos/$dest
     [[ ! -d repos ]] && mkdir repos
     [[ ! -d repos/$dest ]] && mkdir repos/$dest
