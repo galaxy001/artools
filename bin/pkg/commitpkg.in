@@ -102,6 +102,15 @@ commit_pkg(){
     fi
 }
 
+get_rm_arch(){
+    local rm_arch='none'
+    case "$CARCH" in
+        'any') rm_arch="${REPO_DEST}-x86_64" ;;
+        'x86_64') rm_arch="${REPO_DEST}-any" ;;
+    esac
+    echo $rm_arch
+}
+
 repo_commit_pkg(){
     local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
     if [[ -n ${artixpath} ]];then
@@ -123,13 +132,9 @@ repo_commit_pkg(){
 
         if [[ ${REPO_SRC} == 'trunk' ]];then
             local action='add'
-            local dest="${REPO_DEST}-$CARCH" rm_arch='none'
-            case "$CARCH" in
-                'any') rm_arch="${REPO_DEST}-x86_64" ;;
-                'x86_64') rm_arch="${REPO_DEST}-any" ;;
-            esac
+            local dest="${REPO_DEST}-$CARCH"
 
-            prepare_commit "$dest" "$rm_arch"
+            prepare_commit "$dest" "$(get_rm_arch)"
 
             cp trunk/* repos/$dest/
         else
@@ -137,7 +142,7 @@ repo_commit_pkg(){
             local src="${REPO_SRC}-$CARCH" dest="${REPO_DEST}-$CARCH"
 
             [[ ! -f repos/$src/PKGBUILD ]] && die "%s does not exist!" "repos/$src/PKGBUILD"
-            prepare_commit "$dest"
+            prepare_commit "$dest" "$(get_rm_arch)"
 
             cp repos/$src/* repos/$dest/
             git rm -r repos/$src
