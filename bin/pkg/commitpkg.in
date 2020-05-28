@@ -26,7 +26,8 @@ get_path(){
 }
 
 prepare_commit(){
-    local dest="$1"
+    local dest="$1" to_rm="${2:-none}"
+    [[ -d repos/$to_rm ]] && git rm -r repos/$to_rm
     [[ -d repos/$dest ]] && git rm -r repos/$dest
     [[ ! -d repos ]] && mkdir repos
     [[ ! -d repos/$dest ]] && mkdir repos/$dest
@@ -122,9 +123,13 @@ repo_commit_pkg(){
 
         if [[ ${REPO_SRC} == 'trunk' ]];then
             local action='add'
-            local dest="${REPO_DEST}-$CARCH"
+            local dest="${REPO_DEST}-$CARCH" rm_arch='none'
+            case "$CARCH" in
+                'any') rm_arch="${REPO_DEST}-x86_64" ;;
+                'x86_64') rm_arch="${REPO_DEST}-any" ;;
+            esac
 
-            prepare_commit "$dest"
+            prepare_commit "$dest" "$rm_arch"
 
             cp trunk/* repos/$dest/
         else

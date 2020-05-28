@@ -29,7 +29,7 @@ sign_pkg(){
     fi
 
     if [[ -n "${BUILDBOT_GPGP}" ]]; then
-        msg2 "Signing [%s]" "${file_to_sign##*/}"
+        msg "Signing [%s]" "${file_to_sign##*/}"
         gpg --batch --passphrase "${BUILDBOT_GPGP}" --detach-sign "$file_to_sign"
     else
         msg2 "Signing [%s] with key %s" "${file_to_sign##*/}" "${GPGKEY}..."
@@ -39,7 +39,7 @@ sign_pkg(){
 
 for pkg in ${passfiles[@]}; do
     if pkgfile=$(find_cached_pkgfile "$pkg");then
-        msg "Found: %s" "${pkgfile}"
+        msg2 "Found: %s" "${pkgfile}"
         [[ -e "${pkgfile}".sig ]] && rm "${pkgfile}".sig
         sign_pkg "${pkgfile}"
     fi
