@@ -116,12 +116,6 @@ ISO_LIBS = \
 
 ISO_UTIL = lib/util-iso.sh
 
-DOCKER_DATA = \
-	data/docker/pacman-docker.conf
-
-DOCKER_ALPM = \
-	data/docker/package-cleanup.hook
-
 DIRMODE = -dm0755
 FILEMODE = -m0644
 MODE =  -m0755
@@ -158,13 +152,6 @@ $(BIN): %: %.in Makefile
 
 clean:
 	$(RM) $(BIN) $(UTIL)
-
-install_docker:
-	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)
-	install $(FILEMODE) $(DOCKER_DATA) $(DESTDIR)$(DATADIR)/$(TOOLS)
-
-	install $(DIRMODE) $(DESTDIR)$(DATADIR)/libalpm/hooks
-	install $(FILEMODE) $(DOCKER_ALPM) $(DESTDIR)$(DATADIR)/libalpm/hooks
 
 install_base:
 	install $(DIRMODE) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
