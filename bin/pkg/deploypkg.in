@@ -16,46 +16,28 @@
 
 prepare_artools
 
-get_pkgbasename(){
-    local pkg="$1"
-    local pkgbasename name ver rel arch
-
-    pkgbasename=${pkg%.pkg.tar*}
-    arch=${pkgbasename##*-}
-    pkgbasename=${pkgbasename%-"$arch"}
-
-    rel=${pkgbasename##*-}
-    pkgbasename=${pkgbasename%-"$rel"}
-
-    ver=${pkgbasename##*-}
-
-    name=${pkgbasename%-"$ver"}
-    echo $name
-}
-
 add(){
-    packages+=("$pkg.$ext")
-    action='add'
-    ln -sf "${pkgfile}"{,.sig} "$repo_path"/
+    pkg=${pkgname%.*}
+    for ext in zst xz;do
+        if pkgfile=$(find_cached_pkgfile "$pkg.$ext");then
+            msg "Found: %s" "${pkgfile}"
+            packages+=("$pkg.$ext")
+            action='add'
+            ln -sf "${pkgfile}"{,.sig} "$repo_path"/
+        fi
+    done
 }
 
 remove(){
-    local to_remove=$(get_pkgbasename "$pkg.$ext")
-    packages+=("$to_remove")
+    packages+=("$pkgname")
     action='remove'
-    rm "$repo_path"/"$to_remove"*pkg.tar*
+    rm "$repo_path"/"$pkgname"*pkg.tar*
 }
 
 repo_action(){
     local packages=() action= func="$1"
     for pkgname in ${passfiles[@]}; do
-        pkg=${pkgname%.*}
-        for ext in zst xz;do
-            if pkgfile=$(find_cached_pkgfile "$pkg.$ext");then
-                msg "Found: %s" "${pkgfile}"
-                "$func"
-            fi
-        done
+        "$func"
     done
     cd $repo_path
     if [[ -n "$action" ]]; then

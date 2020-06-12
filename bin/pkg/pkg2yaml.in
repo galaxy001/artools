@@ -14,7 +14,7 @@
 
 . @libdir@/artools/util-base.sh
 
-write_attr(){
+srcyaml_write_attr(){
     local ident1="$1" ident2="$2" ident3="$3"
     local attrname=$4 attrvalues=("${@:5}")
 
@@ -24,47 +24,41 @@ write_attr(){
     attrvalues=("${attrvalues[@]%[[:space:]]}")
 
     case $attrname in
-        makedepends|checkdepends|depends|provides|arch)
+        pkgver|pkgrel|epoch|url|install|changelog)
+            for v in ${attrvalues[@]};do
+                Yaml+=$(write_yaml_map $ident3 "$attrname" "$v")
+            done
+        ;;
+        *)
             Yaml+=$(write_yaml_map $ident1 "$attrname")
             for v in ${attrvalues[@]};do
                 Yaml+=$(write_yaml_seq $ident2 "$v")
             done
         ;;
-        *)
-            for v in ${attrvalues[@]};do
-                Yaml+=$(write_yaml_map $ident3 "$attrname" "$v")
-            done
-        ;;
     esac
 }
 
-extract_info() {
+pkgbuild_extract_to_yaml() {
     local pkgname=$1 attrname=$2 isarray=$3 outvalue=
 
     if get_pkgbuild_attribute "$pkgname" "$attrname" "$isarray" 'outvalue'; then
-        [[ -z $pkgname ]] && write_attr 2 4 2 "$attrname" "${outvalue[@]}"
-        [[ -n $pkgname ]] && write_attr 4 6 2 "$attrname" "${outvalue[@]}"
+        [[ -z $pkgname ]] && srcyaml_write_attr 2 4 2 "$attrname" "${outvalue[@]}"
+        [[ -n $pkgname ]] && srcyaml_write_attr 4 6 2 "$attrname" "${outvalue[@]}"
     fi
 }
 
-write_details() {
+srcyaml_write_section_details() {
     local attr package_arch a
-    local multivalued_arch_attrs=(provides depends makedepends checkdepends)
-
-    local singlevalued=()
-    local multivalued=(arch provides depends checkdepends)
-
-    if [[ -z "$1" ]];then
-        singlevalued=(pkgver pkgrel epoch)
-        multivalued=(arch provides depends makedepends checkdepends)
-    fi
+    local multivalued_arch_attrs=(source provides conflicts depends replaces
+	                              optdepends makedepends checkdepends)
+# 	                              "${known_hash_algos[@]/%/sums}")
 
     for attr in "${singlevalued[@]}"; do
-        extract_info "$1" "$attr" 0
+        pkgbuild_extract_to_yaml "$1" "$attr" 0
     done
 
     for attr in "${multivalued[@]}"; do
-        extract_info "$1" "$attr" 1
+        pkgbuild_extract_to_yaml "$1" "$attr" 1
     done
 
     get_pkgbuild_attribute "$1" 'arch' 1 'package_arch'
@@ -73,47 +67,55 @@ write_details() {
         [[ $a = any ]] && continue
 
         for attr in "${multivalued_arch_attrs[@]}"; do
-            extract_info "$1" "${attr}_$a" 1
+            pkgbuild_extract_to_yaml "$1" "${attr}_$a" 1
         done
     done
 }
 
-write_pkg_yaml(){
-
-    Yaml=$(write_yaml_header)
+yaml_write_global() {
+    local singlevalued=(pkgver pkgrel epoch url install changelog) #pkgdesc
+    local multivalued=(arch groups license checkdepends makedepends
+                    depends provides conflicts replaces)
+                    #noextract options backup optdepends
+                    #source validpgpkeys "${known_hash_algos[@]/%/sums}")
 
     Yaml+=$(write_empty_line)
-
-    local full=$(get_full_version)
-
-    local ver=${full:-0}
-
-    pkgbase=${pkgbase:-${pkgname[0]}}
-
     Yaml+=$(write_yaml_map 0 "pkgbase")
-    Yaml+=$(write_yaml_map 2 "pkgname" "${pkgbase}")
-    ${details} && write_details ''
-    Yaml+=$(write_yaml_map 2 "fullver" "${ver}")
-
+    Yaml+=$(write_yaml_map 2 "name" "${pkgbase:-$pkgname}")
+    ${details} && srcyaml_write_section_details ''
     Yaml+=$(write_empty_line)
+}
 
-    Yaml+=$(write_yaml_map 0 "package")
+yaml_write_package() {
+    local singlevalued=(url install changelog) #pkgdesc
+    local multivalued=(arch groups license checkdepends depends
+                    provides conflicts replaces) #options backup optdepends)
+
+    Yaml+=$(write_yaml_map 0 "packages")
     for pkg in "${pkgname[@]}"; do
         Yaml+=$(write_yaml_seq_map 2 "pkgname" "$pkg")
-        ${details} && write_details "$pkg"
+        ${details} && srcyaml_write_section_details "$pkg"
     done
-
     Yaml+=$(write_empty_line)
+}
 
+yaml_write_fileinfo(){
+    local version=$(get_full_version)
+    Yaml+=$(write_yaml_map 0 "version" "${version:-0}")
+    Yaml+=$(write_empty_line)
     local pkgfile=$(print_all_package_names)
-
-    Yaml+=$(write_yaml_map 0 "pkgfile")
+    Yaml+=$(write_yaml_map 0 "files")
     for f in ${pkgfile[@]};do
         Yaml+=$(write_yaml_seq 2 "${f##*/}")
     done
-
     Yaml+=$(write_empty_line)
+}
 
+write_srcyaml(){
+    Yaml=$(write_yaml_header)
+    yaml_write_global
+    yaml_write_package
+    yaml_write_fileinfo
     printf '%s' "${Yaml}"
 }
 
@@ -139,11 +141,13 @@ done
 
 shift $(( $OPTIND - 1 ))
 
-[[ -f "$1"/PKGBUILD ]] || die "%s/PKGBUILD does not exist!" "$1"
-PACKAGE="$1"/PKGBUILD; shift
+srcpath=$(readlink -f "$1")
+
+[[ -f "$srcpath"/PKGBUILD ]] || die "%s/PKGBUILD does not exist!" "$srcpath"
+PACKAGE="$srcpath"/PKGBUILD; shift
 
 . "$PACKAGE"
 
 load_makepkg_config
 
-write_pkg_yaml
+write_srcyaml
