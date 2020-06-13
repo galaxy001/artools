@@ -32,10 +32,11 @@ set_arch_repos(){
 }
 
 find_repo(){
-    local pkg="$1" repo=
+    local pkg="$1" repo= pkgarch="${2:-${CARCH}}"
     for r in ${ARCH_REPOS[@]};do
-        [[ -f $pkg/repos/$r-${ARCH}/PKGBUILD ]] && repo=$r-${ARCH}
-        [[ -f $pkg/repos/$r-any/PKGBUILD ]] && repo=$r-any
+        [[ -f $pkg/repos/$r-$pkgarch/PKGBUILD ]] && repo=repos/"$r-$pkgarch"
+        [[ -f $pkg/repos/$r-any/PKGBUILD ]] && repo=repos/"$r"-any
+        [[ -f $pkg/$pkgarch/$r/PKGBUILD ]] && repo="$pkgarch/$r"
     done
     echo $repo
 }

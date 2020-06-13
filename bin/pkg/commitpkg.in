@@ -16,31 +16,28 @@
 
 prepare_artools
 
-get_path(){
-    local repo="$1" pkg=trunk/PKGBUILD
-    if [[ $repo != trunk ]]; then
-        [[ -f repos/$repo-${ARCH}/PKGBUILD ]] && pkg=repos/$repo-${ARCH}/PKGBUILD
-        [[ -f repos/$repo-any/PKGBUILD ]] && pkg=repos/$repo-any/PKGBUILD
-    fi
-    echo $pkg
-}
-
 prepare_commit(){
-    local dest="$1" to_rm="${2:-none}"
-    if [[ -d repos/$to_rm ]]; then
-        git rm -r repos/$to_rm
-        git commit -m "change of package arch"
+    if $is_new_layout; then
+        if [[ -d repos ]]; then
+            git rm -r repos
+            git commit -m "change of repo layout"
+        fi
+
+        [[ -d "$CARCH/${REPO_DEST}" ]] && git rm -r "$CARCH/${REPO_DEST}"
+        [[ ! -d "$CARCH" ]] && mkdir "$CARCH"
+        [[ ! -d "$CARCH/${REPO_DEST}" ]] && mkdir "$CARCH/${REPO_DEST}"
+    else
+        [[ -d repos/"${REPO_DEST}-$CARCH" ]] && git rm -r repos/"${REPO_DEST}-$CARCH"
+        [[ ! -d repos ]] && mkdir repos
+        [[ ! -d repos/"${REPO_DEST}-$CARCH" ]] && mkdir repos/"${REPO_DEST}-$CARCH"
     fi
-    [[ -d repos/$dest ]] && git rm -r repos/$dest
-    [[ ! -d repos ]] && mkdir repos
-    [[ ! -d repos/$dest ]] && mkdir repos/$dest
 }
 
 check_team(){
-    if [[ ${REPO_SRC} == "core" && ${REPO_DEST} == "extra" ]] || \
-        [[ ${REPO_SRC} == "extra" && ${REPO_DEST} == "core" ]] || \
-        [[ ${REPO_SRC} == "extra" && ${REPO_DEST} == "community" ]] || \
-        [[ ${REPO_SRC} == "community" && ${REPO_DEST} == "extra" ]] ;then
+    if [[ "${REPO_SRC}" == "core" && "${REPO_DEST}" == "extra" ]] || \
+        [[ "${REPO_SRC}" == "extra" && "${REPO_DEST}" == "core" ]] || \
+        [[ "${REPO_SRC}" == "extra" && "${REPO_DEST}" == "community" ]] || \
+        [[ "${REPO_SRC}" == "community" && "${REPO_DEST}" == "extra" ]] ;then
 
         local org=$(get_pkg_org "${PACKAGE}")
         add_repo_to_team "${PACKAGE}" "$org" "${REPO_DEST}"
@@ -48,118 +45,89 @@ check_team(){
     fi
 }
 
-commit_pkg(){
-    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
+config() {
+    [[ "${REPO_SRC}" != 'trunk' ]] && pkgbuild="$CARCH/${REPO_SRC}"/PKGBUILD
 
-    if [[ -n ${artixpath} ]];then
-
-        local group=${artixpath%/*}
-
-        cd ${group}
-
-        local head=$(get_local_head)
-
-        cd ${artixpath}
-
-        local pkgbuild=$(get_path "${REPO_SRC}")
-
-        . $pkgbuild
-        [[ $arch == 'any' ]] && CARCH=any
-
-        local version=$(get_full_version)
-
-        local commit_msg=""
-
-        if ${remove};then
-            local action='remove'
-            if [[ "${REPO_SRC}" == 'trunk' ]];then
-                local pkg=${PACKAGE}
-                git rm -r trunk
-            else
-                local pkg="${PACKAGE}-$version"
-                git rm -r repos/"${REPO_SRC}-$CARCH"
-            fi
-            commit_msg="[${REPO_SRC}] '$pkg' ${action}"
-            msg "Action: %s" "$commit_msg"
-        else
-            local action='modify'
-            commit_msg="[${REPO_SRC}] '${PACKAGE}-$version' ${action}"
-            msg "Action: %s" "$commit_msg"
-            git add .
-        fi
-        git commit -m "$commit_msg"
-
-        cd ${group}
-
-        ${push} && pull_tree "${group##*/}" "$head"
-
-#         subrepo_pull "${PACKAGE}"
-        subrepo_push "${PACKAGE}"
-        subrepo_clean "${PACKAGE}"
-
-        ${push} && push_tree "${group##*/}"
-
-        git prune
-    else
-        error "Package '%s' does not exist!" "${PACKAGE}"
+    if [[ ! -f "$pkgbuild" ]]; then
+        [[ "$arch" == any ]] && CARCH=any
+        pkgbuild=repos/"${REPO_SRC}-${CARCH}"/PKGBUILD
+        is_new_layout=false
     fi
 }
 
-get_rm_arch(){
-    local rm_arch='none'
-    case "$CARCH" in
-        'any') rm_arch="${REPO_DEST}-x86_64" ;;
-        'x86_64') rm_arch="${REPO_DEST}-any" ;;
-    esac
-    echo $rm_arch
+commit_pkg() {
+    if ${remove};then
+        local action='remove'
+        if [[ "${REPO_SRC}" == 'trunk' ]];then
+            local pkg=${PACKAGE}
+            git rm -r trunk
+        else
+            local pkg="${PACKAGE}-$(get_full_version)"
+
+            local dest="$CARCH/${REPO_SRC}"
+            if ! $is_new_layout; then
+                dest=repos/"${REPO_SRC}-$CARCH"
+            fi
+
+            git rm -r "$dest"
+        fi
+        local commit_msg="[${REPO_SRC}] '$pkg' ${action}"
+        msg "Action: %s" "$commit_msg"
+    else
+        local action='modify'
+        local commit_msg="[${REPO_SRC}] '${PACKAGE}-$(get_full_version)' ${action}"
+        msg "Action: %s" "$commit_msg"
+        git add .
+    fi
+    git commit -m "$commit_msg"
 }
 
-repo_commit_pkg(){
+repo_commit_pkg() {
+    if [[ "${REPO_SRC}" == 'trunk' ]];then
+        local action='add'
+        prepare_commit
+        cp trunk/* "$CARCH/${REPO_DEST}"/
+    else
+        local action='move'
+        [[ ! -f $pkgbuild ]] && die "%s does not exist!" "$pkgbuild"
+        prepare_commit
+
+        local src="$CARCH/${REPO_SRC}" dest="$CARCH/${REPO_DEST}"
+        if ! $is_new_layout; then
+            src=repos/"${REPO_SRC}-$CARCH"
+            dest=repos/"${REPO_DEST}-$CARCH"
+        fi
+
+        cp "$src"/* "$dest"/
+        git rm -r "$src"
+    fi
+    local commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$(get_full_version)' ${action}"
+    msg "Action: %s" "$commit_msg"
+
+    git add .
+    git commit -m "$commit_msg"
+}
+
+run(){
     local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
     if [[ -n ${artixpath} ]];then
-
         local group=${artixpath%/*}
-
         cd ${group}
-
         local head=$(get_local_head)
 
         cd ${artixpath}
-
-        local pkgbuild=$(get_path "${REPO_SRC}")
-
+        config
         . $pkgbuild
-        [[ $arch == 'any' ]] && CARCH=any
 
-        local version=$(get_full_version)
-
-        if [[ ${REPO_SRC} == 'trunk' ]];then
-            local action='add'
-            local dest="${REPO_DEST}-$CARCH"
-
-            prepare_commit "$dest" "$(get_rm_arch)"
-
-            cp trunk/* repos/$dest/
+        if [[ "${cmd}" == 'commitpkg' ]];then
+            commit_pkg
         else
-            local action='move'
-            local src="${REPO_SRC}-$CARCH" dest="${REPO_DEST}-$CARCH"
-
-            [[ ! -f repos/$src/PKGBUILD ]] && die "%s does not exist!" "repos/$src/PKGBUILD"
-            prepare_commit "$dest" "$(get_rm_arch)"
-
-            cp repos/$src/* repos/$dest/
-            git rm -r repos/$src
+            repo_commit_pkg
         fi
-        local commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$version' ${action}"
-        msg "Action: %s" "$commit_msg"
-
-        git add .
-        git commit -m "$commit_msg"
 
         cd ${group}
 
         ${push} && pull_tree "${group##*/}" "$head"
-
 #         subrepo_pull "${PACKAGE}"
         subrepo_push "${PACKAGE}"
         subrepo_clean "${PACKAGE}"
@@ -168,22 +136,17 @@ repo_commit_pkg(){
 
         git prune
 
-        check_team
+        [[ "${cmd}" != 'commitpkg' ]] && check_team
     else
         error "Package '%s' does not exist!" "${PACKAGE}"
     fi
 }
 
 is_valid_repo(){
-    local src="$1" cases=
-    set_arch_repos true true true
-    for r in ${ARCH_REPOS[@]};do
-        cases=${cases:-}${cases:+|}${r}
-    done
-    eval "case $src in
-        ${cases}|trunk) return 0 ;;
+    case "${REPO_SRC}" in
+        core|extra|community|multilib|testing|community-testing|multilib-testing|staging|community-staging|multilib-staging|gnome-unstable|kde-unstable|trunk) return 0 ;;
         *) return 1 ;;
-    esac"
+    esac
 }
 
 load_makepkg_config
@@ -192,6 +155,9 @@ REPO_SRC='trunk'
 PACKAGE=''
 remove=false
 push=false
+
+is_new_layout=true
+pkgbuild=trunk/PKGBUILD
 
 cmd=${0##*/}
 REPO_DEST=${cmd%pkg}
@@ -225,12 +191,8 @@ done
 
 shift $(($OPTIND - 1))
 
-if $(is_valid_repo "${REPO_SRC}");then
-    if [[ "${cmd}" == 'commitpkg' ]];then
-        commit_pkg
-    else
-        repo_commit_pkg
-    fi
+if $(is_valid_repo);then
+    run
 else
-    error "source repository '%s' is not valid!" "${REPO_SRC}"
+    die "source repository '%s' is not valid!" "${REPO_SRC}"
 fi

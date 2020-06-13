@@ -135,7 +135,7 @@ from_arch(){
     local repo=$(find_repo "$srcpath")
     msg "repo: %s" "$repo"
 
-    local archpath=$srcpath/repos/$repo
+    local archpath=$srcpath/$repo
     local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
 
     show_deps "$archpath"
@@ -156,7 +156,7 @@ view_build(){
     local archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
     [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
     local repo=$(find_repo "${archpath}")
-    archpath=$archpath/repos/$repo
+    archpath=$archpath/$repo
     msg2 "repo: %s" "$repo"
     show_deps "$archpath"
 }

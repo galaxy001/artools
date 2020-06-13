@@ -26,16 +26,14 @@ get_import_path(){
 }
 
 compare_m(){
-    local artixver="$1" artixrepo="$2" archver="$3" archrepo="$4"
-
     local result=$(vercmp "$artixver" "$archver")
     if [[ $artixrepo == *testing* ]] || [[ $artixrepo == *staging* ]]; then
         if [[ "$archrepo" == "$artixrepo"  ]]; then
-            msg_row "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
+            msg_row "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
         else
-            msg_row_notify "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
+            msg_row_notify "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
             if [[ -n "$archrepo" ]]; then
-                printf "%s\n" "${archrepo%-*}:${artixrepo%-*}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_moves.list
+                printf "%s\n" "${a}:${b}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_moves.list
             fi
         fi
 
@@ -43,22 +41,18 @@ compare_m(){
 }
 
 compare_u(){
-    local artixver="$1" artixrepo="$2" archver="$3" archrepo="$4"
-
     local result=$(vercmp "$artixver" "$archver")
     if [ $result -eq -1 ];then
-        msg_row_upgrade "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
-        printf "%s\n" "${archrepo%-*}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_upgrades.list
+        msg_row_upgrade "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
+        printf "%s\n" "${a}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_upgrades.list
     fi
 }
 
 compare_d(){
-    local artixver="$1" artixrepo="$2" archver="$3" archrepo="$4"
-
     local result=$(vercmp "$artixver" "$archver")
     if [ $result -eq 1 ];then
         if [[ -n "$archver" ]] && [[ -n "$archrepo" ]];then
-            msg_row_downgrade "${table}" "${archrepo%-*}" "${artixrepo%-*}" "$pkg" "$archver" "$artixver" "${group#*-}"
+            msg_row_downgrade "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
         fi
     fi
 }
@@ -69,7 +63,7 @@ pre_compare(){
     group=${group##*/}
     local pkg=${pkgpath##*/}
     local artixrepo=$(find_repo "$pkgpath")
-    local pkgbuild=$pkgpath/repos/$artixrepo/PKGBUILD
+    local pkgbuild=$pkgpath/$artixrepo/PKGBUILD
 
     if [[ -f $pkgbuild ]];then
         . $pkgbuild 2>/dev/null
@@ -77,14 +71,19 @@ pre_compare(){
 
         local archpath=$(get_import_path $pkg)
         local archrepo=$(find_repo "${archpath}")
-        pkgbuild=$archpath/repos/$archrepo/PKGBUILD
+        pkgbuild=$archpath/$archrepo/PKGBUILD
+        local node=${artixrepo%/*}
+        local a=${archrepo#*/} b=${artixrepo#*/}
+        a="${a%-*}"
+
+        [[ "$node" != "$CARCH" ]] && b=${b%-*}
 
         if [[ -f "$pkgbuild" ]];then
             . $pkgbuild 2>/dev/null
             local archver=$(get_full_version)
         fi
 
-        "$func" "$artixver" "$artixrepo" "$archver" "$archrepo"
+        "$func"
 
         unset pkgver epoch pkgrel artixver archver pkgbuild archpath
     fi
