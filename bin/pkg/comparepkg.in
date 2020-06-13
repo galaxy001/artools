@@ -138,11 +138,11 @@ show_move_table(){
 update_db_cache(){
     msg "Updating database cache"
     for repo in "${searchrepos[@]}"; do
-        local cachedir=${db_cache_dir}/${LINKSDBEXT}/${ARCH}/${repo}
+        local cachedir=${db_cache_dir}/${LINKSDBEXT}/${CARCH}/${repo}
         rm -rf "$cachedir"
         mkdir -p "$cachedir"
         msg2 "%s" "$repo"
-        curl -L -s "${REPOS_MIRROR}/${repo}/os/${ARCH}/${repo}.${LINKSDBEXT}" \
+        curl -L -s "${REPOS_MIRROR}/${repo}/os/${CARCH}/${repo}.${LINKSDBEXT}" \
             | bsdtar -xf - -C "$cachedir"
     done
     msg "Done"
@@ -172,41 +172,52 @@ show_lib_table() {
 is_db_entry() {
     local pkgname="$1" repo="${REPOS[$2]}"
 
-    if [[ -d ${db_cache_dir}/${LINKSDBEXT}/${ARCH}/$repo/$pkgname ]];then
+    if [[ -d ${db_cache_dir}/${LINKSDBEXT}/${CARCH}/$repo/$pkgname ]];then
         return 0
     fi
     return 1
 }
 
+check_pkg_in_db() {
+    . $pkgbuild 2>/dev/null
+    local artixver=$(get_full_version)
+    local is_entry=false
+    for name in ${pkgname[@]};do
+
+        if is_db_entry "$name-$artixver" "$repo";then
+            is_entry=true
+        fi
+        if ! $is_entry;then
+            msg_row "${tableU}" "$repo" "$name" "$artixver" "$is_entry"
+        fi
+
+    done
+    unset artixver is_entry pkgbuild pkgver epoch pkgname pkgbase
+}
+
+check_new() {
+    local func="$1"
+    local pkgbuild=$pkgpath/$CARCH/$repo/PKGBUILD
+    "$func"
+}
+
+check_old() {
+    local func="$1"
+    for a in any ${CARCH};do
+        local pkgbuild=$pkgpath/repos/$repo-$a/PKGBUILD
+        "$func"
+    done
+}
+
 check_db(){
     local pkgpath="${1%/*}"
-    local pkg=${pkgpath##*/}
-    local sarch=(any ${ARCH})
 
-    for repo in ${ARCH_REPOS[@]};do
-        for a in ${sarch[@]};do
-
-            local pkgbuild=$pkgpath/repos/$repo-$a/PKGBUILD
-
-            if [[ -f $pkgbuild ]];then
-
-                . $pkgbuild 2>/dev/null
-                local artixver=$(get_full_version)
-
-                local is_entry=false
-
-                for name in ${pkgname[@]};do
-
-                    if is_db_entry "$name-$artixver" "$repo";then
-                        is_entry=true
-                    fi
-                    if ! $is_entry;then
-                        msg_row "${tableU}" "$repo" "$name" "$artixver" "$is_entry"
-                    fi
-                done
-                unset artixver is_entry pkgbuild pkgver epoch pkgname pkgbase
-            fi
-        done
+    for repo in ${!REPOS[@]};do
+        if [[ -f $pkgpath/$CARCH/$repo/PKGBUILD ]]; then
+            check_new "check_pkg_in_db"
+        else
+            check_old "check_pkg_in_db"
+        fi
     done
 }
 
