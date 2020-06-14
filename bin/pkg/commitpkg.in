@@ -22,20 +22,11 @@ prepare_commit(){
         msg "Switching to new layout ..."
         [[ ! -d "$CARCH" ]] && mkdir "$CARCH"
 
-        if [[ -d repos/"${REPO_SRC}-$CARCH" ]] || [[ -d repos/"${REPO_SRC}"-any ]]; then
-            mkdir "$CARCH/${REPO_SRC}"
-            local old_src="${REPO_SRC}-$CARCH"
-            [[ "$arch" == any ]] && old_src="${REPO_SRC}"-any
-            cp repos/"$old_src"/* "$CARCH/${REPO_SRC}"/
-            git add $CARCH/${REPO_SRC}
-        fi
-        if [[ -d repos/"${REPO_DEST}-$CARCH" ]] || [[ -d repos/"${REPO_DEST}"-any ]]; then
-            mkdir "$CARCH/${REPO_DEST}"
-            local old_dest="${REPO_DEST}-$CARCH"
-            [[ "$arch" == any ]] && old_dest="${REPO_DEST}"-any
-            cp repos/"$old_dest"/* "$CARCH/${REPO_DEST}"/
-            git add $CARCH/${REPO_DEST}
-        fi
+        for r in $(ls repos); do
+            mkdir "$CARCH/${r%-*}"
+            cp repos/${r}/* $CARCH/${r%-*}/
+            git add $CARCH/${r%-*}
+        done
 
         git rm -r repos
         git commit -m "switch to new repo layout"
