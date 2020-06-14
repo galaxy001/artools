@@ -17,19 +17,35 @@
 prepare_artools
 
 prepare_commit(){
-    if $is_new_layout; then
-        if [[ -d repos ]]; then
-            git rm -r repos
-            git commit -m "change of repo layout"
+    # create new layout, copy & remove repos
+    if [[ -d repos ]]; then
+        msg "Switching to new layout ..."
+        [[ ! -d "$CARCH" ]] && mkdir "$CARCH"
+
+        if [[ -d repos/"${REPO_SRC}-$CARCH" ]] || [[ -d repos/"${REPO_SRC}"-any ]]; then
+            mkdir "$CARCH/${REPO_SRC}"
+            local old_src="${REPO_SRC}-$CARCH"
+            [[ "$arch" == any ]] && old_src="${REPO_SRC}"-any
+            cp repos/"$old_src"/* "$CARCH/${REPO_SRC}"/
+            git add $CARCH/${REPO_SRC}
+        fi
+        if [[ -d repos/"${REPO_DEST}-$CARCH" ]] || [[ -d repos/"${REPO_DEST}"-any ]]; then
+            mkdir "$CARCH/${REPO_DEST}"
+            local old_dest="${REPO_DEST}-$CARCH"
+            [[ "$arch" == any ]] && old_dest="${REPO_DEST}"-any
+            cp repos/"$old_dest"/* "$CARCH/${REPO_DEST}"/
+            git add $CARCH/${REPO_DEST}
         fi
 
+        git rm -r repos
+        git commit -m "switch to new repo layout"
+        msg "Done switch"
+    fi
+
+    if [[ $action == 'add' ]] || [[ $action == 'move' ]] ;then
         [[ -d "$CARCH/${REPO_DEST}" ]] && git rm -r "$CARCH/${REPO_DEST}"
         [[ ! -d "$CARCH" ]] && mkdir "$CARCH"
         [[ ! -d "$CARCH/${REPO_DEST}" ]] && mkdir "$CARCH/${REPO_DEST}"
-    else
-        [[ -d repos/"${REPO_DEST}-$CARCH" ]] && git rm -r repos/"${REPO_DEST}-$CARCH"
-        [[ ! -d repos ]] && mkdir repos
-        [[ ! -d repos/"${REPO_DEST}-$CARCH" ]] && mkdir repos/"${REPO_DEST}-$CARCH"
     fi
 }
 
@@ -49,32 +65,28 @@ config() {
     [[ "${REPO_SRC}" != 'trunk' ]] && pkgbuild="$CARCH/${REPO_SRC}"/PKGBUILD
 
     if [[ ! -f "$pkgbuild" ]]; then
-        [[ "$arch" == any ]] && CARCH=any
         pkgbuild=repos/"${REPO_SRC}-${CARCH}"/PKGBUILD
-        is_new_layout=false
+        [[ -f repos/"${REPO_SRC}"-any/PKGBUILD ]] && pkgbuild=repos/"${REPO_SRC}"-any/PKGBUILD
     fi
 }
 
 commit_pkg() {
     if ${remove};then
-        local action='remove'
+        action='remove'
         if [[ "${REPO_SRC}" == 'trunk' ]];then
             local pkg=${PACKAGE}
             git rm -r trunk
         else
             local pkg="${PACKAGE}-$(get_full_version)"
 
-            local dest="$CARCH/${REPO_SRC}"
-            if ! $is_new_layout; then
-                dest=repos/"${REPO_SRC}-$CARCH"
-            fi
+            prepare_commit
 
-            git rm -r "$dest"
+            git rm -r "$CARCH/${REPO_SRC}"
         fi
         local commit_msg="[${REPO_SRC}] '$pkg' ${action}"
         msg "Action: %s" "$commit_msg"
     else
-        local action='modify'
+        action='modify'
         local commit_msg="[${REPO_SRC}] '${PACKAGE}-$(get_full_version)' ${action}"
         msg "Action: %s" "$commit_msg"
         git add .
@@ -84,22 +96,17 @@ commit_pkg() {
 
 repo_commit_pkg() {
     if [[ "${REPO_SRC}" == 'trunk' ]];then
-        local action='add'
+        action='add'
         prepare_commit
         cp trunk/* "$CARCH/${REPO_DEST}"/
     else
-        local action='move'
+        action='move'
         [[ ! -f $pkgbuild ]] && die "%s does not exist!" "$pkgbuild"
+
         prepare_commit
 
-        local src="$CARCH/${REPO_SRC}" dest="$CARCH/${REPO_DEST}"
-        if ! $is_new_layout; then
-            src=repos/"${REPO_SRC}-$CARCH"
-            dest=repos/"${REPO_DEST}-$CARCH"
-        fi
-
-        cp "$src"/* "$dest"/
-        git rm -r "$src"
+        cp "$CARCH/${REPO_SRC}"/* "$CARCH/${REPO_DEST}"/
+        git rm -r "$CARCH/${REPO_SRC}"
     fi
     local commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$(get_full_version)' ${action}"
     msg "Action: %s" "$commit_msg"
@@ -138,7 +145,7 @@ run(){
 
         [[ "${cmd}" != 'commitpkg' ]] && check_team
     else
-        error "Package '%s' does not exist!" "${PACKAGE}"
+        die "Package '%s' does not exist!" "${PACKAGE}"
     fi
 }
 
@@ -156,7 +163,6 @@ PACKAGE=''
 remove=false
 push=false
 
-is_new_layout=true
 pkgbuild=trunk/PKGBUILD
 
 cmd=${0##*/}
