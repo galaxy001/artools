@@ -94,15 +94,13 @@ show_deps(){
 
     . $src/PKGBUILD 2>/dev/null
 
-    [[ $arch == 'any' ]] && CARCH=any
-
     local archver=$(get_full_version)
 
     [[ -n ${pkgbase} ]] && msg2 "pkgbase: %s" "${pkgbase}"
     msg2 "pkgname: %s" "${pkgname[*]}"
     [[ -n $pkgdesc ]] && msg2 "pkgdesc: %s" "${pkgdesc}"
     msg2 "Arch Version: %s" "$archver"
-    msg2 "arch: %s" "$CARCH"
+    msg2 "arch: %s" "$arch"
 
     [[ -n ${makedepends[@]} ]] && msg2 "makedepends: %s" "${makedepends[*]}"
     [[ -n ${checkdepends[@]} ]] && msg2 "checkdepends: %s" "${checkdepends[*]}"
@@ -133,7 +131,7 @@ from_arch(){
     [[ -z $srcpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
 
     local repo=$(find_repo "$srcpath")
-    msg "repo: %s" "$repo"
+    msg "repo: %s" "${repo#*/}"
 
     local archpath=$srcpath/$repo
     local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
@@ -157,7 +155,7 @@ view_build(){
     [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
     local repo=$(find_repo "${archpath}")
     archpath=$archpath/$repo
-    msg2 "repo: %s" "$repo"
+    msg "repo: %s" "${repo#*/}"
     show_deps "$archpath"
 }
 

@@ -86,7 +86,7 @@ passfiles="$@"
 
 prepare_dir "${REPOS_ROOT}"
 
-repo_path=${REPOS_ROOT}/${dest_repo}/os/${ARCH}
+repo_path=${REPOS_ROOT}/${dest_repo}/os/${CARCH}
 
 if [[ -n ${passfiles[@]} ]]; then
     if ${add_pkg}; then
