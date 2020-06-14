@@ -28,7 +28,7 @@ get_import_path(){
 compare_m(){
     local result=$(vercmp "$artixver" "$archver")
     if [[ $artixrepo == *testing* ]] || [[ $artixrepo == *staging* ]]; then
-        if [[ "$archrepo" == "$artixrepo"  ]]; then
+        if [[ "${a}" == "${b}"  ]]; then
             msg_row "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
         else
             msg_row_notify "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
