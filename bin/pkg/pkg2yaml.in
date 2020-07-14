@@ -101,6 +101,7 @@ yaml_write_package() {
 
 yaml_write_fileinfo(){
     local version=$(get_full_version)
+    pkgbase=${pkgbase:-$pkgname}
     Yaml+=$(write_yaml_map 0 "version" "${version:-0}")
     Yaml+=$(write_empty_line)
     local pkgfile=$(print_all_package_names)
