@@ -17,7 +17,8 @@ shopt -s extglob
 get_compliant_name(){
     local gitname="$1"
     case "$gitname" in
-        *+) gitname=${gitname//+/plus}
+        *+) gitname=${gitname//+/plus} ;;
+        *+*) gitname=${gitname//+/-} ;;
     esac
     echo "$gitname"
 }
