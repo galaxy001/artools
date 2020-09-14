@@ -58,9 +58,12 @@ load_pkg_config(){
             packages-cinnamon
             packages-lxqt
             packages-mate
+            packages-kf5
+            packages-plasma
             packages-kde
             packages-xfce
             packages-wm
+            packages-lib32
 #             packages-haskell
     )
 
