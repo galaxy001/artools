@@ -64,7 +64,6 @@ load_pkg_config(){
             packages-xfce
             packages-wm
             packages-lib32
-#             packages-haskell
     )
 
     HOST_TREE_ARTIX=${HOST_TREE_ARTIX:-"gitea@${GIT_DOMAIN}:artixlinux"}
