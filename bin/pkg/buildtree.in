@@ -55,7 +55,7 @@ patch_pkg(){
 
 pull_tree_arch(){
     cd ${TREE_DIR_ARCH}
-    for tree in ${TREE_NAMES_ARCH[@]};do
+    for tree in ${ARCH_TREE[@]};do
         if [[ -d ${tree} ]];then
             cd ${tree}
             pull_tree "${tree}" "$(get_local_head)" "Arch"
@@ -176,7 +176,7 @@ sync_repos(){
         if ${sync_group}; then
             pull_tree_artix "${GROUP}"
         else
-            pull_tree_artix "${TREE_NAMES_ARTIX[*]}"
+            pull_tree_artix "${ARTIX_TREE[*]}"
         fi
     fi
 }
@@ -199,7 +199,7 @@ check=false
 PACKAGE=''
 
 TEAM='community'
-GROUP=${TREE_NAMES_ARTIX[0]}
+GROUP=${ARTIX_TREE[0]}
 
 usage() {
     echo "Usage: ${0##*/} [options]"

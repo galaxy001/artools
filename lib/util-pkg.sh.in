@@ -36,41 +36,37 @@ load_pkg_config(){
 
     TREE_DIR_ARTIX=${TREE_DIR_ARTIX:-"${WORKSPACE_DIR}/artixlinux"}
 
+    ARTIX_TREE=(
+        packages community
+        packages-{gfx,gtk,media,net,qt5,xorg}
+    )
+
+    local dev_tree=(packages-{python,perl,java,ruby})
+
+    local init_tree=(packages-{openrc,runit,s6})
+
+    local desktop_tree=(
+        packages-{kf5,plasma,kde}
+        packages-{lxqt,gnome,cinnamon,mate,xfce,wm}
+    )
+
     [[ -z ${TREE_NAMES_ARTIX[@]} ]] && \
     TREE_NAMES_ARTIX=(
-            packages
-            community
-            packages-kernel
-            packages-net
-            packages-gfx
-            packages-openrc
-            packages-runit
-            packages-s6
-            packages-xorg
-            packages-python
-            packages-perl
-            packages-java
-            packages-qt5
-            packages-devel
-            packages-ruby
-            packages-gtk
-            packages-gnome
-            packages-cinnamon
-            packages-lxqt
-            packages-mate
-            packages-kf5
-            packages-plasma
-            packages-kde
-            packages-xfce
-            packages-wm
-            packages-lib32
+        packages-kernel
+        "${init_tree[@]}"
+        "${dev_tree[@]}"
+        "${desktop_tree[@]}"
+        packages-devel
+        packages-lib32
     )
+
+    ARTIX_TREE+=("${TREE_NAMES_ARTIX[@]}")
 
     HOST_TREE_ARTIX=${HOST_TREE_ARTIX:-"gitea@${GIT_DOMAIN}:artixlinux"}
 
     TREE_DIR_ARCH=${TREE_DIR_ARCH:-"${WORKSPACE_DIR}/archlinux"}
 
-    TREE_NAMES_ARCH=(packages community)
+    ARCH_TREE=(packages community)
 
     HOST_TREE_ARCH=${HOST_TREE_ARCH:-'git://git.archlinux.org/svntogit'}
 
