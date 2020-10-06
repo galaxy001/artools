@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2018-19 artoo@artixlinux.org
+# Copyright (C) 2018-20 artoo@artixlinux.org
 # Copyright (C) 2018 Artix Linux Developers
 #
 # This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,27 @@ batch_move() {
     done < $pkglist
 }
 
+batch_create() {
+    local name="${1:-pkg_create}"
+    local pkglist=${TREE_DIR_ARTIX}/$name.list
+    [[ -f $pkglist ]] || die "%s does not exist!" "$pkglist"
+    while read entry;do
+        local pkg=${entry##*:}
+        local group=${entry%:*}
+        group=${group#*:}
+        local team=${entry%%:*}
+        if ${runlist}; then
+            buildtree -n -p "${pkg}" -t "${team}" -g "${group}"
+            buildtree -i -p "${pkg}"
+            commitpkg -p "${pkg}"
+        else
+            msg "%s" "buildtree -n -p ${pkg} -t ${team} -g ${group}"
+            msg2 "%s" "buildtree -i -p ${pkg}"
+            msg2 "%s" "commitpkg -p ${pkg}"
+        fi
+    done < $pkglist
+}
+
 # batch_upgrade() {
 #     local pkglist=${TREE_DIR_ARTIX}/pkg_upgrades.list
 #     [[ -f $pkglist ]] || die "%s does not exist!" "$pkglist"
@@ -47,20 +68,22 @@ batch_move() {
 usage() {
     echo "Usage: ${0##*/} [optional listname]"
     echo '    -r                 Run generated commands'
+    echo '    -c                 Create subrepos from list'
     echo '    -h                 This help'
     echo ''
     echo ''
     exit $1
 }
 
-movelistname=pkg_moves
 runlist=false
+create=false
 
-opts='rh'
+opts='rch'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         r) runlist=true ;;
+        c) create=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -68,6 +91,10 @@ done
 
 shift $(($OPTIND - 1))
 
-movelistname="$1"; shift
+listname="$1"; shift
 
-batch_move "$movelistname"
+if ${create};then
+    batch_create "${listname}"
+else
+    batch_move "${listname}"
+fi
