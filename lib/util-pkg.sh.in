@@ -46,7 +46,7 @@ load_pkg_config(){
     local init_tree=(packages-{openrc,runit,s6})
 
     local desktop_tree=(
-        packages-{kf5,plasma,kde}
+        packages-{kf5,plasma,kde,qt6}
         packages-{lxqt,gnome,cinnamon,mate,xfce,wm}
     )
 
