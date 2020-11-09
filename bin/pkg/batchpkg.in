@@ -92,6 +92,7 @@ while getopts "${opts}" arg; do
     case "${arg}" in
         r) runlist=true ;;
         c) create=true ;;
+        u) update=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
