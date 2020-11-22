@@ -97,7 +97,7 @@ PKG_UTIL = lib/util-pkg.sh
 
 PKG_DATA = \
 	data/pacman/makepkg.conf \
-	data/git-names.conf
+	data/valid-names.conf
 
 PATCHES = \
 	$(wildcard data/patches/*.patch)

@@ -141,10 +141,15 @@ run(){
 }
 
 is_valid_repo(){
-    case "${REPO_SRC}" in
-        core|extra|community|multilib|testing|community-testing|multilib-testing|staging|community-staging|multilib-staging|gnome-unstable|kde-unstable|rebuild|trunk) return 0 ;;
+    . "${DATADIR}"/valid-names.conf
+    local _valid=trunk
+    for repo in ${valid_names[@]}; do
+        _valid=${repo:- }${repo:+|}$_valid
+    done
+    eval "case ${REPO_SRC} in
+        ${_valid}) return 0 ;;
         *) return 1 ;;
-    esac
+    esac"
 }
 
 load_makepkg_config

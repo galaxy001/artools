@@ -29,7 +29,7 @@ compare_m(){
     local result=$(vercmp "$artixver" "$archver")
     case ${artixrepo} in
         *testing*|*staging*|*rebuild)
-            if [[ "${a}" == "${b}" ]]; then
+            if [[ "${a}" == "${b}" ]] || [[ "${a}" == 'staging' && "${b}" == 'rebuild' ]]; then
                 msg_row "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
             else
                 msg_row_notify "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
@@ -76,13 +76,9 @@ pre_compare(){
         local node=${artixrepo%/*}
         local a=${archrepo#*/} b=${artixrepo#*/}
         a="${a%-*}"
-        [[ $artixrepo == */rebuild ]] && b=staging
 
         [[ "$node" != "$CARCH" ]] && b=${b%-*}
 
-        if [[ $b == 'rebuild' ]]; then
-            $b == 'staging'
-        fi
         if [[ -f "$pkgbuild" ]]; then
             . $pkgbuild 2>/dev/null
             local archver=$(get_full_version)

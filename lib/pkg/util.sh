@@ -25,7 +25,7 @@ get_compliant_name(){
 
 set_arch_repos(){
     local x="$1" y="$2" z="$3"
-    . "${DATADIR}"/git-names.conf
+    . "${DATADIR}"/valid-names.conf
 
     ARCH_REPOS=(${stable[@]})
 
