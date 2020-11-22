@@ -27,17 +27,18 @@ get_import_path(){
 
 compare_m(){
     local result=$(vercmp "$artixver" "$archver")
-    if [[ $artixrepo == *testing* ]] || [[ $artixrepo == *staging* ]]; then
-        if [[ "${a}" == "${b}"  ]]; then
-            msg_row "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
-        else
-            msg_row_notify "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
-            if [[ -n "$archrepo" ]]; then
-                printf "%s\n" "${a}:${b}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_moves.list
+    case ${artixrepo} in
+        *testing*|*staging*|*rebuild)
+            if [[ "${a}" == "${b}" ]]; then
+                msg_row "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
+            else
+                msg_row_notify "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
+                if [[ -n "$archrepo" ]]; then
+                    printf "%s\n" "${a}:${b}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_moves.list
+                fi
             fi
-        fi
-
-    fi
+        ;;
+    esac
 }
 
 compare_u(){
@@ -65,7 +66,7 @@ pre_compare(){
     local artixrepo=$(find_repo "$pkgpath")
     local pkgbuild=$pkgpath/$artixrepo/PKGBUILD
 
-    if [[ -f $pkgbuild ]];then
+    if [[ -f $pkgbuild ]]; then
         . $pkgbuild 2>/dev/null
         local artixver=$(get_full_version)
 
@@ -75,10 +76,14 @@ pre_compare(){
         local node=${artixrepo%/*}
         local a=${archrepo#*/} b=${artixrepo#*/}
         a="${a%-*}"
+        [[ $artixrepo == */rebuild ]] && b=staging
 
         [[ "$node" != "$CARCH" ]] && b=${b%-*}
 
-        if [[ -f "$pkgbuild" ]];then
+        if [[ $b == 'rebuild' ]]; then
+            $b == 'staging'
+        fi
+        if [[ -f "$pkgbuild" ]]; then
             . $pkgbuild 2>/dev/null
             local archver=$(get_full_version)
         fi
@@ -106,7 +111,7 @@ compare_move(){
 
 tree_loop(){
     local func="$1"
-    for tree in ${ARTIX_TREE[@]};do
+    for tree in ${ARTIX_TREE[@]}; do
         local pkgs=$(find ${TREE_DIR_ARTIX}/$tree -name trunk)
         for package in ${pkgs[@]}; do
             "$func" "$package"
@@ -191,7 +196,7 @@ check_db(){
         local artixver=$(get_full_version)
         for name in ${pkgname[@]};do
 
-            if ! is_db_entry "$name-$artixver" "$repo";then
+            if ! is_db_entry "$name-$artixver" "$repo"; then
                 msg_row "${tableU}" "$repo" "$name" "$artixver" "false"
             fi
 

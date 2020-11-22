@@ -1,4 +1,4 @@
-VERSION=0.20
+VERSION=0.21
 
 CHROOT_VERSION=0.10
 
@@ -59,7 +59,8 @@ LN_COMMITPKG = \
 	multilib-testingpkg \
 	multilib-stagingpkg \
 	kde-unstablepkg \
-	gnome-unstablepkg
+	gnome-unstablepkg \
+	rebuildpkg
 
 LN_BUILDPKG = \
 	buildpkg-system \
@@ -95,7 +96,8 @@ PKG_LIBS = \
 PKG_UTIL = lib/util-pkg.sh
 
 PKG_DATA = \
-	data/pacman/makepkg.conf
+	data/pacman/makepkg.conf \
+	data/git-names.conf
 
 PATCHES = \
 	$(wildcard data/patches/*.patch)

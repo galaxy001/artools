@@ -142,7 +142,7 @@ run(){
 
 is_valid_repo(){
     case "${REPO_SRC}" in
-        core|extra|community|multilib|testing|community-testing|multilib-testing|staging|community-staging|multilib-staging|gnome-unstable|kde-unstable|trunk) return 0 ;;
+        core|extra|community|multilib|testing|community-testing|multilib-testing|staging|community-staging|multilib-staging|gnome-unstable|kde-unstable|rebuild|trunk) return 0 ;;
         *) return 1 ;;
     esac
 }

@@ -25,11 +25,13 @@ get_compliant_name(){
 
 set_arch_repos(){
     local x="$1" y="$2" z="$3"
-    ARCH_REPOS=(core extra community multilib)
+    . "${DATADIR}"/git-names.conf
 
-    $x && ARCH_REPOS+=(testing community-testing multilib-testing)
-    $y && ARCH_REPOS+=(staging community-staging multilib-staging)
-    $z && ARCH_REPOS+=(gnome-unstable kde-unstable)
+    ARCH_REPOS=(${stable[@]})
+
+    $x && ARCH_REPOS+=(${gremlins[@]})
+    $y && ARCH_REPOS+=(${goblins[@]})
+    $z && ARCH_REPOS+=(${unstable[@]})
 }
 
 find_repo(){
