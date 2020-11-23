@@ -38,6 +38,11 @@ prepare_commit(){
         [[ ! -d "$CARCH" ]] && mkdir "$CARCH"
         [[ ! -d "$CARCH/${REPO_DEST}" ]] && mkdir "$CARCH/${REPO_DEST}"
     fi
+
+    if [[ -d "$CARCH"/rebuild ]] && [[ ${REPO_DEST} == "$CARCH"/staging ]]; then
+        git rm -r "$CARCH"/rebuild
+        git commit -m "switch from rebuild to staging"
+    fi
 }
 
 check_team(){
