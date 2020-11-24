@@ -24,8 +24,8 @@ prepare_commit(){
 
         for r in $(ls repos); do
             mkdir "$CARCH/${r%-*}"
-            cp repos/${r}/* $CARCH/${r%-*}/
-            git add $CARCH/${r%-*}
+            cp repos/"${r}"/* "$CARCH/${r%-*}/"
+            git add "$CARCH/${r%-*}"
         done
 
         git rm -r repos
@@ -38,10 +38,15 @@ prepare_commit(){
         [[ ! -d "$CARCH" ]] && mkdir "$CARCH"
         [[ ! -d "$CARCH/${REPO_DEST}" ]] && mkdir "$CARCH/${REPO_DEST}"
     fi
+}
 
-    if [[ -d "$CARCH"/rebuild ]] && [[ ${REPO_DEST} == "$CARCH"/staging ]]; then
+check_rebuild(){
+    if [[ -d "$CARCH"/rebuild ]] && [[ "${REPO_DEST}" == 'staging' ]]; then
         git rm -r "$CARCH"/rebuild
         git commit -m "switch from rebuild to staging"
+    elif [[ -d "$CARCH"/staging ]] && [[ "${REPO_DEST}" == 'rebuild' ]]; then
+        git rm -r "$CARCH"/staging
+        git commit -m "switch from staging to rebuild"
     fi
 }
 
@@ -93,7 +98,10 @@ commit_pkg() {
 repo_commit_pkg() {
     if [[ "${REPO_SRC}" == 'trunk' ]];then
         action='add'
+
         prepare_commit
+        check_rebuild
+
         cp trunk/* "$CARCH/${REPO_DEST}"/
     else
         action='move'
@@ -149,7 +157,7 @@ is_valid_repo(){
     . "${DATADIR}"/valid-names.conf
     local _valid=trunk
     for repo in ${valid_names[@]}; do
-        _valid=${repo:- }${repo:+|}$_valid
+        _valid=${repo:-}${repo:+|}$_valid
     done
     eval "case ${REPO_SRC} in
         ${_valid}) return 0 ;;
