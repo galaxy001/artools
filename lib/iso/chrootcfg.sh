@@ -34,16 +34,15 @@ add_svc_runit(){
 }
 
 add_svc_s6(){
-    local mnt="$1" names="$2" valid="" rlvl="${3:-default}"
+    local mnt="$1" names="$2" rlvl="${3:-default}"
     for svc in $names; do
         error=false
         chroot $mnt s6-rc-db -c /etc/s6/rc/compiled type $svc &> /dev/null || error=true
         if [ $? == 0 ] && [[ $error == false ]]; then
             msg2 "Setting %s ..." "$svc"
-            valid=${valid:-}${valid:+' '}${svc}
+            chroot $mnt s6-rc-bundle-update -c /etc/s6/rc/compiled add $rlvl $svc
         fi
     done
-    chroot $mnt s6-rc-bundle -c /etc/s6/rc/compiled add $rlvl $valid
 
     # rebuild s6-linux-init binaries
     chroot $mnt rm -r /etc/s6/current
