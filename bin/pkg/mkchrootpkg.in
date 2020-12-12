@@ -12,7 +12,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/base/chroot.sh)
 
 shopt -s nullglob
 
@@ -277,8 +279,6 @@ move_products() {
     done
 }
 # }}}
-
-orig_argv=("$0" "$@")
 
 opts='hcur:I:l:nNCTb:U:'
 

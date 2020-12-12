@@ -12,14 +12,16 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-pkg.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/base/chroot.sh)
+m4_include(lib/util-base.sh)
+m4_include(lib/util-pkg.sh)
 
 prepare_artools
 
 create_first=false
 rebuild=false
-no_check=false
-is_checkpkg=false
 
 mkchrootpkg_args=(-c -n)
 
@@ -39,10 +41,8 @@ usage() {
     echo ''
     echo "Default mkchrootpkg_args args: ${mkchrootpkg_args[*]}"
     echo ''
-    exit $1
+    exit "$1"
 }
-
-orig_argv=("$0" "$@")
 
 opts='hcCNmr:d:'
 
@@ -52,8 +52,8 @@ while getopts "${opts}" arg; do
         d) repo="$OPTARG" ;;
         c) create_first=true ;;
         m) rebuild=true ;;
-        C) is_checkpkg=true; mkchrootpkg_args+=(-C) ;;
-        N) no_check=true; mkchrootpkg_args+=(-N) ;;
+        C) mkchrootpkg_args+=(-C) ;;
+        N) mkchrootpkg_args+=(-N) ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '%s'" "${arg}"; usage 1 ;;
     esac
@@ -69,13 +69,11 @@ else
     esac
 fi
 
-pacman_conf="${DATADIR}/pacman-${repo}.conf"
-[[ -f ${USER_CONF_DIR}/pacman-${repo}.conf ]] && pacman_conf="${USER_CONF_DIR}/pacman-${repo}.conf"
+get_pacman_conf "${repo}"
 
-makepkg_conf="${DATADIR}/makepkg.conf"
-[[ -f ${USER_CONF_DIR}/makepkg.conf ]] && makepkg_conf="${USER_CONF_DIR}/makepkg.conf"
+get_makepkg_conf
 
-check_root SOURCE_DATE_EPOCH
+check_root SOURCE_DATE_EPOCH,SRCDEST,SRCPKGDEST,PKGDEST,LOGDEST,MAKEFLAGS,PACKAGER,GNUPGHOME
 
 mkchrootpkg_args+=("${@:$OPTIND}")
 
@@ -114,9 +112,5 @@ if [[ ! -v SOURCE_DATE_EPOCH ]]; then
     export SOURCE_DATE_EPOCH=$(date +%s)
 fi
 
-timer_start=$(get_timer)
-
 msg "Building in chroot for [%s] (%s)..." "${repo}" "${ARCH}"
 exec mkchrootpkg -r "${CHROOTS_PKG}/${repo}-${ARCH}" "${mkchrootpkg_args[@]}"
-
-show_elapsed_time "${FUNCNAME}" "${timer_start}"

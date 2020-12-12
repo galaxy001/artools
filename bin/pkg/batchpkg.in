@@ -12,15 +12,20 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. /usr/lib/artools/util-pkg.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/util-base.sh)
+m4_include(lib/util-pkg.sh)
 
 prepare_artools
 
+#{{{ functions
+
 batch_move() {
     local name="${1:-pkg_moves}"
-    local pkglist=${TREE_DIR_ARTIX}/$name.list
+    local pkglist="${TREE_DIR_ARTIX}"/"$name".list
     [[ -f $pkglist ]] || die "%s does not exist!" "$pkglist"
-    while read entry;do
+    while read -r entry; do
         local pkg=${entry##*:}
         local src=${entry%:*}
         src=${src#*:}
@@ -30,14 +35,14 @@ batch_move() {
         else
             msg "%s" "${dest}pkg -s ${src} -u -p ${pkg}"
         fi
-    done < $pkglist
+    done < "$pkglist"
 }
 
 batch_create() {
     local name="${1:-pkg_create}"
-    local pkglist=${TREE_DIR_ARTIX}/$name.list
+    local pkglist="${TREE_DIR_ARTIX}"/"$name".list
     [[ -f $pkglist ]] || die "%s does not exist!" "$pkglist"
-    while read entry;do
+    while read -r entry; do
         local pkg=${entry##*:}
         local group=${entry%:*}
         group=${group#*:}
@@ -51,14 +56,14 @@ batch_create() {
             msg2 "%s" "buildtree -i -p ${pkg}"
             msg2 "%s" "commitpkg -p ${pkg}"
         fi
-    done < $pkglist
+    done < "$pkglist"
 }
 
 batch_update() {
     local name="${1:-pkg_upgrades}"
     local pkglist=${TREE_DIR_ARTIX}/$name.list
     [[ -f $pkglist ]] || die "%s does not exist!" "$pkglist"
-    while read entry;do
+    while read -r entry; do
         local pkg=${entry#*:}
         local dest=${entry%:*}
         if ${runlist}; then
@@ -68,8 +73,10 @@ batch_update() {
             msg "buildtree -i -p ${pkg}"
             msg2 "${dest}pkg -u -p ${pkg}"
         fi
-    done < $pkglist
+    done < "$pkglist"
 }
+
+#}}}
 
 usage() {
     echo "Usage: ${0##*/} [optional listname]"
@@ -79,7 +86,7 @@ usage() {
     echo '    -h                 This help'
     echo ''
     echo ''
-    exit $1
+    exit "$1"
 }
 
 runlist=false
@@ -98,13 +105,13 @@ while getopts "${opts}" arg; do
     esac
 done
 
-shift $(($OPTIND - 1))
+shift $(( OPTIND - 1 ))
 
 listname="$1"; shift
 
-if ${create};then
+if ${create}; then
     batch_create "${listname}"
-elif ${update};then
+elif ${update}; then
     batch_update "${listname}"
 else
     batch_move "${listname}"

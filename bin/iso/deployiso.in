@@ -12,9 +12,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-iso.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/util-base.sh)
+m4_include(lib/util-iso.sh)
 
 prepare_artools
+
+#{{{ functions
 
 connect(){
     echo "${ACCOUNT}@${FILE_HOST}:${FILE_HOME}"
@@ -27,13 +32,11 @@ prepare_transfer(){
 
 sync_dir(){
     msg "Start upload [%s] ..." "${PROFILE}"
-    rsync "${rsync_args[@]}" ${SRC_DIR} $(connect)${DEST_DIR}
+    rsync "${rsync_args[@]}" "${SRC_DIR}" "$(connect)${DEST_DIR}"
     msg "Done upload [%s]" "${PROFILE}"
-    show_elapsed_time "${FUNCNAME}" "${timer_start}"
 }
 
-update=false
-verbose=false
+#}}}
 
 rsync_args=(-aP --progress -e "ssh -p ${FILE_PORT}")
 
@@ -46,7 +49,7 @@ usage() {
     echo '    -h                 This help'
     echo ''
     echo ''
-    exit $1
+    exit "$1"
 }
 
 opts='p:l:uvh'
@@ -55,18 +58,16 @@ while getopts "${opts}" arg; do
     case "${arg}" in
         p) PROFILE="$OPTARG" ;;
         l) UPLIMIT="$OPTARG" ;;
-        u) update=true; rsync_args+=(-u) ;;
-        v) verbose=true; rsync_args+=(-v --stats) ;;
+        u) rsync_args+=(-u) ;;
+        v) rsync_args+=(-v --stats) ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
 done
 
-shift $(($OPTIND - 1))
+shift $(( OPTIND - 1 ))
 
-timer_start=$(get_timer)
-
-rsync_args+=(--bwlimit=${UPLIMIT})
+rsync_args+=(--bwlimit="${UPLIMIT}")
 
 prepare_transfer
 

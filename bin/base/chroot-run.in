@@ -14,7 +14,27 @@
 
 chroot_version=0.9
 
-. @libdir@/artools/util-base.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/base/mount.sh)
+m4_include(lib/base/chroot.sh)
+
+# $1: chroot
+kill_chroot_process(){
+    local prefix="$1" flink pid name
+    for root_dir in /proc/*/root; do
+        flink=$(readlink "$root_dir")
+        if [ "x$flink" != "x" ]; then
+            if [ "x${flink:0:${#prefix}}" = "x$prefix" ]; then
+                # this process is in the chroot...
+                pid=$(basename "$(dirname "$root_dir")")
+                name=$(ps -p "$pid" -o comm=)
+                info "Killing chroot process: %s (%s)" "$name" "$pid"
+                kill -9 "$pid"
+            fi
+        fi
+    done
+}
 
 # umask might have been changed in /etc/profile
 # ensure that sane default is set again
@@ -41,8 +61,6 @@ usage() {
     exit 1
 }
 
-orig_argv=("$0" "$@")
-
 opts='hC:M:c:b:f:s'
 
 while getopts ${opts} arg; do
@@ -52,12 +70,12 @@ while getopts ${opts} arg; do
         c) cache_dirs+=("$OPTARG") ;;
         f) files+=("$OPTARG") ;;
         s) nosetarch=1 ;;
-        b) bindmounts=("$OPTARG"); mount_args+=(${bindmounts[@]}) ;;
+        b) bindmounts=("$OPTARG"); mount_args+=("${bindmounts[@]}") ;;
         h|?) usage ;;
         *) error "invalid argument '$arg'"; usage ;;
     esac
 done
-shift $(($OPTIND - 1))
+shift $(( OPTIND - 1 ))
 
 (( $# < 1 )) && die 'You must specify a directory.'
 
@@ -74,10 +92,12 @@ if (( ${#cache_dirs[@]} == 0 )); then
     mapfile -t cache_dirs < <($pacconf_cmd --config "${pac_conf:-$working_dir/etc/pacman.conf}" CacheDir)
 fi
 
-host_mirrors=($($pacconf_cmd --repo world Server 2> /dev/null | sed -r 's#(.*/)world/os/.*#\1$repo/os/$arch#'))
+# shellcheck disable=2016
+host_mirrors=($("$pacconf_cmd" --repo world Server 2> /dev/null | sed -r 's#(.*/)world/os/.*#\1$repo/os/$arch#'))
 
 for host_mirror in "${host_mirrors[@]}"; do
     if [[ $host_mirror == *file://* ]]; then
+        # shellcheck disable=2016
         host_mirror=$(echo "$host_mirror" | sed -r 's#file://(/.*)/\$repo/os/\$arch#\1#g')
         info "host mirror: %s" "$host_mirror"
         in_array "$host_mirror" "${cache_dirs[@]}" || cache_dirs+=("$host_mirror")
@@ -85,15 +105,16 @@ for host_mirror in "${host_mirrors[@]}"; do
 done
 
 while read -r line; do
+    # shellcheck disable=2016
     mapfile -t lines < <($pacconf_cmd --config "${pac_conf:-$working_dir/etc/pacman.conf}" \
-        --repo $line Server | sed -r 's#(.*/)[^/]+/os/.+#\1#')
+        --repo "$line" Server | sed -r 's#(.*/)[^/]+/os/.+#\1#')
     for line in "${lines[@]}"; do
         if [[ $line = file://* ]]; then
             line=${line#file://}
             in_array "$line" "${cache_dirs[@]}" || cache_dirs+=("$line")
         fi
     done
-done < <($pacconf_cmd --config "${pac_conf:-$working_dir/etc/pacman.conf}" --repo-list)
+done < <("$pacconf_cmd" --config "${pac_conf:-$working_dir/etc/pacman.conf}" --repo-list)
 
 copy_hostconf () {
     unshare --fork --pid gpg --homedir "$working_dir"/etc/pacman.d/gnupg/ --no-permission-warning --quiet --batch --import --import-options import-local-sigs "$(pacman-conf GpgDir)"/pubring.gpg >/dev/null 2>&1
@@ -101,9 +122,9 @@ copy_hostconf () {
 
     printf 'Server = %s\n' "${host_mirrors[@]}" >"$working_dir/etc/pacman.d/mirrorlist"
 
-    [[ -n $pacman_conf ]] && cp $pacman_conf "${working_dir}/etc/pacman.conf"
+    [[ -n $pacman_conf ]] && cp "$pacman_conf" "${working_dir}/etc/pacman.conf"
 
-    [[ -n $makepkg_conf ]] && cp $makepkg_conf "${working_dir}/etc/makepkg.conf"
+    [[ -n $makepkg_conf ]] && cp "$makepkg_conf" "${working_dir}/etc/makepkg.conf"
 
     local file
     for file in "${files[@]}"; do
@@ -143,7 +164,7 @@ umask 0022
 # Sanity check
 if [[ ! -f "$working_dir/.artools" ]]; then
     die "'%s' does not appear to be an artix chroot." "$working_dir"
-elif [[ $(cat "$working_dir/.artools") != ${CHROOTVERSION} ]]; then
+elif [[ $(cat "$working_dir/.artools") != "${CHROOTVERSION}" ]]; then
     die "chroot '%s' is not at version %s. Please rebuild." "$working_dir" "${CHROOTVERSION}"
 fi
 
@@ -155,7 +176,7 @@ chroot_extra_mount
 
 copy_hostconf
 
-eval $(grep '^CARCH=' "$working_dir/etc/makepkg.conf")
+eval "$(grep '^CARCH=' "$working_dir/etc/makepkg.conf")"
 
 [[ -z $nosetarch ]] || unset CARCH
 

@@ -1,12 +1,9 @@
 VERSION=0.21
 
-CHROOT_VERSION=0.10
-
 TOOLS = artools
 PREFIX ?= /usr
 SYSCONFDIR = /etc
 BINDIR = $(PREFIX)/bin
-LIBDIR = $(PREFIX)/lib
 DATADIR = $(PREFIX)/share
 CPIODIR = $(SYSCONFDIR)/initcpio
 
@@ -17,13 +14,8 @@ BASE_BIN = \
 	bin/base/chroot-run \
 	bin/base/mkchroot \
 	bin/base/basestrap \
-	bin/base/artools-chroot \
+	bin/base/artix-chroot \
 	bin/base/fstabgen
-
-BASE_LIBS = \
-	$(wildcard lib/base/*.sh)
-
-BASE_UTIL = lib/util-base.sh
 
 BASE_DATA = \
 	$(wildcard data/pacman/pacman*.conf)
@@ -90,11 +82,6 @@ LN_DEPLOYPKG = \
 	deploypkg-kde-wobble \
 	deploypkg-gnome-wobble
 
-PKG_LIBS = \
-	$(wildcard lib/pkg/*.sh)
-
-PKG_UTIL = lib/util-pkg.sh
-
 PKG_DATA = \
 	data/pacman/makepkg.conf \
 	data/valid-names.conf
@@ -113,11 +100,6 @@ LN_BUILDISO = \
 	buildiso-gremlins \
 	buildiso-goblins
 
-ISO_LIBS = \
-	$(wildcard lib/iso/*.sh)
-
-ISO_UTIL = lib/util-iso.sh
-
 DIRMODE = -dm0755
 FILEMODE = -m0644
 MODE =  -m0755
@@ -128,32 +110,22 @@ CHMODAW = chmod a-w
 CHMODX = chmod +x
 
 BIN = $(BASE_BIN) $(PKG_BIN) $(ISO_BIN)
-UTIL = $(BASE_UTIL) $(PKG_UTIL) $(ISO_UTIL)
 
-all: $(BIN) $(UTIL)
+all: $(BIN)
 
-EDIT_UTIL = sed -e "s|@datadir[@]|$(DATADIR)|g" \
-	-e "s|@sysconfdir[@]|$(SYSCONFDIR)|g" \
-	-e "s|@libdir[@]|$(LIBDIR)|g" \
-	-e "s|@chroot_version@|$(CHROOT_VERSION)|"
+EDIT = sed -e "s|@datadir[@]|$(DATADIR)|g" \
+	-e "s|@sysconfdir[@]|$(SYSCONFDIR)|g"
 
-EDIT_BIN = sed -e "s|@libdir[@]|$(LIBDIR)|g"
-
-$(UTIL): %: %.in Makefile
+%: %.in Makefile lib/util-base.sh
 	@echo "GEN $@"
 	@$(RM) "$@"
-	@$(M4) $@.in | $(EDIT_UTIL) >$@
-	@$(CHMODAW) "$@"
-
-$(BIN): %: %.in Makefile
-	@echo "GEN $@"
-	@$(RM) "$@"
-	@$(M4) $@.in | $(EDIT_BIN) >$@
+	@{ echo -n 'm4_changequote([[[,]]])'; cat $@.in; } | $(M4) | $(EDIT) >$@
 	@$(CHMODAW) "$@"
 	@$(CHMODX) "$@"
+	@bash -O extglob -n "$@"
 
 clean:
-	$(RM) $(BIN) $(UTIL)
+	$(RM) $(BIN)
 
 install_base:
 	install $(DIRMODE) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
@@ -161,10 +133,6 @@ install_base:
 
 	install $(DIRMODE) $(DESTDIR)$(BINDIR)
 	install $(MODE) $(BASE_BIN) $(DESTDIR)$(BINDIR)
-
-	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)/base
-	install $(FILEMODE) $(BASE_UTIL) $(DESTDIR)$(LIBDIR)/$(TOOLS)
-	install $(FILEMODE) $(BASE_LIBS) $(DESTDIR)$(LIBDIR)/$(TOOLS)/base
 
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)
 	install $(FILEMODE) $(BASE_DATA) $(DESTDIR)$(DATADIR)/$(TOOLS)
@@ -184,9 +152,7 @@ install_pkg:
 	for l in $(LN_BUILDPKG); do $(LN) buildpkg $(DESTDIR)$(BINDIR)/$$l; done
 	for l in $(LN_DEPLOYPKG); do $(LN) deploypkg $(DESTDIR)$(BINDIR)/$$l; done
 
-	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)/pkg
-	install $(FILEMODE) $(PKG_UTIL) $(DESTDIR)$(LIBDIR)/$(TOOLS)
-	install $(FILEMODE) $(PKG_LIBS) $(DESTDIR)$(LIBDIR)/$(TOOLS)/pkg
+	$(LN) artix-chroot $(DESTDIR)$(BINDIR)/artools-chroot
 
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)
 	install $(FILEMODE) $(PKG_DATA) $(DESTDIR)$(DATADIR)/$(TOOLS)
@@ -205,10 +171,6 @@ install_iso: install_cpio
 	install $(MODE) $(ISO_BIN) $(DESTDIR)$(BINDIR)
 
 	for l in $(LN_BUILDISO); do $(LN) buildiso $(DESTDIR)$(BINDIR)/$$l; done
-
-	install $(DIRMODE) $(DESTDIR)$(LIBDIR)/$(TOOLS)/iso
-	install $(FILEMODE) $(ISO_UTIL) $(DESTDIR)$(LIBDIR)/$(TOOLS)
-	install $(FILEMODE) $(ISO_LIBS) $(DESTDIR)$(LIBDIR)/$(TOOLS)/iso
 
 install: install_base install_pkg install_iso
 

@@ -1,22 +1,6 @@
-#!/bin/bash
-#
-# Copyright (C) 2018-19 artoo@artixlinux.org
-# Copyright (C) 2018 Artix Linux Developers
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#!/hint/bash
 
-. @libdir@/artools/util-base.sh
-
-for pkglib in ${LIBDIR}/pkg/*.sh; do
-    . $pkglib
-done
+#{{{ pkg conf
 
 load_pkg_config(){
 
@@ -24,6 +8,7 @@ load_pkg_config(){
 
     [[ -f "$conf" ]] || return 1
 
+    # shellcheck disable=1090
     [[ -r "$conf" ]] && . "$conf"
 
     DOMAIN='artixlinux.org'
@@ -50,7 +35,7 @@ load_pkg_config(){
         packages-{lxqt,gnome,cinnamon,mate,xfce,wm}
     )
 
-    [[ -z ${TREE_NAMES_ARTIX[@]} ]] && \
+    [[ -z ${TREE_NAMES_ARTIX[*]} ]] && \
     TREE_NAMES_ARTIX=(
         packages-kernel
         "${init_tree[@]}"
@@ -84,5 +69,7 @@ load_pkg_config(){
 
     return 0
 }
+
+#}}}
 
 load_pkg_config "${USER_CONF_DIR}" || load_pkg_config "${SYSCONFDIR}"

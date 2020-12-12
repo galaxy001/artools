@@ -12,39 +12,44 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-pkg.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/pkg/repo.sh)
+m4_include(lib/util-base.sh)
+m4_include(lib/util-pkg.sh)
 
 prepare_artools
 
+#{{{ functions
+
 add(){
-    pkg=${pkgname%.*}
-    for ext in zst xz;do
-        if pkgfile=$(find_cached_pkgfile "$pkg.$ext");then
-            msg "Found: %s" "${pkgfile}"
-            packages+=("$pkg.$ext")
-            action='add'
-            ln -sf "${pkgfile}"{,.sig} "$repo_path"/
-        fi
-    done
+    if pkgfile=$(find_cached_pkgfile "${pkgname}"); then
+        msg "Found: %s" "${pkgfile}"
+        packages+=("${pkgname}")
+        action='add'
+        ln -sfv "${pkgfile}"{,.sig} "$repo_path"/
+    fi
 }
 
 remove(){
     packages+=("$pkgname")
     action='remove'
-    rm "$repo_path"/"$pkgname"*pkg.tar*
+    rm -v "$repo_path"/"$pkgname"*.pkg.tar.*
 }
 
 repo_action(){
-    local packages=() action= func="$1"
+    local packages=() action func="$1"
     for pkgname in ${passfiles[@]}; do
         "$func"
     done
-    cd $repo_path
-    if [[ -n "$action" ]]; then
-        repo-"$action" -R "${dest_repo}"."${PKGDBEXT}" "${packages[@]}"
-        ${linksdb} && links-"$action" "${dest_repo}"."${LINKSDBEXT}" "${packages[@]}"
+    cd "$repo_path" || return
+    if [[ -n "${action}" ]]; then
+        repo-"${action}" -R "${dest_repo}"."${PKGDBEXT}" "${packages[@]}"
+        ${linksdb} && links-"${action}" "${dest_repo}"."${LINKSDBEXT}" "${packages[@]}"
     fi
 }
+
+#}}}
 
 load_makepkg_config
 
@@ -64,7 +69,7 @@ usage() {
     echo '    -h                 This help'
     echo ''
     echo ''
-    exit $1
+    exit "$1"
 }
 
 opts='arlhd:'
@@ -80,19 +85,15 @@ while getopts "${opts}" arg; do
     esac
 done
 
-shift $(($OPTIND - 1))
+shift $(( OPTIND - 1 ))
 
-passfiles="$@"
+passfiles=("$@")
 
 prepare_dir "${REPOS_ROOT}"
 
 repo_path=${REPOS_ROOT}/${dest_repo}/os/${CARCH}
 
-if [[ -n ${passfiles[@]} ]]; then
-    if ${add_pkg}; then
-        repo_action add
-    fi
-    if ${rm_pkg}; then
-        repo_action remove
-    fi
+if [[ -n "${passfiles[*]}" ]]; then
+    ${add_pkg} && repo_action add
+    ${rm_pkg} && repo_action remove
 fi

@@ -1,16 +1,20 @@
-#!/bin/bash
-#
-# Copyright (C) 2018-19 artoo@artixlinux.org
-# Copyright (C) 2018 Artix Linux Developers
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#!/hint/bash
+
+#{{{ chroot
+
+orig_argv=("$0" "$@")
+check_root() {
+    local keepenv="$1"
+
+    (( EUID == 0 )) && return
+    if type -P sudo >/dev/null; then
+        # shellcheck disable=2154
+        exec sudo --preserve-env="$keepenv" -- "${orig_argv[@]}"
+    else
+        # shellcheck disable=2154
+        exec su root -c "$(printf ' %q' "${orig_argv[@]}")"
+    fi
+}
 
 is_btrfs() {
     [[ -e "$1" && "$(stat -f -c %T "$1")" == btrfs ]]
@@ -20,9 +24,9 @@ is_subvolume() {
     [[ -e "$1" && "$(stat -f -c %T "$1")" == btrfs && "$(stat -c %i "$1")" == 256 ]]
 }
 
-is_same_fs() {
-    [[ "$(stat -c %d "$1")" == "$(stat -c %d "$2")" ]]
-}
+# is_same_fs() {
+#     [[ "$(stat -c %d "$1")" == "$(stat -c %d "$2")" ]]
+# }
 
 subvolume_delete_recursive() {
     local subvol
@@ -42,19 +46,4 @@ subvolume_delete_recursive() {
     return 0
 }
 
-# $1: chroot
-kill_chroot_process(){
-    local prefix="$1" flink pid name
-    for root_dir in /proc/*/root; do
-        flink=$(readlink $root_dir)
-        if [ "x$flink" != "x" ]; then
-            if [ "x${flink:0:${#prefix}}" = "x$prefix" ]; then
-                # this process is in the chroot...
-                pid=$(basename $(dirname "$root_dir"))
-                name=$(ps -p $pid -o comm=)
-                info "Killing chroot process: %s (%s)" "$name" "$pid"
-                kill -9 "$pid"
-            fi
-        fi
-    done
-}
+# }}}

@@ -12,9 +12,109 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-pkg.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/pkg/git.sh)
+m4_include(lib/pkg/repo.sh)
+m4_include(lib/util-base.sh)
+m4_include(lib/util-pkg.sh)
 
 prepare_artools
+
+#{{{ functions
+
+clone_tree(){
+    local url="$1" tree="$2" os="${3:-$(get_osname)}"
+
+    msg "Cloning %s (%s) ..." "$tree" "$os"
+
+    git clone "$url/$tree".git
+}
+
+get_compliant_name(){
+    local gitname="$1"
+    case "$gitname" in
+        *+) gitname=${gitname//+/plus} ;;
+        *+*) gitname=${gitname//+/-} ;;
+    esac
+    echo "$gitname"
+}
+
+subrepo_clone(){
+    local pkg="$1" org="$2"
+    local gitname
+    gitname=$(get_compliant_name "$pkg")
+    msg2 "Subrepo clone [%s] from (%s)" "$pkg" "$org/$gitname"
+    git subrepo clone gitea@"${GIT_DOMAIN}":"$org"/"$gitname".git "$pkg"
+}
+
+create_repo() {
+    local pkg="$1" org="$2"
+    local gitname
+    gitname=$(get_compliant_name "$pkg")
+    local json="{ \"auto_init\": true, \"name\":\"$gitname\", \"gitignores\":\"ArchLinuxPackages\", \"readme\": \"Default\" }"
+
+    msg2 "Create package repo [%s] in org (%s)" "${pkg}" "${org}"
+
+    curl -s -X POST "${GIT_URL}/api/v1/org/$org/repos?access_token=${GIT_TOKEN}" \
+        -H "accept: application/json" \
+        -H "content-type: application/json" \
+        -d "$json"
+
+    echo
+}
+
+write_jenkinsfile(){
+    local pkg="$1"
+    local jenkins=$pkg/Jenkinsfile
+
+    echo "@Library('artix-ci') import org.artixlinux.RepoPackage" > "$jenkins"
+    {
+    echo ''
+    echo 'PackagePipeline(new RepoPackage(this))'
+    echo ''
+    } >> "$jenkins"
+
+    git add "$jenkins"
+}
+
+write_agentyaml(){
+    local pkg="$1"
+    local agent="$pkg"/.artixlinux/agent.yaml label='master'
+    [[ -d $pkg/.artixlinux ]] || mkdir "$pkg"/.artixlinux
+
+    echo '%YAML 1.2' > "$agent"
+    {
+    echo '---'
+    echo ''
+    echo "label: $label"
+    echo ''
+    } >> "$agent"
+
+    git add "$agent"
+}
+
+commit_jenkins_files(){
+    local pkg="$1"
+
+    write_jenkinsfile "$pkg"
+    write_agentyaml "$pkg"
+
+    git commit -m "initial commit"
+}
+
+config_tree(){
+    local tree="$1"
+    cd "$tree" || return
+        git config --bool pull.rebase true
+        git config commit.gpgsign true
+        if [[ -n "${GPGKEY}" ]];then
+            git config user.signingkey "${GPGKEY}"
+        else
+            warning "No GPGKEY configured in makepkg.conf!"
+        fi
+    cd ..
+}
 
 patch_pkg(){
     local pkgpath="$1"
@@ -25,41 +125,42 @@ patch_pkg(){
             msg2 "Patching %s" "$pkg"
             sed -e 's|{locale,systemd/system,tmpfiles.d}|{locale,tmpfiles.d}|' \
                 -e '/nscd.service/d' \
-                -i $pkgpath/PKGBUILD
+                -i "$pkgpath"/PKGBUILD
         ;;
         linux|linux-lts)
             msg2 "Patching %s" "$pkg"
-            sed -e 's|KBUILD_BUILD_HOST=.*|KBUILD_BUILD_HOST=artixlinux|' -i $pkgpath/PKGBUILD
+            sed -e 's|KBUILD_BUILD_HOST=.*|KBUILD_BUILD_HOST=artixlinux|' -i "$pkgpath"/PKGBUILD
             sed -e 's|CONFIG_DEFAULT_HOSTNAME=.*|CONFIG_DEFAULT_HOSTNAME="artixlinux"|' \
-                -i $pkgpath/config
+                -i "$pkgpath"/config
         ;;
         bash)
             msg2 "Patching %s" "$pkg"
+            # shellcheck disable=2016
             sed -e 's|system.bash_logout)|system.bash_logout artix.bashrc)|' \
             -e "s|etc/bash.|etc/bash/|g" \
             -e 's|"$pkgdir/etc/skel/.bash_logout"|"$pkgdir/etc/skel/.bash_logout"\n  install -Dm644 artix.bashrc $pkgdir/etc/bash/bashrc.d/artix.bashrc|' \
-            -i $pkgpath/PKGBUILD
-            cd $pkgpath
-                patch -Np 1 -i ${DATADIR}/patches/artix-bash.patch
+            -i "$pkgpath"/PKGBUILD
+            ( cd "$pkgpath" || return
+                patch -Np 1 -i "${DATADIR}"/patches/artix-bash.patch
                 updpkgsums
-            cd ../..
+            )
         ;;
         gstreamer|gst-plugins-*|licenses)
             msg2 "Patching %s" "$pkg"
             sed -e 's|https://www.archlinux.org/|https://www.artixlinux.org/|' \
                 -e 's|(Arch Linux)|(Artix Linux)|' \
-                -i $pkgpath/PKGBUILD
+                -i "$pkgpath"/PKGBUILD
         ;;
     esac
 }
 
 pull_tree_arch(){
-    cd ${TREE_DIR_ARCH}
-    for tree in ${ARCH_TREE[@]};do
-        if [[ -d ${tree} ]];then
-            cd ${tree}
-            pull_tree "${tree}" "$(get_local_head)" "Arch"
-            cd ..
+    cd "${TREE_DIR_ARCH}" || return
+    for tree in "${ARCH_TREE[@]}";do
+        if [[ -d "${tree}" ]];then
+            ( cd "${tree}" || return
+                pull_tree "${tree}" "$(get_local_head)" "Arch"
+            )
         else
             clone_tree "${HOST_TREE_ARCH}" "${tree}" "Arch"
         fi
@@ -67,14 +168,19 @@ pull_tree_arch(){
 }
 
 pull_tree_artix(){
-    local repos=("$1")
-    cd ${TREE_DIR_ARTIX}
-    for tree in ${repos[@]};do
-        if [[ -d ${tree} ]];then
+    local repos=()
+    if ${sync_group}; then
+        repos=("${GROUP}")
+    else
+        repos=("${ARTIX_TREE[@]}")
+    fi
+    cd "${TREE_DIR_ARTIX}" || return
+    for tree in "${repos[@]}"; do
+        if [[ -d "${tree}" ]];then
             config_tree "${tree}"
-            cd ${tree}
-            pull_tree "${tree}" "$(get_local_head)"
-            cd ..
+            ( cd "${tree}" || return
+                pull_tree "${tree}" "$(get_local_head)"
+            )
         else
             clone_tree "${HOST_TREE_ARTIX}" "${tree}"
             config_tree "${tree}"
@@ -86,32 +192,42 @@ sync_pkg(){
     local rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
     local src="$1" dest="$2"
     msg "Sync from Arch [%s] to Artix [%s]" "${src##*archlinux/}" "${dest##*artixlinux/}"
-    rsync "${rsync_args[@]}" $src/ $dest/
+    rsync "${rsync_args[@]}" "$src"/ "$dest"/
 }
 
 show_deps(){
-    local src="$1"
+    local src="$1" archver
 
-    . $src/PKGBUILD 2>/dev/null
+    # shellcheck disable=1090
+    . "$src"/PKGBUILD 2>/dev/null
 
-    local archver=$(get_full_version)
+    archver=$(get_full_version)
 
+    # shellcheck disable=2154
     [[ -n ${pkgbase} ]] && msg2 "pkgbase: %s" "${pkgbase}"
+    # shellcheck disable=2154
     msg2 "pkgname: %s" "${pkgname[*]}"
-    [[ -n $pkgdesc ]] && msg2 "pkgdesc: %s" "${pkgdesc}"
+    # shellcheck disable=2154
+    [[ -n "${pkgdesc}" ]] && msg2 "pkgdesc: %s" "${pkgdesc}"
+    # shellcheck disable=2154
     msg2 "Arch Version: %s" "$archver"
+    # shellcheck disable=2154
     msg2 "arch: %s" "$arch"
-
-    [[ -n ${makedepends[@]} ]] && msg2 "makedepends: %s" "${makedepends[*]}"
-    [[ -n ${checkdepends[@]} ]] && msg2 "checkdepends: %s" "${checkdepends[*]}"
-    [[ -n ${depends[@]} ]] && msg2 "depends: %s" "${depends[*]}"
-    [[ -n ${optdepends[@]} ]] && msg2 "optdepends: %s" "${optdepends[@]}"
+    # shellcheck disable=2154
+    [[ -n ${makedepends[*]} ]] && msg2 "makedepends: %s" "${makedepends[*]}"
+    # shellcheck disable=2154
+    [[ -n ${checkdepends[*]} ]] && msg2 "checkdepends: %s" "${checkdepends[*]}"
+    # shellcheck disable=2154
+    [[ -n ${depends[*]} ]] && msg2 "depends: %s" "${depends[*]}"
+    # shellcheck disable=2154
+    [[ -n ${optdepends[*]} ]] && msg2 "optdepends: %s" "${optdepends[@]}"
 }
 
 subrepo_new(){
-    cd ${TREE_DIR_ARTIX}/${GROUP}
+    cd "${TREE_DIR_ARTIX}/${GROUP}" || return
 
-    local org=$(get_pkg_org "${PACKAGE}")
+    local org
+    org=$(get_pkg_org "${PACKAGE}")
 
     create_repo "${PACKAGE}" "$org"
 
@@ -125,16 +241,17 @@ subrepo_new(){
 }
 
 from_arch(){
-    cd ${TREE_DIR_ARTIX}
+    cd "${TREE_DIR_ARTIX}" || return
 
-    local srcpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
+    local srcpath repo archpath artixpath
+    srcpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
     [[ -z $srcpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
 
-    local repo=$(find_repo "$srcpath")
+    repo=$(find_repo "$srcpath")
     msg "repo: %s" "${repo#*/}"
 
-    local archpath=$srcpath/$repo
-    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    archpath=$srcpath/$repo
+    artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
 
     show_deps "$archpath"
 
@@ -151,19 +268,21 @@ from_arch(){
 }
 
 view_build(){
-    local archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
+    local archpath repo
+    archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
     [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
-    local repo=$(find_repo "${archpath}")
+    repo=$(find_repo "${archpath}")
     archpath=$archpath/$repo
     msg "repo: %s" "${repo#*/}"
     show_deps "$archpath"
 }
 
 check_tree(){
-    local archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
+    local archpath artixpath group
+    archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
     [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
-    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
-    local group=${artixpath%/*}
+    artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    group=${artixpath%/*}
     msg "group: %s" "${group##*/}"
 
     [[ -z $artixpath ]] && msg2 "exists: %s" "no"
@@ -172,14 +291,10 @@ check_tree(){
 
 sync_repos(){
     ${sync_arch} && pull_tree_arch
-    if ${sync_artix};then
-        if ${sync_group}; then
-            pull_tree_artix "${GROUP}"
-        else
-            pull_tree_artix "${ARTIX_TREE[*]}"
-        fi
-    fi
+    ${sync_artix} && pull_tree_artix
 }
+
+#}}}
 
 load_makepkg_config
 
@@ -199,7 +314,7 @@ check=false
 PACKAGE=''
 
 TEAM='community'
-GROUP=${ARTIX_TREE[0]}
+GROUP="${ARTIX_TREE[0]}"
 
 usage() {
     echo "Usage: ${0##*/} [options]"
@@ -222,10 +337,8 @@ usage() {
     echo '    -h            This help'
     echo ''
     echo ''
-    exit $1
+    exit "$1"
 }
-
-orig_argv=("$0" "$@")
 
 opts='p:t:g:sinabcvxyzh'
 
@@ -249,7 +362,7 @@ while getopts "${opts}" arg; do
     esac
 done
 
-shift $(($OPTIND - 1))
+shift $(( OPTIND - 1 ))
 
 prepare_dir "${TREE_DIR_ARTIX}"
 prepare_dir "${TREE_DIR_ARCH}"

@@ -12,21 +12,53 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-pkg.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/pkg/repo.sh)
+m4_include(lib/util-base.sh)
+m4_include(lib/util-pkg.sh)
 
 prepare_artools
 
-get_import_path(){
-    local pkg="$1" import_path=
+#{{{ table
 
-    for tree in ${ARCH_TREE[@]};do
-        [[ -d ${TREE_DIR_ARCH}/$tree/$pkg/repos ]] && import_path=${TREE_DIR_ARCH}/$tree/$pkg
-    done
-    echo $import_path
+msg_table_header(){
+    local mesg=$1; shift
+    # shellcheck disable=2059
+    printf "${BLUE} ${mesg} ${ALL_OFF}\n" "$@" >&2
 }
 
+msg_row_downgrade(){
+    local mesg=$1; shift
+    # shellcheck disable=2059
+    printf "${YELLOW} ${mesg}${ALL_OFF}\n" "$@" >&2
+}
+
+msg_row_notify(){
+    local mesg=$1; shift
+    # shellcheck disable=2059
+    printf "${GREEN} ${mesg}${ALL_OFF}\n" "$@" >&2
+}
+
+msg_row(){
+    local mesg=$1; shift
+#     printf "${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
+    # shellcheck disable=2059
+    printf "${WHITE} ${mesg}${ALL_OFF}\n" "$@" >&2
+}
+
+msg_row_upgrade(){
+    local mesg=$1; shift
+    # shellcheck disable=2059
+    printf "${RED} ${mesg} ${ALL_OFF}\n" "$@" >&2
+}
+
+#}}}
+
+#{{{ upgrades, downgrades, moves
+
 compare_m(){
-    local result=$(vercmp "$artixver" "$archver")
+    result=$(vercmp "$artixver" "$archver")
     case ${artixrepo} in
         *testing*|*staging*|*rebuild)
             if [[ "${a}" == "${b}" ]] || [[ "${a}" == 'staging' && "${b}" == 'rebuild' ]]; then
@@ -34,7 +66,7 @@ compare_m(){
             else
                 msg_row_notify "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
                 if [[ -n "$archrepo" ]]; then
-                    printf "%s\n" "${a}:${b}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_moves.list
+                    printf "%s\n" "${a}:${b}:$pkg" >> "${TREE_DIR_ARTIX}"/pkg_moves.list
                 fi
             fi
         ;;
@@ -42,46 +74,58 @@ compare_m(){
 }
 
 compare_u(){
-    local result=$(vercmp "$artixver" "$archver")
-    if [ $result -eq -1 ];then
+    result=$(vercmp "$artixver" "$archver")
+    if [ "$result" -eq -1 ];then
         msg_row_upgrade "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
-        printf "%s\n" "${a}:$pkg" >> ${TREE_DIR_ARTIX}/pkg_upgrades.list
+        printf "%s\n" "${a}:$pkg" >> "${TREE_DIR_ARTIX}"/pkg_upgrades.list
     fi
 }
 
 compare_d(){
-    local result=$(vercmp "$artixver" "$archver")
-    if [ $result -eq 1 ];then
+    result=$(vercmp "$artixver" "$archver")
+    if [ "$result" -eq 1 ];then
         if [[ -n "$archver" ]] && [[ -n "$archrepo" ]];then
             msg_row_downgrade "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
         fi
     fi
 }
 
+get_archpath(){
+    local pkg="$1" archpath
+
+    for tree in "${ARCH_TREE[@]}"; do
+        [[ -d ${TREE_DIR_ARCH}/$tree/$pkg/repos ]] && archpath=${TREE_DIR_ARCH}/$tree/$pkg
+    done
+    echo "$archpath"
+}
+
 pre_compare(){
-    local func="$1" pkgpath="$2"
-    local group="${pkgpath%/*}"
+    local func="$1" pkgpath="$2" result group
+    group="${pkgpath%/*}"
     group=${group##*/}
-    local pkg=${pkgpath##*/}
-    local artixrepo=$(find_repo "$pkgpath")
-    local pkgbuild=$pkgpath/$artixrepo/PKGBUILD
+
+    local pkg artixrepo archrepo pkgbuild artixver archver archpath node a b
+    pkg=${pkgpath##*/}
+    artixrepo=$(find_repo "$pkgpath")
+    pkgbuild=$pkgpath/$artixrepo/PKGBUILD
 
     if [[ -f $pkgbuild ]]; then
-        . $pkgbuild 2>/dev/null
-        local artixver=$(get_full_version)
-
-        local archpath=$(get_import_path $pkg)
-        local archrepo=$(find_repo "${archpath}")
+        # shellcheck disable=1090
+        . "$pkgbuild" 2>/dev/null
+        artixver=$(get_full_version)
+        archpath=$(get_archpath "$pkg")
+        archrepo=$(find_repo "${archpath}")
         pkgbuild=$archpath/$archrepo/PKGBUILD
-        local node=${artixrepo%/*}
-        local a=${archrepo#*/} b=${artixrepo#*/}
+        node=${artixrepo%/*}
+        a=${archrepo#*/} b=${artixrepo#*/}
         a="${a%-*}"
 
         [[ "$node" != "$CARCH" ]] && b=${b%-*}
 
         if [[ -f "$pkgbuild" ]]; then
-            . $pkgbuild 2>/dev/null
-            local archver=$(get_full_version)
+            # shellcheck disable=1090
+            . "$pkgbuild" 2>/dev/null
+            archver=$(get_full_version)
         fi
 
         "$func"
@@ -105,11 +149,14 @@ compare_move(){
     pre_compare compare_m "$pkgpath"
 }
 
+#}}}
+
+#{{{ functions
+
 tree_loop(){
     local func="$1"
-    for tree in ${ARTIX_TREE[@]}; do
-        local pkgs=$(find ${TREE_DIR_ARTIX}/$tree -name trunk)
-        for package in ${pkgs[@]}; do
+    for tree in "${ARTIX_TREE[@]}"; do
+        for package in $(find "${TREE_DIR_ARTIX}/$tree" -name trunk); do
             "$func" "$package"
         done
     done
@@ -121,7 +168,7 @@ show_compare_header(){
 
 show_upgrades_table(){
     show_compare_header
-    [[ -f ${TREE_DIR_ARTIX}/pkg_upgrades.list ]] && rm ${TREE_DIR_ARTIX}/pkg_upgrades.list
+    [[ -f "${TREE_DIR_ARTIX}"/pkg_upgrades.list ]] && rm "${TREE_DIR_ARTIX}"/pkg_upgrades.list
     tree_loop compare_upgrades
 }
 
@@ -132,7 +179,7 @@ show_downgrades_table(){
 
 show_move_table(){
     show_compare_header
-    [[ -f ${TREE_DIR_ARTIX}/pkg_moves.list ]] && rm ${TREE_DIR_ARTIX}/pkg_moves.list
+    [[ -f "${TREE_DIR_ARTIX}"/pkg_moves.list ]] && rm "${TREE_DIR_ARTIX}"/pkg_moves.list
     tree_loop compare_move
 }
 
@@ -149,9 +196,12 @@ update_db_cache(){
     msg "Done"
 }
 
+#}}}
+
+#{{{ sogrep
+
 query_db() {
     for repo in "${searchrepos[@]}"; do
-        local prefix=
         local db=${db_cache_dir}/${LINKSDBEXT}/${CARCH}/${repo}/
         if [[ -d ${db} ]]; then
             while read -rd '' pkg; do
@@ -170,6 +220,10 @@ show_lib_table() {
     query_db
 }
 
+#}}}
+
+#{{{ check db
+
 is_db_entry() {
     local pkgname="$1" repo="${REPOS[$2]}"
 
@@ -182,15 +236,17 @@ is_db_entry() {
 check_db(){
     local pkgpath="${1%/*}"
 
-    for repo in ${!REPOS[@]};do
-        local pkgbuild=
+    for repo in "${!REPOS[@]}"; do
+        local pkgbuild artixver
         [[ -f $pkgpath/$CARCH/$repo/PKGBUILD ]] && pkgbuild=$pkgpath/$CARCH/$repo/PKGBUILD
         [[ -f $pkgpath/repos/$repo-$CARCH/PKGBUILD ]] && pkgbuild=$pkgpath/repos/$repo-$CARCH/PKGBUILD
         [[ -f $pkgpath/repos/$repo-any/PKGBUILD ]] && pkgbuild=$pkgpath/repos/$repo-any/PKGBUILD
 
-        . $pkgbuild 2>/dev/null
-        local artixver=$(get_full_version)
-        for name in ${pkgname[@]};do
+        # shellcheck disable=1090
+        . "$pkgbuild" 2>/dev/null
+
+        artixver=$(get_full_version)
+        for name in "${pkgname[@]}"; do
 
             if ! is_db_entry "$name-$artixver" "$repo"; then
                 msg_row "${tableU}" "$repo" "$name" "$artixver" "false"
@@ -206,6 +262,8 @@ show_db_table(){
     msg_table_header "${tableU}" "Repo" "Package" "Version" "Database"
     tree_loop check_db
 }
+
+#}}}
 
 db_cache_dir="${XDG_CACHE_HOME:-$USER_HOME/.cache}/artools"
 
@@ -227,36 +285,6 @@ readonly table="%-18s %-18s %-25s %-27s %-27s %-10s"
 readonly tableU="%-20s %-35s %-30s %-10s"
 readonly tableQ="%-20s %-45s %s"
 
-declare -A REPOS=(
-    [core]=system
-    [extra]=world
-    [community]=galaxy
-    [multilib]=lib32
-    [testing]=gremlins
-    [staging]=goblins
-    [community-testing]=galaxy-gremlins
-    [community-staging]=galaxy-goblins
-    [multilib-testing]=lib32-gremlins
-    [multilib-staging]=lib32-goblins
-    [kde-unstable]=kde-wobble
-    [gnome-unstable]=gnome-wobble
-)
-
-searchrepos=(
-    ${REPOS[kde-unstable]}
-    ${REPOS[gnome-unstable]}
-    ${REPOS[staging]}
-    ${REPOS[testing]}
-    ${REPOS[core]}
-    ${REPOS[extra]}
-    ${REPOS[community-staging]}
-    ${REPOS[community-testing]}
-    ${REPOS[community]}
-    ${REPOS[multilib-staging]}
-    ${REPOS[multilib-testing]}
-    ${REPOS[multilib]}
-)
-
 usage() {
     echo "Usage: ${0##*/} [options] (with -q [libname])"
     echo '    -u            Show upgrade packages'
@@ -273,10 +301,8 @@ usage() {
     echo '    -h            This help'
     echo ''
     echo ''
-    exit $1
+    exit "$1"
 }
-
-orig_argv=("$0" "$@")
 
 opts='r:qcsudmxyzh'
 
@@ -297,11 +323,43 @@ while getopts "${opts}" arg; do
     esac
 done
 
-shift $(($OPTIND - 1))
+shift $(( OPTIND - 1 ))
 
 library="$1"; shift
 
 set_arch_repos "$testing" "$staging" "$unstable"
+
+#{{{ assoc repos array
+declare -A REPOS=(
+    [${valid_names[0]}]=system
+    [${valid_names[1]}]=world
+    [${valid_names[2]}]=galaxy
+    [${valid_names[3]}]=lib32
+    [${valid_names[4]}]=gremlins
+    [${valid_names[5]}]=galaxy-gremlins
+    [${valid_names[6]}]=lib32-gremlins
+    [${valid_names[7]}]=goblins
+    [${valid_names[8]}]=galaxy-goblins
+    [${valid_names[9]}]=lib32-goblins
+    [${valid_names[11]}]=kde-wobble
+    [${valid_names[12]}]=gnome-wobble
+)
+
+searchrepos=(
+    "${REPOS[${valid_names[11]}]}"
+    "${REPOS[${valid_names[12]}]}"
+    "${REPOS[${valid_names[7]}]}"
+    "${REPOS[${valid_names[8]}]}"
+    "${REPOS[${valid_names[9]}]}"
+    "${REPOS[${valid_names[4]}]}"
+    "${REPOS[${valid_names[5]}]}"
+    "${REPOS[${valid_names[6]}]}"
+    "${REPOS[${valid_names[0]}]}"
+    "${REPOS[${valid_names[1]}]}"
+    "${REPOS[${valid_names[2]}]}"
+    "${REPOS[${valid_names[3]}]}"
+)
+#}}}
 
 ${move} && show_move_table
 

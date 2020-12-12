@@ -12,11 +12,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-pkg.sh
+m4_include(lib/base/message.sh)
 
 shopt -s extglob
 
 load_makepkg_config
+
+#{{{ functions
 
 pkgver_equal() {
     if [[ $1 = *-* && $2 = *-* ]]; then
@@ -79,6 +81,8 @@ find_cached_package() {
         ;;
     esac
 }
+
+#}}}
 
 usage() {
     cat <<- _EOF_

@@ -12,13 +12,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-pkg.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/pkg/repo.sh)
 
 prepare_artools
 
 load_makepkg_config
 
-passfiles="$@"
+passfiles=("$@")
 
 sign_pkg(){
     local file_to_sign="$1"
@@ -32,12 +34,13 @@ sign_pkg(){
         msg "Signing [%s]" "${file_to_sign##*/}"
         gpg --batch --passphrase "${BUILDBOT_GPGP}" --detach-sign "$file_to_sign"
     else
-        msg2 "Signing [%s] with key %s" "${file_to_sign##*/}" "${GPGKEY}..."
+        msg "Signing [%s] with key %s" "${file_to_sign##*/}" "${GPGKEY}..."
         gpg --detach-sign --use-agent -u "${GPGKEY}" "$file_to_sign"
     fi
 }
 
 for pkg in ${passfiles[@]}; do
+    msg "Searching %s ..." "$pkg"
     if pkgfile=$(find_cached_pkgfile "$pkg");then
         msg2 "Found: %s" "${pkgfile}"
         [[ -e "${pkgfile}".sig ]] && rm "${pkgfile}".sig

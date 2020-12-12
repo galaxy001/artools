@@ -1,16 +1,6 @@
-#!/bin/bash
-#
-# Copyright (C) 2018-19 artoo@artixlinux.org
-# Copyright (C) 2018 Artix Linux Developers
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#!/hint/bash
+
+#{{{ yaml
 
 write_yaml_header(){
     printf '%s' '---'
@@ -34,3 +24,5 @@ write_yaml_seq_map(){
     local ident="$1" key="$2" val="$3"
     printf "\n%${ident}s- %s: %s\n" '' "$key" "$val"
 }
+
+#}}}

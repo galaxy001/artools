@@ -12,9 +12,40 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-pkg.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/pkg/git.sh)
+m4_include(lib/pkg/repo.sh)
+m4_include(lib/util-base.sh)
+m4_include(lib/util-pkg.sh)
 
 prepare_artools
+
+#{{{ functions
+
+push_tree(){
+    local tree="$1"
+    msg "Update (%s)" "${tree}"
+    git push origin master
+}
+
+subrepo_push(){
+    local pkg="$1"
+    msg2 "Subrepo push (%s)" "$pkg"
+    git subrepo push "$pkg" || die "%s push failed" "$pkg"
+}
+
+subrepo_clean(){
+    local pkg="$1"
+    msg2 "Subrepo clean (%s)" "$pkg"
+    git subrepo clean "$pkg"
+}
+
+subrepo_pull(){
+    local pkg="$1"
+    msg2 "Subrepo pull (%s)" "$pkg"
+    git subrepo pull "$pkg"
+}
 
 prepare_commit(){
     # create new layout, copy & remove repos
@@ -22,10 +53,13 @@ prepare_commit(){
         msg "Switching to new layout ..."
         [[ ! -d "$CARCH" ]] && mkdir "$CARCH"
 
-        for r in $(ls repos); do
-            mkdir "$CARCH/${r%-*}"
-            cp repos/"${r}"/* "$CARCH/${r%-*}/"
-            git add "$CARCH/${r%-*}"
+        for r in repos/*; do
+            local name noarch
+            name=${r#*/}
+            noarch=${name%-*}
+            mkdir "$CARCH/${noarch}"
+            cp repos/"${name}"/* "$CARCH/${noarch}/"
+            git add "$CARCH/${noarch}"
         done
 
         git rm -r repos
@@ -41,54 +75,65 @@ prepare_commit(){
 }
 
 check_rebuild(){
-    if [[ -d "$CARCH"/rebuild ]] && [[ "${REPO_DEST}" == 'staging' ]]; then
-        git rm -r "$CARCH"/rebuild
-        git commit -m "switch from rebuild to staging"
-    elif [[ -d "$CARCH"/staging ]] && [[ "${REPO_DEST}" == 'rebuild' ]]; then
-        git rm -r "$CARCH"/staging
-        git commit -m "switch from staging to rebuild"
+    if [[ -d "$CARCH"/"${valid_names[10]}" ]] \
+    && [[ "${REPO_DEST}" == "${valid_names[7]}" ]]; then
+        git rm -r "$CARCH"/"${valid_names[10]}"
+        git commit -m "switch from ${valid_names[10]} to ${valid_names[7]}"
+    elif [[ -d "$CARCH"/"${valid_names[7]}" ]] \
+    && [[ "${REPO_DEST}" == "${valid_names[10]}" ]]; then
+        git rm -r "$CARCH"/"${valid_names[7]}"
+        git commit -m "switch from ${valid_names[7]} to ${valid_names[10]}"
     fi
 }
 
 check_team(){
-    if [[ "${REPO_SRC}" == "core" && "${REPO_DEST}" == "extra" ]] || \
-        [[ "${REPO_SRC}" == "extra" && "${REPO_DEST}" == "core" ]] || \
-        [[ "${REPO_SRC}" == "extra" && "${REPO_DEST}" == "community" ]] || \
-        [[ "${REPO_SRC}" == "community" && "${REPO_DEST}" == "extra" ]] ;then
+    if [[ "${REPO_SRC}" == "${valid_names[0]}" \
+    && "${REPO_DEST}" == "${valid_names[1]}" ]] || \
+        [[ "${REPO_SRC}" == "${valid_names[1]}" \
+        && "${REPO_DEST}" == "${valid_names[0]}" ]] || \
+        [[ "${REPO_SRC}" == "${valid_names[1]}" \
+        && "${REPO_DEST}" == "${valid_names[2]}" ]] || \
+        [[ "${REPO_SRC}" == "${valid_names[2]}" \
+        && "${REPO_DEST}" == "${valid_names[1]}" ]] ;then
 
-        local org=$(get_pkg_org "${PACKAGE}")
+        local org
+        org=$(get_pkg_org "${PACKAGE}")
         add_repo_to_team "${PACKAGE}" "$org" "${REPO_DEST}"
         remove_repo_from_team "${PACKAGE}" "$org" "${REPO_SRC}"
     fi
 }
 
-config() {
+path_config() {
     [[ "${REPO_SRC}" != 'trunk' ]] && pkgbuild="$CARCH/${REPO_SRC}"/PKGBUILD
 
     if [[ ! -f "$pkgbuild" ]]; then
         pkgbuild=repos/"${REPO_SRC}-${CARCH}"/PKGBUILD
         [[ -f repos/"${REPO_SRC}"-any/PKGBUILD ]] && pkgbuild=repos/"${REPO_SRC}"-any/PKGBUILD
     fi
+
+    # shellcheck disable=1090
+    . "$pkgbuild"
 }
 
 commit_pkg() {
+    local commit_msg pkg
     if ${remove};then
         action='remove'
         if [[ "${REPO_SRC}" == 'trunk' ]];then
-            local pkg=${PACKAGE}
+            pkg=${PACKAGE}
             git rm -r trunk
         else
-            local pkg="${PACKAGE}-$(get_full_version)"
+            pkg="${PACKAGE}-$(get_full_version)"
 
             prepare_commit
 
             git rm -r "$CARCH/${REPO_SRC}"
         fi
-        local commit_msg="[${REPO_SRC}] '$pkg' ${action}"
+        commit_msg="[${REPO_SRC}] '$pkg' ${action}"
         msg "Action: %s" "$commit_msg"
     else
         action='modify'
-        local commit_msg="[${REPO_SRC}] '${PACKAGE}-$(get_full_version)' ${action}"
+        commit_msg="[${REPO_SRC}] '${PACKAGE}-$(get_full_version)' ${action}"
         msg "Action: %s" "$commit_msg"
         git add .
     fi
@@ -96,6 +141,7 @@ commit_pkg() {
 }
 
 repo_commit_pkg() {
+    local commit_msg
     if [[ "${REPO_SRC}" == 'trunk' ]];then
         action='add'
 
@@ -112,7 +158,7 @@ repo_commit_pkg() {
         cp "$CARCH/${REPO_SRC}"/* "$CARCH/${REPO_DEST}"/
         git rm -r "$CARCH/${REPO_SRC}"
     fi
-    local commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$(get_full_version)' ${action}"
+    commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$(get_full_version)' ${action}"
     msg "Action: %s" "$commit_msg"
 
     git add .
@@ -120,15 +166,16 @@ repo_commit_pkg() {
 }
 
 run(){
-    local artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    local artixpath head group
+    artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
     if [[ -n ${artixpath} ]];then
-        local group=${artixpath%/*}
-        cd ${group}
-        local head=$(get_local_head)
+        group=${artixpath%/*}
+        cd "${group}" || return
+        head=$(get_local_head)
 
-        cd ${artixpath}
-        config
-        . $pkgbuild
+        cd "${artixpath}" || return
+
+        path_config
 
         if [[ "${cmd}" == 'commitpkg' ]];then
             commit_pkg
@@ -136,7 +183,7 @@ run(){
             repo_commit_pkg
         fi
 
-        cd ${group}
+        cd "${group}" || return
 
         ${push} && pull_tree "${group##*/}" "$head"
 #         subrepo_pull "${PACKAGE}"
@@ -145,7 +192,7 @@ run(){
 
         ${push} && push_tree "${group##*/}"
 
-        git prune
+#         git prune -v
 
         [[ "${cmd}" != 'commitpkg' ]] && check_team
     else
@@ -154,9 +201,8 @@ run(){
 }
 
 is_valid_repo(){
-    . "${DATADIR}"/valid-names.conf
     local _valid=trunk
-    for repo in ${valid_names[@]}; do
+    for repo in "${valid_names[@]}"; do
         _valid=${repo:-}${repo:+|}$_valid
     done
     eval "case ${REPO_SRC} in
@@ -164,6 +210,8 @@ is_valid_repo(){
         *) return 1 ;;
     esac"
 }
+
+#}}}
 
 load_makepkg_config
 
@@ -186,10 +234,8 @@ usage() {
     echo '    -h                 This help'
     echo ''
     echo ''
-    exit $1
+    exit "$1"
 }
-
-orig_argv=("$0" "$@")
 
 opts='p:s:urh'
 
@@ -204,9 +250,11 @@ while getopts "${opts}" arg; do
     esac
 done
 
-shift $(($OPTIND - 1))
+shift $(( OPTIND - 1 ))
 
-if $(is_valid_repo);then
+set_arch_repos "false" "false" "false"
+
+if is_valid_repo;then
     run
 else
     die "source repository '%s' is not valid!" "${REPO_SRC}"

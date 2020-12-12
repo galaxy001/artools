@@ -12,7 +12,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/yaml.sh)
+
+#{{{ functions
 
 srcyaml_write_attr(){
     local ident1="$1" ident2="$2" ident3="$3"
@@ -25,14 +28,14 @@ srcyaml_write_attr(){
 
     case $attrname in
         pkgver|pkgrel|epoch|url|install|changelog)
-            for v in ${attrvalues[@]};do
-                Yaml+=$(write_yaml_map $ident3 "$attrname" "$v")
+            for v in "${attrvalues[@]}"; do
+                Yaml+=$(write_yaml_map "$ident3" "$attrname" "$v")
             done
         ;;
         *)
-            Yaml+=$(write_yaml_map $ident1 "$attrname")
-            for v in ${attrvalues[@]};do
-                Yaml+=$(write_yaml_seq $ident2 "$v")
+            Yaml+=$(write_yaml_map "$ident1" "$attrname")
+            for v in "${attrvalues[@]}"; do
+                Yaml+=$(write_yaml_seq "$ident2" "$v")
             done
         ;;
     esac
@@ -100,13 +103,15 @@ yaml_write_package() {
 }
 
 yaml_write_fileinfo(){
-    local version=$(get_full_version)
+    local version
+    version=$(get_full_version)
     pkgbase=${pkgbase:-$pkgname}
     Yaml+=$(write_yaml_map 0 "version" "${version:-0}")
     Yaml+=$(write_empty_line)
-    local pkgfile=$(print_all_package_names)
+    local pkgfile
+    pkgfile=$(print_all_package_names)
     Yaml+=$(write_yaml_map 0 "files")
-    for f in ${pkgfile[@]};do
+    for f in ${pkgfile[@]}; do
         Yaml+=$(write_yaml_seq 2 "${f##*/}")
     done
     Yaml+=$(write_empty_line)
@@ -120,12 +125,14 @@ write_srcyaml(){
     printf '%s' "${Yaml}"
 }
 
+#}}}
+
 usage() {
     echo "Usage: ${0##*/} [options]"
     echo "    -d            Don't include details"
     echo '    -h            This help'
     echo ''
-    exit $1
+    exit "$1"
 }
 
 details=true
@@ -140,13 +147,14 @@ while getopts "${opts}" arg; do
     esac
 done
 
-shift $(( $OPTIND - 1 ))
+shift $(( OPTIND - 1 ))
 
 srcpath=$(readlink -f "$1")
 
 [[ -f "$srcpath"/PKGBUILD ]] || die "%s/PKGBUILD does not exist!" "$srcpath"
 PACKAGE="$srcpath"/PKGBUILD; shift
 
+# shellcheck disable=1090
 . "$PACKAGE"
 
 load_makepkg_config

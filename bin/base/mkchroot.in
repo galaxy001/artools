@@ -12,7 +12,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-. @libdir@/artools/util-base.sh
+m4_include(lib/base/message.sh)
+m4_include(lib/base/common.sh)
+m4_include(lib/base/chroot.sh)
 
 working_dir=''
 umode=''
@@ -33,8 +35,6 @@ usage() {
     exit 1
 }
 
-orig_argv=("$0" "$@")
-
 opts='hUC:M:c:f:s'
 
 while getopts ${opts} arg; do
@@ -53,13 +53,13 @@ while getopts ${opts} arg; do
         [[ -v OPTARG ]] && chroot_args+=("$OPTARG")
     fi
 done
-shift $(($OPTIND - 1))
+shift $(( OPTIND - 1 ))
 
 (( $# < 2 )) && die 'You must specify a directory and one or more packages.'
 
 check_root
 
-working_dir="$(readlink -f $1)"
+working_dir="$(readlink -f "$1")"
 shift 1
 
 [[ -z $working_dir ]] && die 'Please specify a working directory.'
@@ -94,7 +94,7 @@ for f in "${files[@]}"; do
 done
 
 basestrap -${umode}Mc ${pacman_conf:+-C "$pacman_conf"} "$working_dir" \
-    ${cache_dirs[@]/#/--cachedir=} "$@" || die 'Failed to install all packages'
+    "${cache_dirs[@]/#/--cachedir=}" "$@" || die 'Failed to install all packages'
 
 printf '%s.UTF-8 UTF-8\n' en_US de_DE > "$working_dir/etc/locale.gen"
 echo 'LANG=en_US.UTF-8' > "$working_dir/etc/locale.conf"
