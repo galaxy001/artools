@@ -19,8 +19,6 @@ m4_include(lib/pkg/repo.sh)
 m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
 
-prepare_artools
-
 #{{{ functions
 
 clone_tree(){
@@ -45,7 +43,7 @@ subrepo_clone(){
     local gitname
     gitname=$(get_compliant_name "$pkg")
     msg2 "Subrepo clone [%s] from (%s)" "$pkg" "$org/$gitname"
-    git subrepo clone gitea@"${GIT_DOMAIN}":"$org"/"$gitname".git "$pkg"
+    git subrepo clone "${GIT_SSH}":"$org"/"$gitname".git "$pkg"
 }
 
 create_repo() {
@@ -235,7 +233,7 @@ subrepo_new(){
 
     subrepo_clone "${PACKAGE}" "$org"
 
-    prepare_dir "${TREE_DIR_ARTIX}/${GROUP}/${PACKAGE}/trunk"
+    mkdir -p "${TREE_DIR_ARTIX}/${GROUP}/${PACKAGE}/trunk"
 
     commit_jenkins_files "${PACKAGE}"
 }
@@ -363,9 +361,6 @@ while getopts "${opts}" arg; do
 done
 
 shift $(( OPTIND - 1 ))
-
-prepare_dir "${TREE_DIR_ARTIX}"
-prepare_dir "${TREE_DIR_ARCH}"
 
 set_arch_repos "$testing" "$staging" "$unstable"
 

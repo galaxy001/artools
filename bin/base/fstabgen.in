@@ -15,7 +15,6 @@
 shopt -s extglob
 
 m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
 
 #{{{ filesystems
 
@@ -410,7 +409,7 @@ done
 # handle swaps devices
 {
     # ignore header
-    read
+    read -r
 
     while read -r device type _ _ prio; do
         options=defaults

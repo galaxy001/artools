@@ -13,7 +13,6 @@
 # GNU General Public License for more details.
 
 m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
 m4_include(lib/base/chroot.sh)
 
 shopt -s nullglob

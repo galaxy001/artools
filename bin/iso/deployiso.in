@@ -17,8 +17,6 @@ m4_include(lib/base/common.sh)
 m4_include(lib/util-base.sh)
 m4_include(lib/util-iso.sh)
 
-prepare_artools
-
 #{{{ functions
 
 connect(){

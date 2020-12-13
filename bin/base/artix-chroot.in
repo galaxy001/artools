@@ -15,7 +15,6 @@
 shopt -s extglob
 
 m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
 m4_include(lib/base/chroot.sh)
 m4_include(lib/base/mount.sh)
 
@@ -31,12 +30,6 @@ chroot_part_umount() {
     info "umount: [%s]" "${CHROOT_ACTIVE_PART_MOUNTS[@]}"
     umount "${CHROOT_ACTIVE_PART_MOUNTS[@]}"
     unset CHROOT_ACTIVE_PART_MOUNTS
-}
-
-parse_fstab(){
-    $(perl -ane 'printf("%s:%s\n", @F[0,1]) if $F[0] =~ m#^UUID=#;' "$1"/etc/fstab)
-# 	perl -ane 'printf("%s:%s\n", @F[0,1]) if $F[0] =~ m#^/dev#;' $1/etc/fstab
-# 	perl -ane 'printf("%s:%s\n", @F[0,1]) if $F[0] =~ m#^LABEL=#;' $1/etc/fstab
 }
 
 detect(){
@@ -63,9 +56,9 @@ mount_os(){
     chroot_part_mount "$2" "$1"
 
     local mounts
-    mounts=$(parse_fstab "$1")
+    mounts=$(perl -ane 'printf("%s:%s\n", @F[0,1]) if $F[0] =~ m#^UUID=#;' "$1"/etc/fstab)
 
-    for entry in "${mounts[@]}"; do
+    for entry in ${mounts}; do
         entry=${entry//UUID=}
         local dev=${entry%:*} mp=${entry#*:}
         case "${entry#*:}" in

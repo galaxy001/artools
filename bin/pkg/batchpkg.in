@@ -17,8 +17,6 @@ m4_include(lib/base/common.sh)
 m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
 
-prepare_artools
-
 #{{{ functions
 
 batch_move() {

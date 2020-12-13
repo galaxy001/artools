@@ -39,3 +39,5 @@ load_iso_config(){
 #}}}
 
 load_iso_config "${USER_CONF_DIR}" || load_iso_config "${SYSCONFDIR}"
+
+prepare_dir "${ISO_POOL}"

@@ -18,8 +18,6 @@ m4_include(lib/pkg/repo.sh)
 m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
 
-prepare_artools
-
 #{{{ functions
 
 add(){
@@ -39,7 +37,7 @@ remove(){
 
 repo_action(){
     local packages=() action func="$1"
-    for pkgname in ${passfiles[@]}; do
+    for pkgname in "${passfiles[@]}"; do
         "$func"
     done
     cd "$repo_path" || return
@@ -88,8 +86,6 @@ done
 shift $(( OPTIND - 1 ))
 
 passfiles=("$@")
-
-prepare_dir "${REPOS_ROOT}"
 
 repo_path=${REPOS_ROOT}/${dest_repo}/os/${CARCH}
 

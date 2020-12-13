@@ -111,7 +111,7 @@ yaml_write_fileinfo(){
     local pkgfile
     pkgfile=$(print_all_package_names)
     Yaml+=$(write_yaml_map 0 "files")
-    for f in ${pkgfile[@]}; do
+    for f in ${pkgfile}; do
         Yaml+=$(write_yaml_seq 2 "${f##*/}")
     done
     Yaml+=$(write_empty_line)

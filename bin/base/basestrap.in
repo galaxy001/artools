@@ -23,7 +23,6 @@
 shopt -s extglob
 
 m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
 m4_include(lib/base/mount.sh)
 m4_include(lib/base/chroot.sh)
 

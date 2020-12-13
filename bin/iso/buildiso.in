@@ -21,8 +21,6 @@ m4_include(lib/iso/services.sh)
 m4_include(lib/util-base.sh)
 m4_include(lib/util-iso.sh)
 
-prepare_artools
-
 #{{{ session
 
 set_xdm(){
@@ -819,8 +817,6 @@ prepare_build(){
 
     basestrap_args+=(-C "${pacman_conf}")
     work_dir=${CHROOTS_ISO}/${PROFILE}/artix
-
-    prepare_dir "${ISO_POOL}"
 
     iso_dir="${ISO_POOL}/${PROFILE}"
 

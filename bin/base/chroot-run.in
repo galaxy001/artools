@@ -15,7 +15,6 @@
 chroot_version=0.9
 
 m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
 m4_include(lib/base/mount.sh)
 m4_include(lib/base/chroot.sh)
 
@@ -43,7 +42,7 @@ umask 0022
 working_dir=''
 files=()
 
-mount_args=()
+mount_args=("-B:/etc/hosts:/etc/hosts")
 
 usage() {
     echo "Usage: ${0##*/} [options] working-dir [run arguments]"
@@ -70,7 +69,7 @@ while getopts ${opts} arg; do
         c) cache_dirs+=("$OPTARG") ;;
         f) files+=("$OPTARG") ;;
         s) nosetarch=1 ;;
-        b) bindmounts=("$OPTARG"); mount_args+=("${bindmounts[@]}") ;;
+        b) bindmounts+=("$OPTARG"); mount_args+=(${bindmounts[@]}) ;;
         h|?) usage ;;
         *) error "invalid argument '$arg'"; usage ;;
     esac
@@ -135,7 +134,7 @@ copy_hostconf () {
     sed -r "s|^#?\\s*CacheDir.+|CacheDir = ${cache_dirs[*]}|g" -i "${working_dir}/etc/pacman.conf"
 }
 
-mount_args+=("-B:${cache_dirs[0]//:/\\:}:${cache_dirs[0]//:/\\:}" "-B:/etc/hosts:/etc/hosts")
+mount_args+=("-B:${cache_dirs[0]//:/\\:}:${cache_dirs[0]//:/\\:}")
 
 for cache_dir in "${cache_dirs[@]:1}"; do
     mount_args+=("-Br:${cache_dir//:/\\:}:${cache_dir//:/\\:}")
@@ -144,7 +143,7 @@ done
 chroot_extra_mount() {
     chroot_add_resolv_conf "${working_dir}"
 
-    for arg in ${mount_args[@]}; do
+    for arg in "${mount_args[@]}"; do
         local flag=${arg%%:*}
         local dest=${arg##*:}
         local src=${arg%:*}

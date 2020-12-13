@@ -13,10 +13,7 @@
 # GNU General Public License for more details.
 
 m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
 m4_include(lib/pkg/repo.sh)
-
-prepare_artools
 
 load_makepkg_config
 
@@ -39,7 +36,7 @@ sign_pkg(){
     fi
 }
 
-for pkg in ${passfiles[@]}; do
+for pkg in "${passfiles[@]}"; do
     msg "Searching %s ..." "$pkg"
     if pkgfile=$(find_cached_pkgfile "$pkg");then
         msg2 "Found: %s" "${pkgfile}"

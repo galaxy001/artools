@@ -11,11 +11,11 @@ load_pkg_config(){
     # shellcheck disable=1090
     [[ -r "$conf" ]] && . "$conf"
 
-    DOMAIN='artixlinux.org'
+    local git_domain="gitea.${DOMAIN}"
 
-    GIT_DOMAIN="gitea.${DOMAIN}"
+    GIT_URL="https://${git_domain}"
 
-    GIT_URL="https://${GIT_DOMAIN}"
+    GIT_SSH="gitea@${git_domain}"
 
     GIT_TOKEN=${GIT_TOKEN:-''}
 
@@ -73,3 +73,7 @@ load_pkg_config(){
 #}}}
 
 load_pkg_config "${USER_CONF_DIR}" || load_pkg_config "${SYSCONFDIR}"
+
+prepare_dir "${REPOS_ROOT}"
+prepare_dir "${TREE_DIR_ARTIX}"
+prepare_dir "${TREE_DIR_ARCH}"
