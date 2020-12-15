@@ -11,27 +11,13 @@ load_iso_config(){
     # shellcheck disable=1090
     [[ -r "$conf" ]] && . "$conf"
 
-    CHROOTS_ISO="${CHROOTS_DIR}/buildiso"
-
     ISO_POOL=${ISO_POOL:-"${WORKSPACE_DIR}/iso"}
-
-    PROFILE='base'
 
     ISO_VERSION=${ISO_VERSION:-"$(date +%Y%m%d)"}
 
     INITSYS=${INITSYS:-'openrc'}
 
     GPG_KEY=${GPG_KEY:-''}
-
-    UPLIMIT=${UPLIMIT:-1000}
-
-    FILE_HOST="download.${DOMAIN}"
-
-    FILE_HOME=${FILE_HOME:-'/srv/iso'}
-
-    FILE_PORT=${FILE_PORT:-65432}
-
-    ACCOUNT=${ACCOUNT:-'naughtyISOuploader'}
 
     return 0
 }

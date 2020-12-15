@@ -12,11 +12,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
-m4_include(lib/pkg/repo.sh)
 m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
+m4_include(lib/base/message.sh)
+m4_include(lib/pkg/repo.sh)
 
 #{{{ table
 
@@ -184,11 +183,11 @@ show_move_table(){
 update_db_cache(){
     msg "Updating database cache"
     for repo in "${searchrepos[@]}"; do
-        local cachedir=${db_cache_dir}/${LINKSDBEXT}/${CARCH}/${repo}
+        local cachedir=${db_cache_dir}/${linksdb_ext}/${CARCH}/${repo}
         rm -rf "$cachedir"
         mkdir -p "$cachedir"
         msg2 "%s" "$repo"
-        curl -L -s "${REPOS_MIRROR}/${repo}/os/${CARCH}/${repo}.${LINKSDBEXT}" \
+        curl -L -s "${REPOS_MIRROR}/${repo}/os/${CARCH}/${repo}.${linksdb_ext}" \
             | bsdtar -xf - -C "$cachedir"
     done
     msg "Done"
@@ -200,7 +199,7 @@ update_db_cache(){
 
 query_db() {
     for repo in "${searchrepos[@]}"; do
-        local db=${db_cache_dir}/${LINKSDBEXT}/${CARCH}/${repo}/
+        local db=${db_cache_dir}/${linksdb_ext}/${CARCH}/${repo}/
         if [[ -d ${db} ]]; then
             while read -rd '' pkg; do
                 read -r match
@@ -225,7 +224,7 @@ show_lib_table() {
 is_db_entry() {
     local pkgname="$1" repo="${REPOS[$2]}"
 
-    if [[ -d ${db_cache_dir}/${LINKSDBEXT}/${CARCH}/$repo/$pkgname ]];then
+    if [[ -d ${db_cache_dir}/${linksdb_ext}/${CARCH}/$repo/$pkgname ]];then
         return 0
     fi
     return 1
@@ -264,6 +263,8 @@ show_db_table(){
 #}}}
 
 db_cache_dir="${XDG_CACHE_HOME:-$USER_HOME/.cache}/artools"
+
+linksdb_ext="links.tar.${DBEXT}"
 
 load_makepkg_config
 
@@ -327,7 +328,8 @@ library="$1"; shift
 
 set_arch_repos "$testing" "$staging" "$unstable"
 
-#{{{ assoc repos array
+#{{{ repo names arrays
+
 declare -A REPOS=(
     [${valid_names[0]}]=system
     [${valid_names[1]}]=world
@@ -357,6 +359,7 @@ searchrepos=(
     "${REPOS[${valid_names[2]}]}"
     "${REPOS[${valid_names[3]}]}"
 )
+
 #}}}
 
 ${move} && show_move_table

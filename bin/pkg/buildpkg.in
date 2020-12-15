@@ -12,11 +12,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+m4_include(lib/util-base.sh)
 m4_include(lib/base/message.sh)
 m4_include(lib/base/common.sh)
 m4_include(lib/base/chroot.sh)
-m4_include(lib/util-base.sh)
-m4_include(lib/util-pkg.sh)
 
 create_first=false
 rebuild=false
@@ -26,6 +25,8 @@ mkchrootpkg_args=(-c -n)
 cmd=${0##*/}
 repo=${cmd#*-}
 base_devel=('base-devel')
+chroots_pkg="${CHROOTS_DIR}/buildpkg"
+arch=$(uname -m)
 
 usage() {
     echo "Usage: ${0##*/} [options] -- [mkchrootpkg_args]"
@@ -46,7 +47,7 @@ opts='hcCNmr:d:'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        r) CHROOTS_PKG="$OPTARG" ;;
+        r) chroots_pkg="$OPTARG" ;;
         d) repo="$OPTARG" ;;
         c) create_first=true ;;
         m) rebuild=true ;;
@@ -75,10 +76,10 @@ check_root SOURCE_DATE_EPOCH,SRCDEST,SRCPKGDEST,PKGDEST,LOGDEST,MAKEFLAGS,PACKAG
 
 mkchrootpkg_args+=("${@:$OPTIND}")
 
-if ${create_first} || [[ ! -d "${CHROOTS_PKG}/${repo}-${ARCH}" ]];then
-    msg "Creating chroot for [%s] (%s)..." "${repo}" "${ARCH}"
+if ${create_first} || [[ ! -d "${chroots_pkg}/${repo}-${arch}" ]];then
+    msg "Creating chroot for [%s] (%s)..." "${repo}" "${arch}"
 
-    for copy in "${CHROOTS_PKG}/${repo}-${ARCH}"/*; do
+    for copy in "${chroots_pkg}/${repo}-${arch}"/*; do
         [[ -d $copy ]] || continue
         msg2 "Deleting chroot copy '%s'..." "$(basename "${copy}")"
 
@@ -89,19 +90,19 @@ if ${create_first} || [[ ! -d "${CHROOTS_PKG}/${repo}-${ARCH}" ]];then
     done
     lock_close 9
 
-    rm -rf --one-file-system "${CHROOTS_PKG}/${repo}-${ARCH}"
-    (umask 0022; mkdir -p "${CHROOTS_PKG}/${repo}-${ARCH}")
-    setarch "${ARCH}" mkchroot \
+    rm -rf --one-file-system "${chroots_pkg}/${repo}-${arch}"
+    (umask 0022; mkdir -p "${chroots_pkg}/${repo}-${arch}")
+    setarch "${arch}" mkchroot \
         -C "${pacman_conf}" \
         -M "${makepkg_conf}" \
-        "${CHROOTS_PKG}/${repo}-${ARCH}/root" \
+        "${chroots_pkg}/${repo}-${arch}/root" \
         "${base_devel[@]}" || abort
 else
-    lock 9 "${CHROOTS_PKG}/${repo}-${ARCH}/root.lock" "Locking clean chroot"
+    lock 9 "${chroots_pkg}/${repo}-${arch}/root.lock" "Locking clean chroot"
     chroot-run \
         -C "${pacman_conf}" \
         -M "${makepkg_conf}" \
-        "${CHROOTS_PKG}/${repo}-${ARCH}/root" \
+        "${chroots_pkg}/${repo}-${arch}/root" \
         pacman -Syuu --noconfirm || abort
 fi
 
@@ -110,5 +111,5 @@ if [[ ! -v SOURCE_DATE_EPOCH ]]; then
     export SOURCE_DATE_EPOCH=$(date +%s)
 fi
 
-msg "Building in chroot for [%s] (%s)..." "${repo}" "${ARCH}"
-exec mkchrootpkg -r "${CHROOTS_PKG}/${repo}-${ARCH}" "${mkchrootpkg_args[@]}"
+msg "Building in chroot for [%s] (%s)..." "${repo}" "${arch}"
+exec mkchrootpkg -r "${chroots_pkg}/${repo}-${arch}" "${mkchrootpkg_args[@]}"

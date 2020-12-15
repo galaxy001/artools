@@ -11,7 +11,7 @@ load_pkg_config(){
     # shellcheck disable=1090
     [[ -r "$conf" ]] && . "$conf"
 
-    local git_domain="gitea.${DOMAIN}"
+    local git_domain="gitea.artixlinux.org"
 
     GIT_URL="https://${git_domain}"
 
@@ -47,25 +47,15 @@ load_pkg_config(){
 
     ARTIX_TREE+=("${TREE_NAMES_ARTIX[@]}")
 
-    HOST_TREE_ARTIX=${HOST_TREE_ARTIX:-"gitea@${GIT_DOMAIN}:artixlinux"}
-
     TREE_DIR_ARCH=${TREE_DIR_ARCH:-"${WORKSPACE_DIR}/archlinux"}
 
     ARCH_TREE=(packages community)
-
-    HOST_TREE_ARCH=${HOST_TREE_ARCH:-'git://git.archlinux.org/svntogit'}
-
-    CHROOTS_PKG="${CHROOTS_DIR}/buildpkg"
 
     REPOS_ROOT=${REPOS_ROOT:-"${WORKSPACE_DIR}/repos"}
 
     REPOS_MIRROR=${REPOS_MIRROR:-'http://mirror1.artixlinux.org/repos'}
 
     DBEXT=${DBEXT:-'xz'}
-
-    LINKSDBEXT=${LINKSDBEXT:-"links.tar.${DBEXT}"}
-
-    PKGDBEXT=${PKGDBEXT:-"db.tar.${DBEXT}"}
 
     return 0
 }

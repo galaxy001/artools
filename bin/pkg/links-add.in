@@ -76,9 +76,9 @@ packages to remove can be specified on the command line.\n"
 See %s(8) for more details and descriptions of the available options.\n" "$cmd"
     printf "\n"
     if [[ $cmd == "links-add" ]] ; then
-        printf -- "Example:  links-add /path/to/repo.${LINKSDBEXT} pacman-5.1.3-1-x86_64.pkg.tar.xz\n"
+        printf -- "Example:  links-add /path/to/repo.links.tar.xz pacman-5.1.3-1-x86_64.pkg.tar.xz\n"
     elif [[ $cmd == "links-remove" ]] ; then
-        printf -- "Example:  links-remove /path/to/repo.${LINKSDBEXT} kernel26\n"
+        printf -- "Example:  links-remove /path/to/repo.links.tar.xz kernel26\n"
     fi
 }
 

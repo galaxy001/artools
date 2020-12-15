@@ -12,22 +12,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
-m4_include(lib/pkg/git.sh)
-m4_include(lib/pkg/repo.sh)
 m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
+m4_include(lib/base/message.sh)
+m4_include(lib/pkg/git.sh)
+m4_include(lib/pkg/repo.sh)
+m4_include(lib/pkg/jenkins.sh)
 
-#{{{ functions
-
-clone_tree(){
-    local url="$1" tree="$2" os="${3:-$(get_osname)}"
-
-    msg "Cloning %s (%s) ..." "$tree" "$os"
-
-    git clone "$url/$tree".git
-}
+#{{{ new git repo
 
 get_compliant_name(){
     local gitname="$1"
@@ -62,43 +54,46 @@ create_repo() {
     echo
 }
 
-write_jenkinsfile(){
-    local pkg="$1"
-    local jenkins=$pkg/Jenkinsfile
+subrepo_new(){
+    cd "${TREE_DIR_ARTIX}/${GROUP}" || return
 
-    echo "@Library('artix-ci') import org.artixlinux.RepoPackage" > "$jenkins"
-    {
-    echo ''
-    echo 'PackagePipeline(new RepoPackage(this))'
-    echo ''
-    } >> "$jenkins"
+    local org
+    org=$(get_pkg_org "${PACKAGE}")
 
-    git add "$jenkins"
+    create_repo "${PACKAGE}" "$org"
+
+    add_repo_to_team "${PACKAGE}" "$org" "${TEAM}"
+
+    subrepo_clone "${PACKAGE}" "$org"
+
+    mkdir -p "${TREE_DIR_ARTIX}/${GROUP}/${PACKAGE}/trunk"
+
+    commit_jenkins_files "${PACKAGE}"
 }
 
-write_agentyaml(){
-    local pkg="$1"
-    local agent="$pkg"/.artixlinux/agent.yaml label='master'
-    [[ -d $pkg/.artixlinux ]] || mkdir "$pkg"/.artixlinux
+#}}}
 
-    echo '%YAML 1.2' > "$agent"
-    {
-    echo '---'
-    echo ''
-    echo "label: $label"
-    echo ''
-    } >> "$agent"
+#{{{ pull
 
-    git add "$agent"
+clone_tree(){
+    local url="$1" tree="$2" os="${3:-Artix}"
+
+    msg "Cloning %s (%s) ..." "$tree" "$os"
+
+    git clone "$url/$tree".git
 }
 
-commit_jenkins_files(){
-    local pkg="$1"
-
-    write_jenkinsfile "$pkg"
-    write_agentyaml "$pkg"
-
-    git commit -m "initial commit"
+pull_tree_arch(){
+    cd "${TREE_DIR_ARCH}" || return
+    for tree in "${ARCH_TREE[@]}";do
+        if [[ -d "${tree}" ]];then
+            ( cd "${tree}" || return
+                pull_tree "${tree}" "$(get_local_head)" "Arch"
+            )
+        else
+            clone_tree "${host_tree_arch}" "${tree}" "Arch"
+        fi
+    done
 }
 
 config_tree(){
@@ -113,6 +108,31 @@ config_tree(){
         fi
     cd ..
 }
+
+pull_tree_artix(){
+    local repos=()
+    if ${sync_group}; then
+        repos=("${GROUP}")
+    else
+        repos=("${ARTIX_TREE[@]}")
+    fi
+    cd "${TREE_DIR_ARTIX}" || return
+    for tree in "${repos[@]}"; do
+        if [[ -d "${tree}" ]];then
+            config_tree "${tree}"
+            ( cd "${tree}" || return
+                pull_tree "${tree}" "$(get_local_head)"
+            )
+        else
+            clone_tree "${host_tree_artix}" "${tree}"
+            config_tree "${tree}"
+        fi
+    done
+}
+
+#}}}
+
+#{{{ patch
 
 patch_pkg(){
     local pkgpath="$1"
@@ -152,39 +172,9 @@ patch_pkg(){
     esac
 }
 
-pull_tree_arch(){
-    cd "${TREE_DIR_ARCH}" || return
-    for tree in "${ARCH_TREE[@]}";do
-        if [[ -d "${tree}" ]];then
-            ( cd "${tree}" || return
-                pull_tree "${tree}" "$(get_local_head)" "Arch"
-            )
-        else
-            clone_tree "${HOST_TREE_ARCH}" "${tree}" "Arch"
-        fi
-    done
-}
+#}}}
 
-pull_tree_artix(){
-    local repos=()
-    if ${sync_group}; then
-        repos=("${GROUP}")
-    else
-        repos=("${ARTIX_TREE[@]}")
-    fi
-    cd "${TREE_DIR_ARTIX}" || return
-    for tree in "${repos[@]}"; do
-        if [[ -d "${tree}" ]];then
-            config_tree "${tree}"
-            ( cd "${tree}" || return
-                pull_tree "${tree}" "$(get_local_head)"
-            )
-        else
-            clone_tree "${HOST_TREE_ARTIX}" "${tree}"
-            config_tree "${tree}"
-        fi
-    done
-}
+#{{{ pkgbuild import
 
 sync_pkg(){
     local rsync_args=(-aWxvci --progress --delete-before --no-R --no-implied-dirs)
@@ -221,23 +211,6 @@ show_deps(){
     [[ -n ${optdepends[*]} ]] && msg2 "optdepends: %s" "${optdepends[@]}"
 }
 
-subrepo_new(){
-    cd "${TREE_DIR_ARTIX}/${GROUP}" || return
-
-    local org
-    org=$(get_pkg_org "${PACKAGE}")
-
-    create_repo "${PACKAGE}" "$org"
-
-    add_repo_to_team "${PACKAGE}" "$org" "${TEAM}"
-
-    subrepo_clone "${PACKAGE}" "$org"
-
-    mkdir -p "${TREE_DIR_ARTIX}/${GROUP}/${PACKAGE}/trunk"
-
-    commit_jenkins_files "${PACKAGE}"
-}
-
 from_arch(){
     cd "${TREE_DIR_ARTIX}" || return
 
@@ -264,6 +237,8 @@ from_arch(){
         die "Package '%s' does not exist!" "${PACKAGE}"
     fi
 }
+
+#}}}
 
 view_build(){
     local archpath repo
@@ -292,8 +267,6 @@ sync_repos(){
     ${sync_artix} && pull_tree_artix
 }
 
-#}}}
-
 load_makepkg_config
 
 testing=true
@@ -313,6 +286,9 @@ PACKAGE=''
 
 TEAM='community'
 GROUP="${ARTIX_TREE[0]}"
+
+host_tree_artix="${GIT_SSH}:artixlinux"
+host_tree_arch='git://git.archlinux.org/svntogit'
 
 usage() {
     echo "Usage: ${0##*/} [options]"

@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 
 m4_include(lib/base/message.sh)
-m4_include(lib/pkg/repo.sh)
+m4_include(lib/pkg/deploy.sh)
 
 load_makepkg_config
 

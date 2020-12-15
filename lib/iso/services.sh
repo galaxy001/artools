@@ -2,6 +2,13 @@
 
 #{{{ services
 
+set_xdm(){
+    if [[ -f "$1"/etc/conf.d/xdm ]];then
+        local conf='DISPLAYMANAGER="'${DISPLAYMANAGER}'"'
+        sed -i -e "s|^.*DISPLAYMANAGER=.*|${conf}|" "$1"/etc/conf.d/xdm
+    fi
+}
+
 add_svc_openrc(){
     local mnt="$1" names="$2" rlvl="${3:-default}"
     for svc in $names; do

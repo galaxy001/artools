@@ -12,11 +12,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
-m4_include(lib/pkg/repo.sh)
 m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
+m4_include(lib/base/message.sh)
+m4_include(lib/pkg/deploy.sh)
 
 #{{{ functions
 
@@ -42,14 +41,17 @@ repo_action(){
     done
     cd "$repo_path" || return
     if [[ -n "${action}" ]]; then
-        repo-"${action}" -R "${dest_repo}"."${PKGDBEXT}" "${packages[@]}"
-        ${linksdb} && links-"${action}" "${dest_repo}"."${LINKSDBEXT}" "${packages[@]}"
+        repo-"${action}" -R "${dest_repo}"."${pkgdb_ext}" "${packages[@]}"
+        ${linksdb} && links-"${action}" "${dest_repo}"."${linksdb_ext}" "${packages[@]}"
     fi
 }
 
 #}}}
 
 load_makepkg_config
+
+pkgdb_ext="db.tar.${DBEXT}"
+linksdb_ext="links.tar.${DBEXT}"
 
 add_pkg=false
 rm_pkg=false

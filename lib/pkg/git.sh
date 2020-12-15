@@ -67,7 +67,7 @@ has_changeset(){
 }
 
 pull_tree(){
-    local tree="$1" local_head="$2" os="${3:-$(get_osname)}"
+    local tree="$1" local_head="$2" os="${3:-Artix}"
     local remote_head
     remote_head=$(get_remote_head)
 

@@ -93,8 +93,7 @@ ISO_CONF = \
 	data/conf/artools-iso.conf
 
 ISO_BIN = \
-	bin/iso/buildiso \
-	bin/iso/deployiso
+	bin/iso/buildiso
 
 LN_BUILDISO = \
 	buildiso-gremlins \

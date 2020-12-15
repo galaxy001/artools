@@ -2,8 +2,6 @@
 
 #{{{ base conf
 
-CHROOTVERSION=0.10
-
 DATADIR=${DATADIR:-'@datadir@/artools'}
 SYSCONFDIR=${SYSCONFDIR:-'@sysconfdir@/artools'}
 
@@ -15,7 +13,9 @@ fi
 
 USER_CONF_DIR="${XDG_CONFIG_HOME:-$USER_HOME/.config}/artools"
 
-
+prepare_dir(){
+    [[ ! -d $1 ]] && mkdir -p "$1"
+}
 
 load_base_config(){
 
@@ -25,10 +25,6 @@ load_base_config(){
 
     # shellcheck disable=1090
     [[ -r "$conf" ]] && . "$conf"
-
-    ARCH=$(uname -m)
-
-    DOMAIN='artixlinux.org'
 
     CHROOTS_DIR=${CHROOTS_DIR:-'/var/lib/artools'}
 

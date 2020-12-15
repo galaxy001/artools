@@ -12,12 +12,11 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-m4_include(lib/base/message.sh)
-m4_include(lib/base/common.sh)
-m4_include(lib/pkg/git.sh)
-m4_include(lib/pkg/repo.sh)
 m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
+m4_include(lib/base/message.sh)
+m4_include(lib/pkg/git.sh)
+m4_include(lib/pkg/repo.sh)
 
 #{{{ functions
 

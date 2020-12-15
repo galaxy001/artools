@@ -12,8 +12,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-chroot_version=0.9
-
 m4_include(lib/base/message.sh)
 m4_include(lib/base/mount.sh)
 m4_include(lib/base/chroot.sh)
