@@ -189,7 +189,7 @@ run(){
 
         ${push} && push_tree "${group##*/}"
 
-#         git prune -v
+        git prune
 
         [[ "${cmd}" != 'commitpkg' ]] && check_team
     else
