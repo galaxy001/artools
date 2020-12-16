@@ -21,9 +21,8 @@ write_agentyaml(){
     local agent="$pkg"/.artixlinux/agent.yaml label='master'
     [[ -d $pkg/.artixlinux ]] || mkdir "$pkg"/.artixlinux
 
-    echo '%YAML 1.2' > "$agent"
+    echo '---' > "$agent"
     {
-    echo '---'
     echo ''
     echo "label: $label"
     echo ''
