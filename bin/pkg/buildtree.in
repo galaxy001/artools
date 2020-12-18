@@ -288,7 +288,7 @@ TEAM='community'
 GROUP="${ARTIX_TREE[0]}"
 
 host_tree_artix="${GIT_SSH}:artixlinux"
-host_tree_arch='git://git.archlinux.org/svntogit'
+host_tree_arch='https://github.com/archlinux'
 
 usage() {
     echo "Usage: ${0##*/} [options]"

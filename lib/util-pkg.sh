@@ -49,7 +49,7 @@ load_pkg_config(){
 
     TREE_DIR_ARCH=${TREE_DIR_ARCH:-"${WORKSPACE_DIR}/archlinux"}
 
-    ARCH_TREE=(packages community)
+    ARCH_TREE=(svntogit-{packages,community})
 
     REPOS_ROOT=${REPOS_ROOT:-"${WORKSPACE_DIR}/repos"}
 
