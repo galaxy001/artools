@@ -21,6 +21,16 @@ m4_include(lib/pkg/table.sh)
 
 #{{{ upgrades, downgrades, moves
 
+remove_list(){
+    local name="$1"
+    [[ -f "${TREE_DIR_ARTIX}"/$name.list ]] && rm "${TREE_DIR_ARTIX}"/$name.list
+}
+
+write_list(){
+    local line="$1" name="$2"
+    printf "%s\n" "$line" >> "${TREE_DIR_ARTIX}"/$name.list
+}
+
 compare_m(){
     result=$(vercmp "$artixver" "$archver")
     case ${artixrepo} in
@@ -30,7 +40,7 @@ compare_m(){
             else
                 msg_row_notify "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
                 if [[ -n "$archrepo" ]]; then
-                    printf "%s\n" "${a}:${b}:$pkg" >> "${TREE_DIR_ARTIX}"/pkg_moves.list
+                    write_list "${a}:${b}:$pkg" pkg_moves
                 fi
             fi
         ;;
@@ -41,7 +51,7 @@ compare_u(){
     result=$(vercmp "$artixver" "$archver")
     if [ "$result" -eq -1 ];then
         msg_row_upgrade "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
-        printf "%s\n" "${a}:$pkg" >> "${TREE_DIR_ARTIX}"/pkg_upgrades.list
+        write_list "${a}:$pkg" pkg_upgrades
     fi
 }
 
@@ -121,7 +131,7 @@ show_compare_header(){
 
 show_upgrades_table(){
     show_compare_header
-    [[ -f "${TREE_DIR_ARTIX}"/pkg_upgrades.list ]] && rm "${TREE_DIR_ARTIX}"/pkg_upgrades.list
+    remove_list pkg_upgrades
     tree_loop compare_upgrades
 }
 
@@ -132,7 +142,7 @@ show_downgrades_table(){
 
 show_move_table(){
     show_compare_header
-    [[ -f "${TREE_DIR_ARTIX}"/pkg_moves.list ]] && rm "${TREE_DIR_ARTIX}"/pkg_moves.list
+    remove_list pkg_moves
     tree_loop compare_move
 }
 
@@ -156,7 +166,6 @@ usage() {
     echo "    -x            Don't inlcude testing packages"
     echo "    -y            Don't inlcude staging packages"
     echo '    -z            Include unstable kde and gnome'
-    echo '                  [default: all]'
     echo '    -h            This help'
     echo ''
     echo ''
