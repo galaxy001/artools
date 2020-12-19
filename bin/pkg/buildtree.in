@@ -31,16 +31,14 @@ get_compliant_name(){
 }
 
 subrepo_clone(){
-    local pkg="$1" org="$2"
-    local gitname
+    local pkg="$1" org="$2" gitname
     gitname=$(get_compliant_name "$pkg")
     msg2 "Subrepo clone [%s] from (%s)" "$pkg" "$org/$gitname"
     git subrepo clone "${GIT_SSH}":"$org"/"$gitname".git "$pkg"
 }
 
 create_repo() {
-    local pkg="$1" org="$2"
-    local gitname
+    local pkg="$1" org="$2" gitname
     gitname=$(get_compliant_name "$pkg")
     local json="{ \"auto_init\": true, \"name\":\"$gitname\", \"gitignores\":\"ArchLinuxPackages\", \"readme\": \"Default\" }"
 

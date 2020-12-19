@@ -249,7 +249,7 @@ done
 
 shift $(( OPTIND - 1 ))
 
-set_arch_repos "false" "false" "false"
+set_arch_repos
 
 if is_valid_repo;then
     run
