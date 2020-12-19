@@ -5,15 +5,15 @@
 shopt -s extglob
 
 set_arch_repos(){
-    local x="$1" y="$2" z="$3"
+    local _testing="${1:-false}" _staging="${2:-false}" _unstable="${3:-false}"
     # shellcheck disable=1090
     . "${DATADIR}"/valid-names.conf
 
     ARCH_REPOS=("${stable[@]}")
 
-    $x && ARCH_REPOS+=("${gremlins[@]}")
-    $y && ARCH_REPOS+=("${goblins[@]}")
-    $z && ARCH_REPOS+=("${unstable[@]}")
+    $_testing && ARCH_REPOS+=("${gremlins[@]}")
+    $_staging && ARCH_REPOS+=("${goblins[@]}")
+    $_unstable && ARCH_REPOS+=("${unstable[@]}")
 }
 
 find_repo(){
@@ -27,8 +27,7 @@ find_repo(){
 }
 
 find_pkg(){
-    local searchdir="$1" pkg="$2"
-    local result
+    local searchdir="$1" pkg="$2" result
     result=$(find "$searchdir" -mindepth 2 -maxdepth 2 -type d -name "$pkg")
     echo "$result"
 }

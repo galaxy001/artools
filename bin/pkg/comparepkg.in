@@ -97,12 +97,12 @@ get_archpath(){
 }
 
 pre_compare(){
-    local func="$1" pkgpath="$2" result group
+    local func="$1" pkgpath="$2" result group pkg
     group="${pkgpath%/*}"
     group=${group##*/}
-
-    local pkg artixrepo archrepo pkgbuild artixver archver archpath node a b
     pkg=${pkgpath##*/}
+
+    local artixrepo archrepo pkgbuild artixver archver archpath node a b
     artixrepo=$(find_repo "$pkgpath")
     pkgbuild=$pkgpath/$artixrepo/PKGBUILD
 
@@ -151,9 +151,10 @@ compare_move(){
 #{{{ functions
 
 tree_loop(){
-    local func="$1"
+    local func="$1" pkgs
     for tree in "${ARTIX_TREE[@]}"; do
-        for package in $(find "${TREE_DIR_ARTIX}/$tree" -name trunk); do
+        pkgs=$(find "${TREE_DIR_ARTIX}/$tree" -name repos -o -name "$CARCH")
+        for package in ${pkgs}; do
             "$func" "$package"
         done
     done
