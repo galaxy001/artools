@@ -32,4 +32,14 @@ find_pkg(){
     echo "$result"
 }
 
+tree_loop(){
+    local func="$1" pkgs
+    for tree in "${ARTIX_TREE[@]}"; do
+        pkgs=$(find "${TREE_DIR_ARTIX}/$tree" -name repos -o -name "$CARCH")
+        for package in ${pkgs}; do
+            "$func" "$package"
+        done
+    done
+}
+
 #}}}

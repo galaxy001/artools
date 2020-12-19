@@ -37,7 +37,8 @@ PKG_BIN = \
 	bin/pkg/finddeps \
 	bin/pkg/find-libdeps \
 	bin/pkg/batchpkg \
-	bin/pkg/signpkg
+	bin/pkg/signpkg \
+	bin/pkg/checkrepo
 
 LN_COMMITPKG = \
 	extrapkg \

@@ -1,0 +1,182 @@
+#!/bin/bash
+#
+# Copyright (C) 2018-19 artoo@artixlinux.org
+# Copyright (C) 2018 Artix Linux Developers
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+m4_include(lib/util-base.sh)
+m4_include(lib/util-pkg.sh)
+m4_include(lib/base/message.sh)
+m4_include(lib/pkg/repo.sh)
+m4_include(lib/pkg/table.sh)
+
+update_db_cache(){
+    msg "Updating database cache"
+    for repo in "${searchrepos[@]}"; do
+        local cachedir=${db_cache_dir}/${linksdb_ext}/${CARCH}/${repo}
+        rm -rf "$cachedir"
+        mkdir -p "$cachedir"
+        msg2 "%s" "$repo"
+        curl -L -s "${REPOS_MIRROR}/${repo}/os/${CARCH}/${repo}.${linksdb_ext}" \
+            | bsdtar -xf - -C "$cachedir"
+    done
+    msg "Done"
+}
+
+#{{{ sogrep
+
+query_db() {
+    for repo in "${searchrepos[@]}"; do
+        local db=${db_cache_dir}/${linksdb_ext}/${CARCH}/${repo}/
+        if [[ -d ${db} ]]; then
+            while read -rd '' pkg; do
+                read -r match
+                pkg=${pkg#${db}}
+                pkg="${pkg%/*}"
+                msg_row "${tableQ}" "${repo}" "${pkg}" "${match}"
+            done < <(grep -rZ "${library}" "${db}") | sort -u
+        fi
+    done
+}
+
+#}}}
+
+#{{{ check db
+
+is_db_entry() {
+    local pkgname="$1" repo="${REPOS[$2]}"
+
+    if [[ -d ${db_cache_dir}/${linksdb_ext}/${CARCH}/$repo/$pkgname ]];then
+        return 0
+    fi
+    return 1
+}
+
+check_db(){
+    local pkgpath="${1%/*}"
+
+    for repo in "${!REPOS[@]}"; do
+        local pkgbuild artixver
+        [[ -f $pkgpath/$CARCH/$repo/PKGBUILD ]] && pkgbuild=$pkgpath/$CARCH/$repo/PKGBUILD
+        [[ -f $pkgpath/repos/$repo-$CARCH/PKGBUILD ]] && pkgbuild=$pkgpath/repos/$repo-$CARCH/PKGBUILD
+        [[ -f $pkgpath/repos/$repo-any/PKGBUILD ]] && pkgbuild=$pkgpath/repos/$repo-any/PKGBUILD
+
+        # shellcheck disable=1090
+        . "$pkgbuild" 2>/dev/null
+
+        artixver=$(get_full_version)
+        for name in "${pkgname[@]}"; do
+
+            if ! is_db_entry "$name-$artixver" "$repo"; then
+                msg_row "${tableU}" "$repo" "$name" "$artixver" "false"
+            fi
+
+        done
+        unset artixver pkgbuild pkgver epoch pkgname pkgbase
+    done
+}
+
+#}}}
+
+show_lib_table() {
+    msg_table_header "${tableQ}" "Repo" "Package" "Library"
+    query_db
+}
+
+show_db_table(){
+    msg_table_header "${tableU}" "Repo" "Package" "Version" "Database"
+    tree_loop check_db
+}
+
+db_cache_dir="${XDG_CACHE_HOME:-$USER_HOME/.cache}/artools"
+
+linksdb_ext="links.tar.${DBEXT}"
+
+load_makepkg_config
+
+sync=false
+check=false
+query=false
+
+readonly tableU="%-20s %-35s %-30s %-10s"
+readonly tableQ="%-20s %-45s %s"
+
+set_arch_repos "true" "true" "true"
+
+#{{{ repo names arrays
+
+declare -A REPOS=(
+    [${valid_names[0]}]=system
+    [${valid_names[1]}]=world
+    [${valid_names[2]}]=galaxy
+    [${valid_names[3]}]=lib32
+    [${valid_names[4]}]=gremlins
+    [${valid_names[5]}]=galaxy-gremlins
+    [${valid_names[6]}]=lib32-gremlins
+    [${valid_names[7]}]=goblins
+    [${valid_names[8]}]=galaxy-goblins
+    [${valid_names[9]}]=lib32-goblins
+    [${valid_names[11]}]=kde-wobble
+    [${valid_names[12]}]=gnome-wobble
+)
+
+searchrepos=(
+    "${REPOS[${valid_names[11]}]}"
+    "${REPOS[${valid_names[12]}]}"
+    "${REPOS[${valid_names[7]}]}"
+    "${REPOS[${valid_names[8]}]}"
+    "${REPOS[${valid_names[9]}]}"
+    "${REPOS[${valid_names[4]}]}"
+    "${REPOS[${valid_names[5]}]}"
+    "${REPOS[${valid_names[6]}]}"
+    "${REPOS[${valid_names[0]}]}"
+    "${REPOS[${valid_names[1]}]}"
+    "${REPOS[${valid_names[2]}]}"
+    "${REPOS[${valid_names[3]}]}"
+)
+
+#}}}
+
+usage() {
+    echo "Usage: ${0##*/} [options] (with -q [libname])"
+    echo '    -r <repo>     Repo name to query'
+    echo '                  [default: all]'
+    echo "    -s            Sync repo databases"
+    echo '    -c            Check repos'
+    echo "    -q            Query repo databases for so libs"
+    echo '    -h            This help'
+    echo ''
+    echo ''
+    exit "$1"
+}
+
+opts='r:qcsh'
+
+while getopts "${opts}" arg; do
+    case "${arg}" in
+        r) searchrepos=("$OPTARG") ;;
+        s) sync=true ;;
+        c) check=true ;;
+        q) query=true ;;
+        h|?) usage 0 ;;
+        *) echo "invalid argument '${arg}'"; usage 1 ;;
+    esac
+done
+
+shift $(( OPTIND - 1 ))
+
+library="$1"; shift
+
+${sync} && update_db_cache
+
+${check} && show_db_table
+
+${query} && show_lib_table
