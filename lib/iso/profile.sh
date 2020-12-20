@@ -61,7 +61,7 @@ load_pkgs(){
     local pkglist="$1" init="$2"
     info "Loading Packages: [%s] ..." "${pkglist##*/}"
 
-    local _init="s|@$init||g"
+    local _init="s|@$init||g" _init_rm1 _init_rm2
     case "$init" in
         'openrc') _init_rm1="s|@runit.*||g"; _init_rm2="s|@s6.*||g" ;;
         's6') _init_rm1="s|@runit.*||g"; _init_rm2="s|@openrc.*||g" ;;
