@@ -212,6 +212,8 @@ is_valid_repo(){
 
 load_makepkg_config
 
+load_valid_names
+
 REPO_SRC='trunk'
 PACKAGE=''
 remove=false
@@ -248,8 +250,6 @@ while getopts "${opts}" arg; do
 done
 
 shift $(( OPTIND - 1 ))
-
-set_arch_repos "false" "false" "false"
 
 if is_valid_repo;then
     run

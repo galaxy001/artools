@@ -8,7 +8,7 @@ load_pkg_config(){
 
     [[ -f "$conf" ]] || return 1
 
-    # shellcheck disable=1090
+    # shellcheck source=/etc/artools/artools-pkg.conf
     [[ -r "$conf" ]] && . "$conf"
 
     local git_domain="gitea.artixlinux.org"

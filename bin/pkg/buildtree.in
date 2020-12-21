@@ -267,6 +267,8 @@ sync_repos(){
 
 load_makepkg_config
 
+load_valid_names
+
 testing=true
 staging=true
 unstable=false

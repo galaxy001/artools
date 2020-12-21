@@ -8,7 +8,7 @@ load_iso_config(){
 
     [[ -f "$conf" ]] || return 1
 
-    # shellcheck disable=1090
+    # shellcheck source=/etc/artools/artools-iso.conf
     [[ -r "$conf" ]] && . "$conf"
 
     ISO_POOL=${ISO_POOL:-"${WORKSPACE_DIR}/iso"}

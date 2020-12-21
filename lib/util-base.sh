@@ -23,12 +23,12 @@ load_base_config(){
 
     [[ -f "$conf" ]] || return 1
 
-    # shellcheck disable=1090
+    # shellcheck source=/etc/artools/artools-base.conf
     [[ -r "$conf" ]] && . "$conf"
 
     CHROOTS_DIR=${CHROOTS_DIR:-'/var/lib/artools'}
 
-    WORKSPACE_DIR=${WORKSPACE_DIR:-"/home/${USER}/artools-workspace"}
+    WORKSPACE_DIR=${WORKSPACE_DIR:-"${USER_HOME}/artools-workspace"}
 
     return 0
 }

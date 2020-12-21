@@ -109,7 +109,7 @@ query=false
 readonly tableU="%-20s %-35s %-30s %-10s"
 readonly tableQ="%-20s %-45s %s"
 
-set_arch_repos "true" "true" "true"
+load_valid_names
 
 #{{{ repo names arrays
 
