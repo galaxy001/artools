@@ -1,6 +1,6 @@
 #!/hint/bash
 
-#{{{ deploy
+#{{{ functions
 
 find_cached_pkgfile() {
     local searchdirs=("$PKGDEST" "$PWD") results=()
@@ -23,6 +23,15 @@ find_cached_pkgfile() {
             return 1
         ;;
     esac
+}
+
+get_pkgbasename() {
+    local name="$1"
+    local rm_pkg=${name%.pkg.tar*}
+    rm_pkg=${rm_pkg%-*}
+    rm_pkg=${rm_pkg%-*}
+    rm_pkg=${rm_pkg%-*}
+    echo "$rm_pkg"
 }
 
 #}}}

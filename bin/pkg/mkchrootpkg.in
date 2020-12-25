@@ -32,7 +32,6 @@ clean_first=0
 run_namcap=0
 run_checkpkg=0
 temp_chroot=0
-run_nocheck=0
 
 bindmounts=()
 
@@ -290,7 +289,7 @@ while getopts "${opts}" arg; do
         I) install_pkgs+=("$OPTARG") ;;
         l) copy="$OPTARG" ;;
         n) run_namcap=1; makepkg_args+=(--install) ;;
-        N) run_nocheck=1; makepkg_args+=(--nocheck) ;;
+        N) makepkg_args+=(--nocheck) ;;
         C) run_checkpkg=1 ;;
         T) temp_chroot=1; copy+="-$$" ;;
         U) makepkg_user="$OPTARG" ;;

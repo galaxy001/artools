@@ -53,20 +53,20 @@ create_repo() {
 }
 
 subrepo_new(){
-    cd "${TREE_DIR_ARTIX}/${GROUP}" || return
+    cd "${TREE_DIR_ARTIX}/${group}" || return
 
     local org
-    org=$(get_pkg_org "${PACKAGE}")
+    org=$(get_pkg_org "${package}")
 
-    create_repo "${PACKAGE}" "$org"
+    create_repo "${package}" "$org"
 
-    add_repo_to_team "${PACKAGE}" "$org" "${TEAM}"
+    add_repo_to_team "${package}" "$org" "${team}"
 
-    subrepo_clone "${PACKAGE}" "$org"
+    subrepo_clone "${package}" "$org"
 
-    mkdir -p "${TREE_DIR_ARTIX}/${GROUP}/${PACKAGE}/trunk"
+    mkdir -p "${TREE_DIR_ARTIX}/${group}/${package}/trunk"
 
-    commit_jenkins_files "${PACKAGE}"
+    commit_jenkins_files "${package}"
 }
 
 #}}}
@@ -89,7 +89,7 @@ pull_tree_arch(){
                 pull_tree "${tree}" "$(get_local_head)" "Arch"
             )
         else
-            clone_tree "${host_tree_arch}" "${tree}" "Arch"
+            clone_tree "${HOST_TREE_ARCH}" "${tree}" "Arch"
         fi
     done
 }
@@ -110,7 +110,7 @@ config_tree(){
 pull_tree_artix(){
     local repos=()
     if ${sync_group}; then
-        repos=("${GROUP}")
+        repos=("${group}")
     else
         repos=("${ARTIX_TREE[@]}")
     fi
@@ -213,14 +213,14 @@ from_arch(){
     cd "${TREE_DIR_ARTIX}" || return
 
     local srcpath repo archpath artixpath
-    srcpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
-    [[ -z $srcpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
+    srcpath=$(find_pkg "${TREE_DIR_ARCH}" "${package}")
+    [[ -z $srcpath ]] && die "Package '%s' does not exist!" "${package}"
 
     repo=$(find_repo "$srcpath")
     msg "repo: %s" "${repo#*/}"
 
     archpath=$srcpath/$repo
-    artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${package}")
 
     show_deps "$archpath"
 
@@ -232,7 +232,7 @@ from_arch(){
             patch_pkg "$artixpath"
         fi
     else
-        die "Package '%s' does not exist!" "${PACKAGE}"
+        die "Package '%s' does not exist!" "${package}"
     fi
 }
 
@@ -240,8 +240,8 @@ from_arch(){
 
 view_build(){
     local archpath repo
-    archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
-    [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
+    archpath=$(find_pkg "${TREE_DIR_ARCH}" "${package}")
+    [[ -z $archpath ]] && die "Package '%s' does not exist!" "${package}"
     repo=$(find_repo "${archpath}")
     archpath=$archpath/$repo
     msg "repo: %s" "${repo#*/}"
@@ -250,9 +250,9 @@ view_build(){
 
 check_tree(){
     local archpath artixpath group
-    archpath=$(find_pkg "${TREE_DIR_ARCH}" "${PACKAGE}")
-    [[ -z $archpath ]] && die "Package '%s' does not exist!" "${PACKAGE}"
-    artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    archpath=$(find_pkg "${TREE_DIR_ARCH}" "${package}")
+    [[ -z $archpath ]] && die "Package '%s' does not exist!" "${package}"
+    artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${package}")
     group=${artixpath%/*}
     msg "group: %s" "${group##*/}"
 
@@ -282,22 +282,21 @@ createnew=false
 sync_group=false
 check=false
 
-PACKAGE=''
+package=''
 
-TEAM='community'
-GROUP="${ARTIX_TREE[0]}"
+team='community'
+group="${ARTIX_TREE[0]}"
 
 host_tree_artix="${GIT_SSH}:artixlinux"
-host_tree_arch='https://github.com/archlinux'
 
 usage() {
     echo "Usage: ${0##*/} [options]"
     echo '    -p <pkg>      Package name'
     echo '    -t <team>     Team name (only with -n)'
     echo '                  Possible values: core,extra,community,multilib'
-    echo "                  [default: ${TEAM}]"
+    echo "                  [default: ${team}]"
     echo '    -g <group>    Group name, the superrepo (only with -n or -s)'
-    echo "                  [default: ${GROUP}]"
+    echo "                  [default: ${group}]"
     echo "    -s            Clone or pull repos"
     echo "    -a            Don't clone or pull arch repos"
     echo "    -b            Don't clone or pull artix repos"
@@ -318,9 +317,9 @@ opts='p:t:g:sinabcvxyzh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        p) PACKAGE="$OPTARG" ;;
-        t) TEAM="$OPTARG" ;;
-        g) GROUP="$OPTARG"; sync_group=true ;;
+        p) package="$OPTARG" ;;
+        t) team="$OPTARG" ;;
+        g) group="$OPTARG"; sync_group=true ;;
         s) sync=true ;;
         a) sync_arch=false ;;
         b) sync_artix=false ;;

@@ -17,7 +17,7 @@ m4_include(lib/util-pkg.sh)
 m4_include(lib/base/message.sh)
 m4_include(lib/pkg/deploy.sh)
 
-#{{{ functions
+#{{{ deploy
 
 add(){
     if pkgfile=$(find_cached_pkgfile "${pkgname}"); then
@@ -29,9 +29,9 @@ add(){
 }
 
 remove(){
-    packages+=("$pkgname")
+    packages+=("$(get_pkgbasename "${pkgname}")")
     action='remove'
-    rm -v "$repo_path"/"$pkgname"*.pkg.tar.*
+    rm -v "$repo_path"/"${pkgname}"{,.sig}
 }
 
 repo_action(){

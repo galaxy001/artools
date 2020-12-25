@@ -2,8 +2,6 @@
 
 #{{{ chroot
 
-CHROOTVERSION=0.10
-
 orig_argv=("$0" "$@")
 check_root() {
     local keepenv="$1"

@@ -14,6 +14,7 @@
 
 m4_include(lib/base/message.sh)
 m4_include(lib/base/chroot.sh)
+m4_include(lib/base/chroot-version.sh)
 
 working_dir=''
 umode=''

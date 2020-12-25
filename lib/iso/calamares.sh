@@ -85,7 +85,7 @@ write_unpackfs() {
 configure_calamares(){
     local mods="$1/etc/calamares/modules"
     if [[ -d "$mods" ]];then
-        msg2 "Configuring Calamares"
+        msg2 "Configuring: Calamares"
         write_users_conf > "$mods"/users.conf
         write_services_"${INITSYS}"_conf "$mods"
         write_postcfg > "$mods"/postcfg.conf

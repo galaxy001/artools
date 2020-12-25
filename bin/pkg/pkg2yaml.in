@@ -152,10 +152,10 @@ shift $(( OPTIND - 1 ))
 srcpath=$(readlink -f "$1")
 
 [[ -f "$srcpath"/PKGBUILD ]] || die "%s/PKGBUILD does not exist!" "$srcpath"
-PACKAGE="$srcpath"/PKGBUILD; shift
+package="$srcpath"/PKGBUILD; shift
 
 # shellcheck disable=1090
-. "$PACKAGE"
+. "${package}"
 
 load_makepkg_config
 

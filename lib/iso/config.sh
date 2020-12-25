@@ -7,9 +7,9 @@ configure_hosts(){
 }
 
 configure_logind(){
-    local conf=$1/etc/"$2"/logind.conf
+    local conf=$1/etc/elogind/logind.conf
     if [[ -e "$conf" ]];then
-        msg2 "Configuring logind ..."
+        msg2 "Configuring: logind"
         sed -i 's/#\(HandleSuspendKey=\)suspend/\1ignore/' "$conf"
         sed -i 's/#\(HandleLidSwitch=\)suspend/\1ignore/' "$conf"
         sed -i 's/#\(HandleHibernateKey=\)hibernate/\1ignore/' "$conf"
@@ -18,14 +18,12 @@ configure_logind(){
 
 configure_services(){
     local mnt="$1"
-    info "Configuring [%s] services" "${INITSYS}"
     add_svc_"${INITSYS}" "$mnt" "${SERVICES[*]} ${SERVICES_LIVE[*]}"
-    info "Done configuring [%s] services" "${INITSYS}"
 }
 
 configure_system(){
     local mnt="$1"
-    configure_logind "$mnt" "elogind"
+    configure_logind "$mnt"
     echo "${HOST_NAME}" > "$mnt"/etc/hostname
 }
 
@@ -47,7 +45,7 @@ configure_chroot(){
     configure_services "$fs"
     configure_calamares "$fs"
     [[ ! -d "$fs/etc/artools" ]] && mkdir -p "$fs/etc/artools"
-    msg2 "Writing live.conf"
+    msg2 "Writing: live.conf"
     write_live_session_conf > "$fs/etc/artools/live.conf"
     msg "Done configuring [%s]" "${fs##*/}"
 }

@@ -15,6 +15,7 @@
 m4_include(lib/base/message.sh)
 m4_include(lib/base/mount.sh)
 m4_include(lib/base/chroot.sh)
+m4_include(lib/base/chroot-version.sh)
 
 # $1: chroot
 kill_chroot_process(){
@@ -26,7 +27,7 @@ kill_chroot_process(){
                 # this process is in the chroot...
                 pid=$(basename "$(dirname "$root_dir")")
                 name=$(ps -p "$pid" -o comm=)
-                info "Killing chroot process: %s (%s)" "$name" "$pid"
+                msg2 "Killing chroot process: %s (%s)" "$name" "$pid"
                 kill -9 "$pid"
             fi
         fi
@@ -96,7 +97,6 @@ for host_mirror in "${host_mirrors[@]}"; do
     if [[ $host_mirror == *file://* ]]; then
         # shellcheck disable=2016
         host_mirror=$(echo "$host_mirror" | sed -r 's#file://(/.*)/\$repo/os/\$arch#\1#g')
-        info "host mirror: %s" "$host_mirror"
         in_array "$host_mirror" "${cache_dirs[@]}" || cache_dirs+=("$host_mirror")
     fi
 done
@@ -148,12 +148,6 @@ chroot_extra_mount() {
     done
 }
 
-sync_host_localtime(){
-    if [[ -e /etc/localtime ]]; then
-        cp -L /etc/localtime "${working_dir}"/etc/localtime
-    fi
-}
-
 umask 0022
 
 # Sanity check
@@ -162,8 +156,6 @@ if [[ ! -f "$working_dir/.artools" ]]; then
 elif [[ $(cat "$working_dir/.artools") != "${CHROOTVERSION}" ]]; then
     die "chroot '%s' is not at version %s. Please rebuild." "$working_dir" "${CHROOTVERSION}"
 fi
-
-#sync_host_localtime
 
 chroot_api_mount "${working_dir}" || die "failed to setup API filesystems in chroot %s" "${working_dir}"
 

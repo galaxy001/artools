@@ -59,7 +59,7 @@ load_profile(){
 
 load_pkgs(){
     local pkglist="$1" init="$2"
-    info "Loading Packages: [%s] ..." "${pkglist##*/}"
+    msg2 "Loading Packages: [%s] ..." "${pkglist##*/}"
 
     local _init="s|@$init||g" _init_rm1 _init_rm2
     case "$init" in

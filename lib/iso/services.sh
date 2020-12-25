@@ -13,7 +13,7 @@ add_svc_openrc(){
     local mnt="$1" names="$2" rlvl="${3:-default}"
     for svc in $names; do
         if [[ -f $mnt/etc/init.d/$svc ]];then
-            msg2 "Setting %s ..." "$svc"
+            msg2 "Setting [%s]: %s" "${INITSYS}" "$svc"
             [[ $svc == "xdm" ]] && set_xdm "$mnt"
             chroot "$mnt" rc-update add "$svc" "$rlvl" &>/dev/null
         fi
@@ -24,7 +24,7 @@ add_svc_runit(){
     local mnt="$1" names="$2" rlvl="${3:-default}"
     for svc in $names; do
         if [[ -d $mnt/etc/runit/sv/$svc ]]; then
-            msg2 "Setting %s ..." "$svc"
+            msg2 "Setting [%s]: %s" "${INITSYS}" "$svc"
             chroot "$mnt" ln -s /etc/runit/sv/"$svc" /etc/runit/runsvdir/"$rlvl" &>/dev/null
         fi
     done
@@ -37,7 +37,7 @@ add_svc_s6(){
         chroot "$mnt" s6-rc-db -c /etc/s6/rc/compiled type "$svc" &> /dev/null || error=true
         ret="$?"
         if [ $ret -eq 0 ] && [[ "$error" == false ]]; then
-            msg2 "Setting %s ..." "$svc"
+            msg2 "Setting [%s]: %s" "${INITSYS}" "$svc"
             chroot "$mnt" s6-rc-bundle-update -c /etc/s6/rc/compiled add "$rlvl" "$svc"
         fi
     done

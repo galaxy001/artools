@@ -13,7 +13,7 @@ trap_setup(){
 }
 
 chroot_mount() {
-#     info "mount: [%s]" "$2"
+#     msg2 "mount: [%s]" "$2"
     mount "$@" && CHROOT_ACTIVE_MOUNTS=("$2" "${CHROOT_ACTIVE_MOUNTS[@]}")
 }
 
@@ -75,7 +75,7 @@ chroot_api_mount() {
 
 chroot_api_umount() {
     if (( ${#CHROOT_ACTIVE_MOUNTS[@]} )); then
-#         info "umount: [%s]" "${CHROOT_ACTIVE_MOUNTS[@]}"
+#         msg2 "umount: [%s]" "${CHROOT_ACTIVE_MOUNTS[@]}"
         umount "${CHROOT_ACTIVE_MOUNTS[@]}"
     fi
     unset CHROOT_ACTIVE_MOUNTS

@@ -14,14 +14,9 @@ shopt -s extglob
 if [[ -t 2 && "$TERM" != dumb ]]; then
     colorize
 else
+    # shellcheck disable=2034
     declare -gr ALL_OFF='' BOLD='' BLUE='' GREEN='' RED='' YELLOW=''
 fi
-
-info() {
-    local mesg=$1; shift
-    # shellcheck disable=2059
-    printf "${YELLOW} -->${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
-}
 
 stat_busy() {
     local mesg=$1; shift

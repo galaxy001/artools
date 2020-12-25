@@ -1,4 +1,4 @@
-VERSION=0.21
+VERSION=0.22
 
 TOOLS = artools
 PREFIX ?= /usr

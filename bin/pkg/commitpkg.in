@@ -65,47 +65,47 @@ prepare_commit(){
     fi
 
     if [[ $action == 'add' ]] || [[ $action == 'move' ]] ;then
-        [[ -d "$CARCH/${REPO_DEST}" ]] && git rm -r "$CARCH/${REPO_DEST}"
+        [[ -d "$CARCH/${repo_dest}" ]] && git rm -r "$CARCH/${repo_dest}"
         [[ ! -d "$CARCH" ]] && mkdir "$CARCH"
-        [[ ! -d "$CARCH/${REPO_DEST}" ]] && mkdir "$CARCH/${REPO_DEST}"
+        [[ ! -d "$CARCH/${repo_dest}" ]] && mkdir "$CARCH/${repo_dest}"
     fi
 }
 
 check_rebuild(){
     if [[ -d "$CARCH"/"${valid_names[10]}" ]] \
-    && [[ "${REPO_DEST}" == "${valid_names[7]}" ]]; then
+    && [[ "${repo_dest}" == "${valid_names[7]}" ]]; then
         git rm -r "$CARCH"/"${valid_names[10]}"
         git commit -m "switch from ${valid_names[10]} to ${valid_names[7]}"
     elif [[ -d "$CARCH"/"${valid_names[7]}" ]] \
-    && [[ "${REPO_DEST}" == "${valid_names[10]}" ]]; then
+    && [[ "${repo_dest}" == "${valid_names[10]}" ]]; then
         git rm -r "$CARCH"/"${valid_names[7]}"
         git commit -m "switch from ${valid_names[7]} to ${valid_names[10]}"
     fi
 }
 
 check_team(){
-    if [[ "${REPO_SRC}" == "${valid_names[0]}" \
-    && "${REPO_DEST}" == "${valid_names[1]}" ]] || \
-        [[ "${REPO_SRC}" == "${valid_names[1]}" \
-        && "${REPO_DEST}" == "${valid_names[0]}" ]] || \
-        [[ "${REPO_SRC}" == "${valid_names[1]}" \
-        && "${REPO_DEST}" == "${valid_names[2]}" ]] || \
-        [[ "${REPO_SRC}" == "${valid_names[2]}" \
-        && "${REPO_DEST}" == "${valid_names[1]}" ]] ;then
+    if [[ "${repo_src}" == "${valid_names[0]}" \
+    && "${repo_dest}" == "${valid_names[1]}" ]] || \
+        [[ "${repo_src}" == "${valid_names[1]}" \
+        && "${repo_dest}" == "${valid_names[0]}" ]] || \
+        [[ "${repo_src}" == "${valid_names[1]}" \
+        && "${repo_dest}" == "${valid_names[2]}" ]] || \
+        [[ "${repo_src}" == "${valid_names[2]}" \
+        && "${repo_dest}" == "${valid_names[1]}" ]] ;then
 
         local org
-        org=$(get_pkg_org "${PACKAGE}")
-        add_repo_to_team "${PACKAGE}" "$org" "${REPO_DEST}"
-        remove_repo_from_team "${PACKAGE}" "$org" "${REPO_SRC}"
+        org=$(get_pkg_org "${package}")
+        add_repo_to_team "${package}" "$org" "${repo_dest}"
+        remove_repo_from_team "${package}" "$org" "${repo_src}"
     fi
 }
 
 path_config() {
-    [[ "${REPO_SRC}" != 'trunk' ]] && pkgbuild="$CARCH/${REPO_SRC}"/PKGBUILD
+    [[ "${repo_src}" != 'trunk' ]] && pkgbuild="$CARCH/${repo_src}"/PKGBUILD
 
     if [[ ! -f "$pkgbuild" ]]; then
-        pkgbuild=repos/"${REPO_SRC}-${CARCH}"/PKGBUILD
-        [[ -f repos/"${REPO_SRC}"-any/PKGBUILD ]] && pkgbuild=repos/"${REPO_SRC}"-any/PKGBUILD
+        pkgbuild=repos/"${repo_src}-${CARCH}"/PKGBUILD
+        [[ -f repos/"${repo_src}"-any/PKGBUILD ]] && pkgbuild=repos/"${repo_src}"-any/PKGBUILD
     fi
 
     # shellcheck disable=1090
@@ -116,21 +116,21 @@ commit_pkg() {
     local commit_msg pkg
     if ${remove};then
         action='remove'
-        if [[ "${REPO_SRC}" == 'trunk' ]];then
-            pkg=${PACKAGE}
+        if [[ "${repo_src}" == 'trunk' ]];then
+            pkg=${package}
             git rm -r trunk
         else
-            pkg="${PACKAGE}-$(get_full_version)"
+            pkg="${package}-$(get_full_version)"
 
             prepare_commit
 
-            git rm -r "$CARCH/${REPO_SRC}"
+            git rm -r "$CARCH/${repo_src}"
         fi
-        commit_msg="[${REPO_SRC}] '$pkg' ${action}"
+        commit_msg="[${repo_src}] '$pkg' ${action}"
         msg "Action: %s" "$commit_msg"
     else
         action='modify'
-        commit_msg="[${REPO_SRC}] '${PACKAGE}-$(get_full_version)' ${action}"
+        commit_msg="[${repo_src}] '${package}-$(get_full_version)' ${action}"
         msg "Action: %s" "$commit_msg"
         git add .
     fi
@@ -139,23 +139,23 @@ commit_pkg() {
 
 repo_commit_pkg() {
     local commit_msg
-    if [[ "${REPO_SRC}" == 'trunk' ]];then
+    if [[ "${repo_src}" == 'trunk' ]];then
         action='add'
 
         prepare_commit
         check_rebuild
 
-        cp trunk/* "$CARCH/${REPO_DEST}"/
+        cp trunk/* "$CARCH/${repo_dest}"/
     else
         action='move'
         [[ ! -f $pkgbuild ]] && die "%s does not exist!" "$pkgbuild"
 
         prepare_commit
 
-        cp "$CARCH/${REPO_SRC}"/* "$CARCH/${REPO_DEST}"/
-        git rm -r "$CARCH/${REPO_SRC}"
+        cp "$CARCH/${repo_src}"/* "$CARCH/${repo_dest}"/
+        git rm -r "$CARCH/${repo_src}"
     fi
-    commit_msg="[${REPO_SRC}] -> [${REPO_DEST}] '${PACKAGE}-$(get_full_version)' ${action}"
+    commit_msg="[${repo_src}] -> [${repo_dest}] '${package}-$(get_full_version)' ${action}"
     msg "Action: %s" "$commit_msg"
 
     git add .
@@ -164,7 +164,7 @@ repo_commit_pkg() {
 
 run(){
     local artixpath head group
-    artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${PACKAGE}")
+    artixpath=$(find_pkg "${TREE_DIR_ARTIX}" "${package}")
     if [[ -n ${artixpath} ]];then
         group=${artixpath%/*}
         cd "${group}" || return
@@ -183,9 +183,9 @@ run(){
         cd "${group}" || return
 
         ${push} && pull_tree "${group##*/}" "$head"
-#         subrepo_pull "${PACKAGE}"
-        subrepo_push "${PACKAGE}"
-        subrepo_clean "${PACKAGE}"
+#         subrepo_pull "${package}"
+        subrepo_push "${package}"
+        subrepo_clean "${package}"
 
         ${push} && push_tree "${group##*/}"
 
@@ -193,7 +193,7 @@ run(){
 
         [[ "${cmd}" != 'commitpkg' ]] && check_team
     else
-        die "Package '%s' does not exist!" "${PACKAGE}"
+        die "Package '%s' does not exist!" "${package}"
     fi
 }
 
@@ -202,7 +202,7 @@ is_valid_repo(){
     for repo in "${valid_names[@]}"; do
         _valid=${repo:-}${repo:+|}$_valid
     done
-    eval "case ${REPO_SRC} in
+    eval "case ${repo_src} in
         ${_valid}) return 0 ;;
         *) return 1 ;;
     esac"
@@ -214,19 +214,19 @@ load_makepkg_config
 
 load_valid_names
 
-REPO_SRC='trunk'
-PACKAGE=''
+repo_src='trunk'
+package=''
 remove=false
 push=false
 
 pkgbuild=trunk/PKGBUILD
 
 cmd=${0##*/}
-REPO_DEST=${cmd%pkg}
+repo_dest=${cmd%pkg}
 
 usage() {
     echo "Usage: ${0##*/} [options]"
-    echo "    -s <name>          Source repository [default:${REPO_SRC}]"
+    echo "    -s <name>          Source repository [default:${repo_src}]"
     echo '    -p <pkg>           Package name'
     echo '    -r                 Delete from repo (commitpkg only)'
     echo '    -u                 Push'
@@ -240,8 +240,8 @@ opts='p:s:urh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        s) REPO_SRC="$OPTARG" ;;
-        p) PACKAGE="$OPTARG" ;;
+        s) repo_src="$OPTARG" ;;
+        p) package="$OPTARG" ;;
         r) remove=true ;;
         u) push=true ;;
         h|?) usage 0 ;;
@@ -254,5 +254,5 @@ shift $(( OPTIND - 1 ))
 if is_valid_repo;then
     run
 else
-    die "source repository '%s' is not valid!" "${REPO_SRC}"
+    die "source repository '%s' is not valid!" "${repo_src}"
 fi

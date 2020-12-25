@@ -2,6 +2,14 @@
 
 #{{{ git
 
+get_compliant_name(){
+    local gitname="$1"
+    case "$gitname" in
+        *+) gitname=${gitname//+/plus}
+    esac
+    echo "$gitname"
+}
+
 get_pkg_org(){
     local pkg="$1" org sub
     case ${pkg} in

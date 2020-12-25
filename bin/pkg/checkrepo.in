@@ -18,24 +18,12 @@ m4_include(lib/base/message.sh)
 m4_include(lib/pkg/repo.sh)
 m4_include(lib/pkg/table.sh)
 
-update_db_cache(){
-    msg "Updating database cache"
-    for repo in "${searchrepos[@]}"; do
-        local cachedir=${db_cache_dir}/${linksdb_ext}/${CARCH}/${repo}
-        rm -rf "$cachedir"
-        mkdir -p "$cachedir"
-        msg2 "%s" "$repo"
-        curl -L -s "${REPOS_MIRROR}/${repo}/os/${CARCH}/${repo}.${linksdb_ext}" \
-            | bsdtar -xf - -C "$cachedir"
-    done
-    msg "Done"
-}
-
 #{{{ sogrep
 
 query_db() {
     for repo in "${searchrepos[@]}"; do
-        local db=${db_cache_dir}/${linksdb_ext}/${CARCH}/${repo}/
+        local db
+        db=${db_cache_dir}/${linksdb_ext}/${CARCH}/${repo}/
         if [[ -d ${db} ]]; then
             while read -rd '' pkg; do
                 read -r match
@@ -52,9 +40,10 @@ query_db() {
 #{{{ check db
 
 is_db_entry() {
-    local pkgname="$1" repo="${REPOS[$2]}"
+    local pkgname="$1" repo="${REPOS[$2]}" entry
+    entry=${db_cache_dir}/${linksdb_ext}/${CARCH}/$repo/$pkgname
 
-    if [[ -d ${db_cache_dir}/${linksdb_ext}/${CARCH}/$repo/$pkgname ]];then
+    if [[ -d "$entry" ]];then
         return 0
     fi
     return 1
@@ -71,14 +60,14 @@ check_db(){
 
         # shellcheck disable=1090
         . "$pkgbuild" 2>/dev/null
-
         artixver=$(get_full_version)
+
         for name in "${pkgname[@]}"; do
-
             if ! is_db_entry "$name-$artixver" "$repo"; then
-                msg_row "${tableU}" "$repo" "$name" "$artixver" "false"
+                msg_row_upgrade "${tableU}" "$repo" "$name" "$artixver" "false"
+            else
+                ${all_db} && msg_row "${tableU}" "$repo" "$name" "$artixver" "true"
             fi
-
         done
         unset artixver pkgbuild pkgver epoch pkgname pkgbase
     done
@@ -96,6 +85,20 @@ show_db_table(){
     tree_loop check_db
 }
 
+update_db_cache(){
+    msg "Updating database cache ..."
+    local cachedir url
+    for repo in "${searchrepos[@]}"; do
+        cachedir=${db_cache_dir}/${linksdb_ext}/${CARCH}/${repo}
+        rm -rf "$cachedir"
+        mkdir -p "$cachedir"
+        msg2 "%s" "$repo"
+        url=${REPOS_MIRROR}/${repo}/os/${CARCH}/${repo}.${linksdb_ext}
+        curl -L -s "$url" | bsdtar -xf - -C "$cachedir"
+    done
+    msg "Done"
+}
+
 db_cache_dir="${XDG_CACHE_HOME:-$USER_HOME/.cache}/artools"
 
 linksdb_ext="links.tar.${DBEXT}"
@@ -105,6 +108,7 @@ load_makepkg_config
 sync=false
 check=false
 query=false
+all_db=false
 
 readonly tableU="%-20s %-35s %-30s %-10s"
 readonly tableQ="%-20s %-45s %s"
@@ -151,6 +155,7 @@ usage() {
     echo '                  [default: all]'
     echo "    -s            Sync repo databases"
     echo '    -c            Check repos'
+    echo '    -a            Show repo db (-c)'
     echo "    -q            Query repo databases for so libs"
     echo '    -h            This help'
     echo ''
@@ -158,13 +163,14 @@ usage() {
     exit "$1"
 }
 
-opts='r:qcsh'
+opts='r:qcsah'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         r) searchrepos=("$OPTARG") ;;
         s) sync=true ;;
         c) check=true ;;
+        a) all_db=true ;;
         q) query=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;

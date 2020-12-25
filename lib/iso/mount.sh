@@ -3,7 +3,7 @@
 #{{{ mount
 
 track_img() {
-    info "mount: [%s]" "$2"
+    msg2 "mount: [%s]" "$2"
     mount "$@" && IMG_ACTIVE_MOUNTS=("$2" "${IMG_ACTIVE_MOUNTS[@]}")
 }
 
@@ -15,7 +15,7 @@ mount_img() {
 
 umount_img() {
     if [[ -n "${IMG_ACTIVE_MOUNTS[*]}" ]];then
-        info "umount: [%s]" "${IMG_ACTIVE_MOUNTS[@]}"
+        msg2 "umount: [%s]" "${IMG_ACTIVE_MOUNTS[@]}"
         umount "${IMG_ACTIVE_MOUNTS[@]}"
         unset IMG_ACTIVE_MOUNTS
         rm -r "$1"
@@ -23,7 +23,7 @@ umount_img() {
 }
 
 track_fs() {
-    info "overlayfs mount: [%s]" "$5"
+    msg2 "overlayfs mount: [%s]" "$5"
     mount "$@" && FS_ACTIVE_MOUNTS=("$5" "${FS_ACTIVE_MOUNTS[@]}")
 }
 
@@ -45,7 +45,7 @@ mount_overlayfs(){
 
 umount_overlayfs(){
     if [[ -n "${FS_ACTIVE_MOUNTS[*]}" ]];then
-        info "overlayfs umount: [%s]" "${FS_ACTIVE_MOUNTS[@]}"
+        msg2 "overlayfs umount: [%s]" "${FS_ACTIVE_MOUNTS[@]}"
         umount "${FS_ACTIVE_MOUNTS[@]}"
         unset FS_ACTIVE_MOUNTS
         rm -rf "${mnt_dir}/work"

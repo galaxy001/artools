@@ -232,8 +232,9 @@ db_write_entry() {
     msg2 "Creating '%s' db entry..." "${REPO_DB_NAME}"
 
     local linksentry=$tmpdir/${REPO_DB_NAME}/$pkgname-$pkgver/${REPO_DB_NAME}
+    local files=$(find "$tmppkg" -type f ! -ipath "*/Documentation/*")
 
-    for f in $(find "$tmppkg" -type f); do
+    for f in ${files}; do
         readelf -d "$f" 2> /dev/null | sed -nr 's/.*Shared library: \[(.*)\].*/\1/p'
     done | sort -u > "$linksentry"
 

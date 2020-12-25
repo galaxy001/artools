@@ -13,9 +13,9 @@ load_pkg_config(){
 
     local git_domain="gitea.artixlinux.org"
 
-    GIT_URL="https://${git_domain}"
+    GIT_URL=${GIT_URL:-"https://${git_domain}"}
 
-    GIT_SSH="gitea@${git_domain}"
+    GIT_SSH=${GIT_SSH:-"gitea@${git_domain}"}
 
     GIT_TOKEN=${GIT_TOKEN:-''}
 
@@ -26,7 +26,10 @@ load_pkg_config(){
         packages-{gfx,gtk,media,net,qt5,xorg}
     )
 
-    local dev_tree=(packages-{python,perl,java,ruby})
+    local dev_tree=(
+        packages-{python,perl,java,ruby}
+        python-{world,galaxy}
+    )
 
     local init_tree=(packages-{openrc,runit,s6})
 
@@ -49,11 +52,14 @@ load_pkg_config(){
 
     TREE_DIR_ARCH=${TREE_DIR_ARCH:-"${WORKSPACE_DIR}/archlinux"}
 
+    [[ -z ${ARCH_TREE[*]} ]] && \
     ARCH_TREE=(svntogit-{packages,community})
 
     REPOS_ROOT=${REPOS_ROOT:-"${WORKSPACE_DIR}/repos"}
 
     REPOS_MIRROR=${REPOS_MIRROR:-'http://mirror1.artixlinux.org/repos'}
+
+    HOST_TREE_ARCH=${HOST_TREE_ARCH:-'https://github.com/archlinux'}
 
     DBEXT=${DBEXT:-'xz'}
 
