@@ -158,7 +158,7 @@ move=false
 readonly table="%-18s %-18s %-25s %-27s %-27s %-10s"
 
 usage() {
-    echo "Usage: ${0##*/} [options] (with -q [libname])"
+    echo "Usage: ${0##*/} [options]"
     echo '    -u            Show upgrade packages'
     echo '    -d            Show downgrade packages'
     echo '    -m            Show packages to move'
