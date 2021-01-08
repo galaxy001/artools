@@ -2,19 +2,11 @@
 
 #{{{ services
 
-set_xdm(){
-    if [[ -f "$1"/etc/conf.d/xdm ]];then
-        local conf='DISPLAYMANAGER="'${DISPLAYMANAGER}'"'
-        sed -i -e "s|^.*DISPLAYMANAGER=.*|${conf}|" "$1"/etc/conf.d/xdm
-    fi
-}
-
 add_svc_openrc(){
     local mnt="$1" names="$2" rlvl="${3:-default}"
     for svc in $names; do
         if [[ -f $mnt/etc/init.d/$svc ]];then
-            msg2 "Setting [%s]: %s" "${INITSYS}" "$svc"
-            [[ $svc == "xdm" ]] && set_xdm "$mnt"
+            msg2 "Setting %s: [%s]" "${INITSYS}" "$svc"
             chroot "$mnt" rc-update add "$svc" "$rlvl" &>/dev/null
         fi
     done
@@ -24,7 +16,7 @@ add_svc_runit(){
     local mnt="$1" names="$2" rlvl="${3:-default}"
     for svc in $names; do
         if [[ -d $mnt/etc/runit/sv/$svc ]]; then
-            msg2 "Setting [%s]: %s" "${INITSYS}" "$svc"
+            msg2 "Setting %s: [%s]" "${INITSYS}" "$svc"
             chroot "$mnt" ln -s /etc/runit/sv/"$svc" /etc/runit/runsvdir/"$rlvl" &>/dev/null
         fi
     done
@@ -37,18 +29,18 @@ add_svc_s6(){
         chroot "$mnt" s6-rc-db -c /etc/s6/rc/compiled type "$svc" &> /dev/null || error=true
         ret="$?"
         if [ $ret -eq 0 ] && [[ "$error" == false ]]; then
-            msg2 "Setting [%s]: %s" "${INITSYS}" "$svc"
+            msg2 "Setting %s: [%s]" "${INITSYS}" "$svc"
             chroot "$mnt" s6-rc-bundle-update -c /etc/s6/rc/compiled add "$rlvl" "$svc"
         fi
     done
 
     # force artix-live as a dependency if these display managers exist
-    for displaymanager in gdm lightdm-srv lxdm sddm; do
-        if [ -f "${work_dir}"/rootfs/etc/s6/sv/$displaymanager/dependencies ]; then
-            echo "artix-live" >> "${work_dir}"rootfs/etc/s6/sv/$displaymanager/dependencies
-        fi
-    done
-    chroot "$mnt" sh /usr/share/libalpm/scripts/s6-rc-db-update-hook
+#     for displaymanager in gdm lightdm-srv lxdm sddm; do
+#         if [ -f "${work_dir}"/rootfs/etc/s6/sv/$displaymanager/dependencies ]; then
+#             echo "artix-live" >> "${work_dir}"rootfs/etc/s6/sv/$displaymanager/dependencies
+#         fi
+#     done
+#     chroot "$mnt" sh /usr/share/libalpm/scripts/s6-rc-db-update-hook
 
     # rebuild s6-linux-init binaries
     chroot "$mnt" rm -r /etc/s6/current

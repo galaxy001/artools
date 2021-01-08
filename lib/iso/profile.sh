@@ -5,11 +5,7 @@
 show_profile(){
     msg2 "iso_file: %s" "${iso_file}"
     msg2 "AUTOLOGIN: %s" "${AUTOLOGIN}"
-    msg2 "HOST_NAME: %s" "${HOST_NAME}"
-    msg2 "USER_NAME: %s" "${USER_NAME}"
     msg2 "PASSWORD: %s" "${PASSWORD}"
-    msg2 "ADDGROUPS: %s" "${ADDGROUPS}"
-    msg2 "SERVICES_LIVE: %s" "${SERVICES_LIVE[*]}"
     msg2 "SERVICES: %s" "${SERVICES[*]}"
 }
 
@@ -28,31 +24,13 @@ load_profile(){
     # shellcheck disable=1090
     [[ -r "$profile_dir/${profile}"/profile.conf ]] && . "$profile_dir/${profile}"/profile.conf
 
-    DISPLAYMANAGER=${DISPLAYMANAGER:-'none'}
-
-    AUTOLOGIN=${AUTOLOGIN:-"true"}
-    [[ ${DISPLAYMANAGER} == 'none' ]] && AUTOLOGIN="false"
-
-    HOST_NAME=${HOST_NAME:-'artix'}
-
-    USER_NAME=${USER_NAME:-'artix'}
+    AUTOLOGIN=${AUTOLOGIN:-true}
 
     PASSWORD=${PASSWORD:-'artix'}
-
-    ADDGROUPS=${ADDGROUPS:-"video,power,optical,network,lp,scanner,wheel,users,log"}
 
     if [[ -z "${SERVICES[*]}" ]];then
         SERVICES=('acpid' 'bluetoothd' 'cronie' 'cupsd' 'syslog-ng' 'connmand')
     fi
-
-    if [[ ${DISPLAYMANAGER} != "none" ]];then
-        case "${INITSYS}" in
-            'openrc') SERVICES+=('xdm') ;;
-            'runit'|'s6') SERVICES+=("${DISPLAYMANAGER}") ;;
-        esac
-    fi
-
-    SERVICES_LIVE=('artix-live' 'pacman-init')
 
     return 0
 }

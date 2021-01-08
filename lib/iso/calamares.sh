@@ -2,30 +2,6 @@
 
 #{{{ calamares
 
-write_users_conf(){
-    local yaml
-    yaml=$(write_yaml_header)
-    yaml+=$(write_yaml_map 0 'defaultGroups')
-    local IFS=','
-    for g in "${ADDGROUPS[@]}"; do
-        yaml+=$(write_yaml_seq 2 "$g")
-    done
-    unset IFS
-    yaml+=$(write_yaml_map 0 'autologinGroup' 'autologin')
-    yaml+=$(write_yaml_map 0 'doAutologin' 'false')
-    yaml+=$(write_yaml_map 0 'sudoersGroup' 'wheel')
-    yaml+=$(write_yaml_map 0 'setRootPassword' 'true')
-    yaml+=$(write_yaml_map 0 'availableShells' '/bin/bash, /bin/zsh')
-#     yaml+=$(write_yaml_map 0 'passwordRequirements')
-#     yaml+=$(write_yaml_map 2 'minLength' '-1')
-#     yaml+=$(write_yaml_map 2 'maxLength' '-1')
-#     yaml+=$(write_yaml_map 2 'libpwquality')
-#     yaml+=$(write_yaml_seq 4 "minlen=8")
-#     yaml+=$(write_yaml_seq 4 "minclass=80")
-    yaml+=$(write_empty_line)
-    printf '%s' "${yaml}"
-}
-
 write_services_conf(){
     local key1="$1" val1="$2" key2="$3" val2="$4"
     local yaml
@@ -86,7 +62,6 @@ configure_calamares(){
     local mods="$1/etc/calamares/modules"
     if [[ -d "$mods" ]];then
         msg2 "Configuring: Calamares"
-        write_users_conf > "$mods"/users.conf
         write_services_"${INITSYS}"_conf "$mods"
         write_postcfg > "$mods"/postcfg.conf
         write_unpackfs > "$mods"/unpackfs.conf
