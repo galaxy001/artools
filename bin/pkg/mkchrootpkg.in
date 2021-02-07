@@ -247,7 +247,7 @@ download_sources() {
         die "Could not download sources."
 }
 
-+move_logfiles() {
+move_logfiles() {
     local l
     for l in "$copydir"/logdest/*; do
         [[ $l == */logpipe.* ]] && continue
