@@ -92,6 +92,10 @@ passfiles=("$@")
 repo_path=${REPOS_ROOT}/${dest_repo}/os/${CARCH}
 
 if [[ -n "${passfiles[*]}" ]]; then
-    ${add_pkg} && repo_action add
-    ${rm_pkg} && repo_action remove
+    if ${add_pkg}; then
+        repo_action add
+    fi
+    if ${rm_pkg}; then
+        repo_action remove
+    fi
 fi
