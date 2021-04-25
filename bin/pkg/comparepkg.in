@@ -34,10 +34,12 @@ write_list(){
 compare_m(){
     case ${artixrepo} in
         *testing*|*staging*|*rebuild)
-            if [[ "${a}" == "${b}" ]] || [[ "${a}" == 'staging' && "${b}" == 'rebuild' ]]; then
+            if [[ "${a}" == "${b}" ]]; then
                 msg_row "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
+            elif [[ "${a}" == 'staging' && "${b}" == 'rebuild' ]]; then
+                msg_row_yellow "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
             else
-                msg_row_notify "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
+                msg_row_green "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
                 [[ -n "$archrepo" ]] && write_list "${a}:${b}:$pkg" pkg_moves
             fi
         ;;
@@ -46,7 +48,7 @@ compare_m(){
 
 compare_u(){
     if [ "$result" -eq -1 ];then
-        msg_row_upgrade "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
+        msg_row_red "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
         write_list "${a}:$pkg" pkg_upgrades
     fi
 }
@@ -54,7 +56,7 @@ compare_u(){
 compare_d(){
     if [ "$result" -eq 1 ];then
         if [[ -n "$archver" ]] && [[ -n "$archrepo" ]];then
-            msg_row_downgrade "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
+            msg_row_yellow "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
         fi
     fi
 }

@@ -64,7 +64,7 @@ check_db(){
 
         for name in "${pkgname[@]}"; do
             if ! is_db_entry "$name-$artixver" "$repo"; then
-                msg_row_upgrade "${tableU}" "$repo" "$name" "$artixver" "false"
+                msg_row_red "${tableU}" "$repo" "$name" "$artixver" "false"
             else
                 ${all_db} && msg_row "${tableU}" "$repo" "$name" "$artixver" "true"
             fi

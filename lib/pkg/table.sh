@@ -8,13 +8,13 @@ msg_table_header(){
     printf "${BLUE} ${mesg} ${ALL_OFF}\n" "$@" >&2
 }
 
-msg_row_downgrade(){
+msg_row_yellow(){
     local mesg=$1; shift
     # shellcheck disable=2059
     printf "${YELLOW} ${mesg}${ALL_OFF}\n" "$@" >&2
 }
 
-msg_row_notify(){
+msg_row_green(){
     local mesg=$1; shift
     # shellcheck disable=2059
     printf "${GREEN} ${mesg}${ALL_OFF}\n" "$@" >&2
@@ -27,7 +27,7 @@ msg_row(){
     printf "${WHITE} ${mesg}${ALL_OFF}\n" "$@" >&2
 }
 
-msg_row_upgrade(){
+msg_row_red(){
     local mesg=$1; shift
     # shellcheck disable=2059
     printf "${RED} ${mesg} ${ALL_OFF}\n" "$@" >&2
