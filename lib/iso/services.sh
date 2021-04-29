@@ -24,29 +24,34 @@ add_svc_runit(){
 
 add_svc_s6(){
     local mnt="$1" names="$2" rlvl="${3:-default}" error ret
+    local db=/etc/s6/rc/compiled
     for svc in $names; do
         error=false
-        chroot "$mnt" s6-rc-db -c /etc/s6/rc/compiled type "$svc" &> /dev/null || error=true
+        chroot "$mnt" s6-rc-db -c "$db" type "$svc" &> /dev/null || error=true
         ret="$?"
         if [ $ret -eq 0 ] && [[ "$error" == false ]]; then
             msg2 "Setting %s: [%s]" "${INITSYS}" "$svc"
-            chroot "$mnt" s6-rc-bundle-update -c /etc/s6/rc/compiled add "$rlvl" "$svc"
+            chroot "$mnt" s6-rc-bundle-update -c "$db" add "$rlvl" "$svc"
         fi
     done
 
-    # force artix-live as a dependency if these display managers exist
-#     for displaymanager in gdm lightdm-srv lxdm sddm; do
-#         if [ -f "${work_dir}"/rootfs/etc/s6/sv/$displaymanager/dependencies ]; then
-#             echo "artix-live" >> "${work_dir}"rootfs/etc/s6/sv/$displaymanager/dependencies
-#         fi
-#     done
-#     chroot "$mnt" sh /usr/share/libalpm/scripts/s6-rc-db-update-hook
-
+    local rlvl=/etc/s6/current
     # rebuild s6-linux-init binaries
-    chroot "$mnt" rm -r /etc/s6/current
-    chroot "$mnt" s6-linux-init-maker -1 -N -f /etc/s6/skel -G "/usr/bin/agetty -L -8 tty1 115200" -c /etc/s6/current /etc/s6/current
-    chroot "$mnt" mv /etc/s6/current/bin/init /etc/s6/current/bin/s6-init
-    chroot "$mnt" cp -a /etc/s6/current/bin /usr
+    chroot "$mnt" rm -r "$rlvl"
+    chroot "$mnt" s6-linux-init-maker -1 -N -f /etc/s6/skel -G "/usr/bin/agetty -L -8 tty1 115200" -c "$rlvl" "$rlvl"
+    chroot "$mnt" mv "$rlvl"/bin/init "$rlvl"/bin/s6-init
+    chroot "$mnt" cp -a "$rlvl"/bin /usr
+}
+
+add_svc_66(){
+    local mnt="$1" names="$2"
+    chroot "$mnt" 66-tree -cnE root &>/dev/null
+    for svc in $names; do
+        if [[ -f $mnt/etc/66/service/$svc ]]; then
+            chroot "$mnt" 66-enable -t root $svc &>/dev/null
+            chroot "$mnt" 66-start -t root $svc &>/dev/null
+        fi
+    done
 }
 
 #}}}

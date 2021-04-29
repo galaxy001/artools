@@ -31,6 +31,11 @@ write_services_s6_conf(){
     write_services_conf 'svDir' '/etc/s6/sv' 'dbDir' '/etc/s6/rc/compiled' > "$conf"
 }
 
+write_services_66_conf(){
+    local conf="$1"/services-66.conf
+    write_services_conf 'svDir' '/etc/66/service' 'dbDir' '/run/66/tree' > "$conf"
+}
+
 write_postcfg(){
     local yaml
     yaml=$(write_yaml_header)
@@ -46,13 +51,10 @@ write_unpackfs() {
     local yaml
     yaml=$(write_yaml_header)
     yaml+=$(write_yaml_map 0 'unpack')
-#     if ${persist}; then
-#         yaml+=$(write_yaml_seq_map 2 'source' '"/run/artix/bootmnt/LiveOS/rootfs.img"')
-#         yaml+=$(write_yaml_map 4 'sourcefs' '"ext4"')
-#     else
+    local fs="squashfs"
+#     ${persist} && fs="ext4"
     yaml+=$(write_yaml_seq_map 2 'source' '"/run/artix/bootmnt/LiveOS/rootfs.img"')
-    yaml+=$(write_yaml_map 4 'sourcefs' '"squashfs"')
-#     fi
+    yaml+=$(write_yaml_map 4 'sourcefs' \'"$fs"\')
     yaml+=$(write_yaml_map 4 'destination' '""')
     yaml+=$(write_empty_line)
     printf '%s' "${yaml}"

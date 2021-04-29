@@ -86,9 +86,9 @@ make_rootfs() {
 
         basestrap "${basestrap_args[@]}" "${rootfs}" "${packages[@]}"
 
-        copy_overlay "${ROOT_OVERLAY}" "${rootfs}"
+        copy_overlay "${root_overlay}" "${rootfs}"
 
-        [[ -z ${LIVE_LIST} ]] && configure_chroot "${rootfs}"
+        [[ -z ${live_list} ]] && configure_chroot "${rootfs}"
 
         clean_up_chroot "${rootfs}"
 
@@ -109,7 +109,7 @@ make_livefs() {
 
         basestrap "${basestrap_args[@]}" "${livefs}" "${packages[@]}"
 
-        copy_overlay "${LIVE_OVERLAY}" "${livefs}"
+        copy_overlay "${live_overlay}" "${livefs}"
 
         configure_chroot "${livefs}"
 
@@ -154,7 +154,7 @@ make_grub(){
         msg "Prepare [/iso/boot/grub]"
 
         local layer=${work_dir}/rootfs
-        [[ -n ${LIVE_LIST} ]] && layer=${work_dir}/livefs
+        [[ -n ${live_list} ]] && layer=${work_dir}/livefs
 
         prepare_grub "${work_dir}/rootfs" "$layer"
 
@@ -248,10 +248,10 @@ mk_boot(){
 }
 
 mk_chroots(){
-    load_pkgs "${ROOT_LIST}" "${INITSYS}"
+    load_pkgs "${root_list}"
     run_safe "make_rootfs"
-    if [[ -n ${LIVE_LIST} ]]; then
-        load_pkgs "${LIVE_LIST}" "${INITSYS}"
+    if [[ -n ${live_list} ]]; then
+        load_pkgs "${live_list}"
         run_safe "make_livefs"
     fi
 }

@@ -11,13 +11,16 @@ show_profile(){
 
 load_profile(){
     local profile_dir="${DATADIR}/iso-profiles"
-    [[ -d ${WORKSPACE_DIR}/iso-profiles ]] && profile_dir=${WORKSPACE_DIR}/iso-profiles
+    [[ -d "${WORKSPACE_DIR}"/iso-profiles ]] && profile_dir="${WORKSPACE_DIR}"/iso-profiles
 
-    ROOT_LIST="$profile_dir/${profile}/Packages-Root"
-    ROOT_OVERLAY="$profile_dir/${profile}/root-overlay"
+    root_list="$profile_dir/${profile}/Packages-Root"
+    root_overlay="$profile_dir/${profile}/root-overlay"
 
-    [[ -f "$profile_dir/${profile}/Packages-Live" ]] && LIVE_LIST="$profile_dir/${profile}/Packages-Live"
-    [[ -d "$profile_dir/${profile}/live-overlay" ]] && LIVE_OVERLAY="$profile_dir/${profile}/live-overlay"
+    [[ -f "$profile_dir/${profile}/Packages-Live" ]] && live_list="$profile_dir/${profile}/Packages-Live"
+    [[ -d "$profile_dir/${profile}/live-overlay" ]] && live_overlay="$profile_dir/${profile}/live-overlay"
+
+    common_dir="${DATADIR}/iso-profiles/common"
+    [[ -d "$profile_dir"/common ]] && common_dir="${profile_dir}"/common
 
     [[ -f $profile_dir/${profile}/profile.conf ]] || return 1
 
@@ -35,28 +38,48 @@ load_profile(){
     return 0
 }
 
-load_pkgs(){
-    local pkglist="$1" init="$2"
-    msg2 "Loading Packages: [%s] ..." "${pkglist##*/}"
+read_from_list() {
+    local list="$1"
+    local _space="s| ||g"
+    local _clean=':a;N;$!ba;s/\n/ /g'
+    local _com_rm="s|#.*||g"
 
-    local _init="s|@$init||g" _init_rm1 _init_rm2
-    case "$init" in
-        'openrc') _init_rm1="s|@runit.*||g"; _init_rm2="s|@s6.*||g" ;;
-        's6') _init_rm1="s|@runit.*||g"; _init_rm2="s|@openrc.*||g" ;;
-        'runit') _init_rm1="s|@s6.*||g"; _init_rm2="s|@openrc.*||g" ;;
-    esac
+    local _init="s|@initsys@|${INITSYS}|g"
 
-    local _space="s| ||g" \
-        _clean=':a;N;$!ba;s/\n/ /g' \
-        _com_rm="s|#.*||g"
-
-    packages=($(sed "$_com_rm" "$pkglist" \
+    msg2 "Loading Packages: [%s] ..." "${list##*/}"
+    packages+=($(sed "$_com_rm" "$list" \
             | sed "$_space" \
-            | sed "$_purge" \
             | sed "$_init" \
-            | sed "$_init_rm1" \
-            | sed "$_init_rm2" \
             | sed "$_clean"))
+}
+
+read_from_services() {
+    for svc in "${SERVICES[@]}"; do
+        case "$svc" in
+            sddm|gdm|lightdm|mdm|greetd|lxdm|xdm) packages+=("$svc-${INITSYS}") ;;
+            NetworkManager) packages+=("networkmanager-${INITSYS}") ;;
+            connmand) packages+=("connman-${INITSYS}") ;;
+            cupsd) packages+=("cups-${INITSYS}") ;;
+            bluetoothd) packages+=("bluez-${INITSYS}") ;;
+            syslog-ng|metalog) packages+=("$svc-${INITSYS}") ;;
+        esac
+    done
+}
+
+load_pkgs(){
+    local pkglist="$1"
+    packages=()
+
+    if [[ "${pkglist##*/}" == "Packages-Root" ]]; then
+        read_from_list "${common_dir}/Packages-base"
+        read_from_list "${common_dir}/Packages-apps"
+        read_from_list "${common_dir}/Packages-${INITSYS}"
+        [[ -n "${live_list}" ]] && read_from_list "${common_dir}/Packages-xorg"
+        read_from_list "$pkglist"
+        read_from_services
+    else
+        read_from_list "$pkglist"
+    fi
 }
 
 #}}}
