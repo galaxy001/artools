@@ -49,7 +49,6 @@ add_svc_66(){
     for svc in $names; do
         if [[ -f $mnt/etc/66/service/$svc ]]; then
             chroot "$mnt" 66-enable -t root $svc &>/dev/null
-            chroot "$mnt" 66-start -t root $svc &>/dev/null
         fi
     done
 }
