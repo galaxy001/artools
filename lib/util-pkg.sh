@@ -31,7 +31,7 @@ load_pkg_config(){
         python-{world,galaxy}
     )
 
-    local init_tree=(packages-{openrc,runit,s6})
+    local init_tree=(packages-{openrc,runit,s6,66})
 
     local desktop_tree=(
         packages-{kf5,plasma,kde,qt6}
