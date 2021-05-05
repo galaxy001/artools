@@ -1,0 +1,57 @@
+# Maintainer:
+
+_init=
+_basepkg=
+
+pkgname=${_basepkg}-${_init}
+pkgver=20210505
+pkgrel=1
+pkgdesc="${_init} ${_basepkg} init script"
+arch=('any')
+url="https://gitea.artixlinux.org/artixlinux/packages-${_init}"
+license=('GPL2')
+groups=()
+depends=("${_init}" "${_basepkg}")
+provides=("init-${_basepkg}")
+conflicts=("init-${_basepkg}")
+backup=()
+source=()
+sha256sums=()
+
+_inst_openrc() {
+    if [ -f "${srcdir}/$1".confd ]; then
+        install -Dm644 "${srcdir}/$1".confd "${pkgdir}"/etc/conf.d/"$1"
+    fi
+    if [ -f "${srcdir}/$1".initd ]; then
+        install -Dm755 "${srcdir}/$1".initd "${pkgdir}"/etc/init.d/"$1"
+    fi
+}
+
+_inst_s6(){
+    for f in dependencies down type up; do
+        if [ -f "${srcdir}/$1.$f" ]; then
+            install -Dm644 "${srcdir}/$1.$file" "${pkgdir}"/etc/s6/sv/"$1/$f"
+        fi
+    done
+}
+
+_inst_runit() {
+    if [ -f "${srcdir}/$1.conf" ]; then
+        install -Dm644 "${srcdir}/$1".conf "${pkgdir}"/etc/runit/sv/"$1"/conf
+    fi
+
+    for f in run finish check; do
+        if [ -f "${srcdir}/$1.$f" ]; then
+            install -Dm755 "${srcdir}/$1.$f" "${pkgdir}"/etc/runit/sv/"$1/$f"
+        fi
+    done
+}
+
+_inst_66() {
+    install -Dm644 "$1" -t "${pkgdir}"/etc/66/service
+}
+
+package() {
+    _inst_"${_init}" ""
+}
+
