@@ -1,0 +1,27 @@
+# Maintainer:
+
+_basepkg=foo
+
+pkgname=${_basepkg}-66
+pkgver=20210505
+pkgrel=1
+pkgdesc="Suite66 ${_basepkg} init script"
+arch=('any')
+url="https://gitea.artixlinux.org/artixlinux/packages-66"
+license=('GPL2')
+groups=()
+depends=("suite66-base" "${_basepkg}")
+provides=("init-${_basepkg}")
+conflicts=("init-${_basepkg}")
+backup=()
+source=()
+sha256sums=()
+
+_inst_66() {
+    install -Dm644 "$1" -t "${pkgdir}"/etc/66/service
+}
+
+package() {
+    _inst_66 ""
+}
+

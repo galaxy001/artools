@@ -1,0 +1,32 @@
+# Maintainer:
+
+_basepkg=
+
+pkgname=${_basepkg}-openrc
+pkgver=20210505
+pkgrel=1
+pkgdesc="Openrc ${_basepkg} init script"
+arch=('any')
+url="https://gitea.artixlinux.org/artixlinux/packages-openrc"
+license=('GPL2')
+groups=()
+depends=("openrc" "${_basepkg}")
+provides=("init-${_basepkg}")
+conflicts=("init-${_basepkg}")
+backup=()
+source=()
+sha256sums=()
+
+_inst_openrc() {
+    if [ -f "${srcdir}/$1".confd ]; then
+        install -Dm644 "${srcdir}/$1".confd "${pkgdir}"/etc/conf.d/"$1"
+    fi
+    if [ -f "${srcdir}/$1".initd ]; then
+        install -Dm755 "${srcdir}/$1".initd "${pkgdir}"/etc/init.d/"$1"
+    fi
+}
+
+package() {
+    _inst_openrc ""
+}
+

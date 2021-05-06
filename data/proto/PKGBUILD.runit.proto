@@ -1,0 +1,35 @@
+# Maintainer:
+
+_basepkg=
+
+pkgname=${_basepkg}-runit
+pkgver=20210505
+pkgrel=1
+pkgdesc="Runit ${_basepkg} init script"
+arch=('any')
+url="https://gitea.artixlinux.org/artixlinux/packages-runit"
+license=('GPL2')
+groups=()
+depends=("runit" "${_basepkg}")
+provides=("init-${_basepkg}")
+conflicts=("init-${_basepkg}")
+backup=()
+source=()
+sha256sums=()
+
+_inst_runit() {
+    if [ -f "${srcdir}/$1".conf ]; then
+        install -Dm644 "${srcdir}/$1".conf "${pkgdir}"/etc/runit/sv/"$1"/conf
+    fi
+
+    for f in run finish check; do
+        if [ -f "${srcdir}/$1.$f" ]; then
+            install -Dm755 "${srcdir}/$1.$f" "${pkgdir}"/etc/runit/sv/"$1/$f"
+        fi
+    done
+}
+
+package() {
+    _inst_runit ""
+}
+

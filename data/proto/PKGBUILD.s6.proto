@@ -1,0 +1,31 @@
+# Maintainer:
+
+_basepkg=
+
+pkgname=${_basepkg}-s6
+pkgver=20210505
+pkgrel=1
+pkgdesc="S6 ${_basepkg} init script"
+arch=('any')
+url="https://gitea.artixlinux.org/artixlinux/packages-s6"
+license=('GPL2')
+groups=()
+depends=("s6-base" "${_basepkg}")
+provides=("init-${_basepkg}")
+conflicts=("init-${_basepkg}")
+backup=()
+source=()
+sha256sums=()
+
+_inst_s6(){
+    for f in dependencies down type up; do
+        if [ -f "${srcdir}/$1.$f" ]; then
+            install -Dm644 "${srcdir}/$1.$file" "${pkgdir}"/etc/s6/sv/"$1/$f"
+        fi
+    done
+}
+
+package() {
+    _inst_s6 ""
+}
+
