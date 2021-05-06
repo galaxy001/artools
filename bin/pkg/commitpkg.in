@@ -132,7 +132,7 @@ commit_pkg() {
         action='modify'
         commit_msg="[${repo_src}] '${package}-$(get_full_version)' ${action}"
         msg "Action: %s" "$commit_msg"
-        git add .
+        git add "${package}"
     fi
     git commit -m "$commit_msg"
 }
@@ -158,7 +158,7 @@ repo_commit_pkg() {
     commit_msg="[${repo_src}] -> [${repo_dest}] '${package}-$(get_full_version)' ${action}"
     msg "Action: %s" "$commit_msg"
 
-    git add .
+    git add "${package}"
     git commit -m "$commit_msg"
 }
 
