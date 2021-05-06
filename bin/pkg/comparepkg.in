@@ -43,7 +43,7 @@ compare_m(){
                 if [[ -n "$archrepo" ]]; then
                     write_list "${a}:${b}:$pkg" pkg_moves
                 else
-                    write_list "@repo@:${b}:$pkg" pkg_moves_artix
+                    write_list "@repo@:${b}:$pkg" artix
                 fi
             fi
         ;;
@@ -146,7 +146,7 @@ show_downgrades_table(){
 show_move_table(){
     show_compare_header
     remove_list pkg_moves
-    remove_list pkg_moves_artix
+    remove_list artix
     tree_loop compare_move
 }
 
