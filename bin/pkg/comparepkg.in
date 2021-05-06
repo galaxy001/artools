@@ -40,7 +40,11 @@ compare_m(){
                 msg_row_yellow "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
             else
                 msg_row_green "${table}" "${a}" "${b}" "$pkg" "$archver" "$artixver" "${group#*-}"
-                [[ -n "$archrepo" ]] && write_list "${a}:${b}:$pkg" pkg_moves
+                if [[ -n "$archrepo" ]]; then
+                    write_list "${a}:${b}:$pkg" pkg_moves
+                else
+                    write_list "@repo@:${b}:$pkg" pkg_moves_artix
+                fi
             fi
         ;;
     esac
@@ -142,6 +146,7 @@ show_downgrades_table(){
 show_move_table(){
     show_compare_header
     remove_list pkg_moves
+    remove_list pkg_moves_artix
     tree_loop compare_move
 }
 
