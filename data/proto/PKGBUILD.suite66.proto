@@ -1,27 +1,34 @@
-# Maintainer:
+# Maintainer: Your Name <youremail@domain.com>
 
-_basepkg=foo
-
-pkgname=${_basepkg}-66
-pkgver=20210505
+pkgname=NAME-66
+pkgver=VERSION
 pkgrel=1
-pkgdesc="Suite66 ${_basepkg} init script"
+epoch=
+pkgdesc="Suite66 NAME init script"
 arch=('any')
 url="https://gitea.artixlinux.org/artixlinux/packages-66"
 license=('GPL2')
 groups=()
-depends=("suite66-base" "${_basepkg}")
-provides=("init-${_basepkg}")
-conflicts=("init-${_basepkg}")
+depends=("suite66-base" "NAME")
+makedepends=()
+checkdepends=()
+optdepends=()
+provides=("init-NAME")
+conflicts=("init-NAME")
+replaces=()
 backup=()
-source=()
+options=()
+install=
+changelog=
+source=(NAME)
 sha256sums=()
 
 _inst_66() {
-    install -Dm644 "$1" -t "${pkgdir}"/etc/66/service
+    local sv="$1"
+    install -Dm644 "$sv" -t "${pkgdir}"/etc/66/service
 }
 
 package() {
-    _inst_66 ""
+    _inst_66 "NAME"
 }
 

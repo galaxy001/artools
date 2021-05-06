@@ -1,35 +1,41 @@
-# Maintainer:
+# Maintainer: Your Name <youremail@domain.com>
 
-_basepkg=
-
-pkgname=${_basepkg}-runit
-pkgver=20210505
+pkgname=NAME-runit
+pkgver=VERSION
 pkgrel=1
-pkgdesc="Runit ${_basepkg} init script"
+epoch=
+pkgdesc="Runit NAME init script"
 arch=('any')
 url="https://gitea.artixlinux.org/artixlinux/packages-runit"
 license=('GPL2')
 groups=()
-depends=("runit" "${_basepkg}")
-provides=("init-${_basepkg}")
-conflicts=("init-${_basepkg}")
+depends=("runit" "NAME")
+makedepends=()
+checkdepends=()
+optdepends=()
+provides=("init-NAME")
+conflicts=("init-NAME")
+replaces=()
 backup=()
-source=()
+options=()
+install=
+changelog=
+source=(NAME.{run,finish,check})
 sha256sums=()
 
 _inst_runit() {
-    if [ -f "${srcdir}/$1".conf ]; then
-        install -Dm644 "${srcdir}/$1".conf "${pkgdir}"/etc/runit/sv/"$1"/conf
+    local sv="$1"
+    if [ -f "${srcdir}/$sv".conf ]; then
+        install -Dm644 "${srcdir}/$sv".conf "${pkgdir}"/etc/runit/sv/"$sv"/conf
     fi
 
     for f in run finish check; do
-        if [ -f "${srcdir}/$1.$f" ]; then
-            install -Dm755 "${srcdir}/$1.$f" "${pkgdir}"/etc/runit/sv/"$1/$f"
+        if [ -f "${srcdir}/$sv.$f" ]; then
+            install -Dm755 "${srcdir}/$sv.$f" "${pkgdir}"/etc/runit/sv/"$sv/$f"
         fi
     done
 }
 
 package() {
-    _inst_runit ""
+    _inst_runit "NAME"
 }
-

@@ -1,31 +1,39 @@
-# Maintainer:
+# Maintainer: Your Name <youremail@domain.com>
 
-_basepkg=
-
-pkgname=${_basepkg}-s6
-pkgver=20210505
+pkgname=NAME-s6
+pkgver=VERSION
 pkgrel=1
-pkgdesc="S6 ${_basepkg} init script"
+epoch=
+pkgdesc="S6 NAME init script"
 arch=('any')
 url="https://gitea.artixlinux.org/artixlinux/packages-s6"
 license=('GPL2')
 groups=()
-depends=("s6-base" "${_basepkg}")
-provides=("init-${_basepkg}")
-conflicts=("init-${_basepkg}")
+depends=("s6-base" "NAME")
+makedepends=()
+checkdepends=()
+optdepends=()
+provides=("init-NAME")
+conflicts=("init-NAME")
+replaces=()
 backup=()
-source=()
+options=()
+install=
+changelog=
+source=(NAME.{dependencies,down,up,type})
 sha256sums=()
 
+
 _inst_s6(){
+    local sv="$1"
     for f in dependencies down type up; do
-        if [ -f "${srcdir}/$1.$f" ]; then
-            install -Dm644 "${srcdir}/$1.$file" "${pkgdir}"/etc/s6/sv/"$1/$f"
+        if [ -f "${srcdir}/$sv.$f" ]; then
+            install -Dm644 "${srcdir}/$sv.$f" "${pkgdir}"/etc/s6/sv/"$sv/$f"
         fi
     done
 }
 
 package() {
-    _inst_s6 ""
+    _inst_s6 "NAME"
 }
 
