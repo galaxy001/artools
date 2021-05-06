@@ -87,6 +87,9 @@ PKG_DATA = \
 	data/pacman/makepkg.conf \
 	data/valid-names.conf
 
+PROTO = \
+	$(wildcard data/proto/*.proto)
+
 PATCHES = \
 	$(wildcard data/patches/*.patch)
 
@@ -159,6 +162,9 @@ install_pkg:
 
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)/patches
 	install $(FILEMODE) $(PATCHES) $(DESTDIR)$(DATADIR)/$(TOOLS)/patches
+
+	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)/proto
+	install $(FILEMODE) $(PROTO) $(DESTDIR)$(DATADIR)/$(TOOLS)/proto
 
 install_cpio:
 	+make CPIODIR=$(CPIODIR) DESTDIR=$(DESTDIR) -C initcpio install
