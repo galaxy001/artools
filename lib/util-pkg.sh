@@ -61,7 +61,7 @@ load_pkg_config(){
 
     HOST_TREE_ARCH=${HOST_TREE_ARCH:-'https://github.com/archlinux'}
 
-    DBEXT=${DBEXT:-'xz'}
+    DBEXT=${DBEXT:-'gz'}
 
     return 0
 }
