@@ -104,6 +104,9 @@ LN_BUILDISO = \
 	buildiso-gremlins \
 	buildiso-goblins
 
+ADMIN_BIN = \
+	bin/admin/giteaadmin
+
 DIRMODE = -dm0755
 FILEMODE = -m0644
 MODE =  -m0755
@@ -130,6 +133,10 @@ EDIT = sed -e "s|@datadir[@]|$(DATADIR)|g" \
 
 clean:
 	$(RM) $(BIN)
+
+install_admin:
+	install $(DIRMODE) $(DESTDIR)$(BINDIR)
+	install $(MODE) $(ADMIN_BIN) $(DESTDIR)$(BINDIR)
 
 install_base:
 	install $(DIRMODE) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)
