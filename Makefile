@@ -1,4 +1,4 @@
-VERSION=0.23
+VERSION=0.24
 
 TOOLS = artools
 PREFIX ?= /usr
@@ -38,7 +38,8 @@ PKG_BIN = \
 	bin/pkg/find-libdeps \
 	bin/pkg/batchpkg \
 	bin/pkg/signpkg \
-	bin/pkg/checkrepo
+	bin/pkg/checkrepo \
+	bin/pkg/gitearepo
 
 LN_COMMITPKG = \
 	extrapkg \

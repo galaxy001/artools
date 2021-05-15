@@ -93,10 +93,8 @@ check_team(){
         [[ "${repo_src}" == "${valid_names[2]}" \
         && "${repo_dest}" == "${valid_names[1]}" ]] ;then
 
-        local org
-        org=$(get_pkg_org "${package}")
-        add_repo_to_team "${package}" "$org" "${repo_dest}"
-        remove_repo_from_team "${package}" "$org" "${repo_src}"
+        gitearepo -ap "${package}" -t "${repo_dest}"
+        gitearepo -rp "${package}" -t "${repo_src}"
     fi
 }
 

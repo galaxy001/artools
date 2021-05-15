@@ -15,54 +15,28 @@
 m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
 m4_include(lib/base/message.sh)
+m4_include(lib/pkg/common.sh)
 m4_include(lib/pkg/git.sh)
 m4_include(lib/pkg/repo.sh)
 m4_include(lib/pkg/jenkins.sh)
 
 #{{{ new git repo
 
-get_compliant_name(){
-    local gitname="$1"
-    case "$gitname" in
-        *+) gitname=${gitname//+/plus} ;;
-        *+*) gitname=${gitname//+/-} ;;
-    esac
-    echo "$gitname"
-}
-
 subrepo_clone(){
-    local pkg="$1" org="$2" gitname
+    local pkg="$1" gitname org
     gitname=$(get_compliant_name "$pkg")
+    org=$(get_pkg_org "$pkg")
+
     msg2 "Subrepo clone [%s] from (%s)" "$pkg" "$org/$gitname"
     git subrepo clone "${GIT_SSH}":"$org"/"$gitname".git "$pkg"
-}
-
-create_repo() {
-    local pkg="$1" org="$2" gitname
-    gitname=$(get_compliant_name "$pkg")
-    local json="{ \"auto_init\": true, \"name\":\"$gitname\", \"gitignores\":\"ArchLinuxPackages\", \"readme\": \"Default\" }"
-
-    msg2 "Create package repo [%s] in org (%s)" "${pkg}" "${org}"
-
-    curl -s -X POST "${GIT_URL}/api/v1/org/$org/repos?access_token=${GIT_TOKEN}" \
-        -H "accept: application/json" \
-        -H "content-type: application/json" \
-        -d "$json"
-
-    echo
 }
 
 subrepo_new(){
     cd "${TREE_DIR_ARTIX}/${group}" || return
 
-    local org
-    org=$(get_pkg_org "${package}")
+    gitearepo -cap "${package}" -t "${team}"
 
-    create_repo "${package}" "$org"
-
-    add_repo_to_team "${package}" "$org" "${team}"
-
-    subrepo_clone "${package}" "$org"
+    subrepo_clone "${package}"
 
     mkdir -p "${TREE_DIR_ARTIX}/${group}/${package}/trunk"
 

@@ -18,17 +18,13 @@ artools
 ##### Runtime:
 
 - base:
-  * openssh
-  * rsync
-  * haveged
   * os-prober
-  * gnupg
   * pacman
 
 - pkg:
   * namcap
   * git-subrepo
-  * jq
+  * rsync
 
 - iso:
   * dosfstools
