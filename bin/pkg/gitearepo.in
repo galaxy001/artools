@@ -16,16 +16,49 @@ m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
 m4_include(lib/base/message.sh)
 m4_include(lib/pkg/common.sh)
-m4_include(lib/pkg/gitea.sh)
+
+#{{{ functions
+
+create_repo() {
+    local name="$1"
+    local org="$2"
+    local json url
+
+    json="{ \"auto_init\": true, \"name\":\"$name\", \"gitignores\":\"ArchLinuxPackages\", \"readme\": \"Default\" }"
+
+    url="${GIT_URL}/api/v1/org/$org/repos?access_token=${GIT_TOKEN}"
+
+    msg2 "Create package repo [%s] in org (%s)" "$name" "$org"
+
+    api_post "$url" -H "accept: application/json" \
+                    -H "content-type: application/json" \
+                    -d "$json"
+}
+
+transfer_repo() {
+    local name="$1"
+    local old_owner="$2"
+    local new_owner="landfill" json url
+    local json url
+
+    json="{  \"new_owner\": \"$new_owner\",  \"team_ids\": []}"
+
+    url="${GIT_URL}/api/v1/repos/$old_owner/$name/transfer?access_token=${GIT_TOKEN}"
+
+    msg2 "Transfer package repo [%s] in org (%s)" "$name" "$new_owner"
+
+    api_post "$url" -H  "accept: application/json" \
+                    -H  "Content-Type: application/json" \
+                    -d "$json"
+}
+
+#}}}
 
 usage() {
     echo "Usage: ${0##*/} [options]"
-    echo '    -p <repo>     Repo name'
-    echo '    -t <team>     Team name'
+    echo '    -r <repo>     Repo name'
     echo '    -c            Create git repo'
-    echo '    -a            Add team to git repo'
-    echo '    -r            Remove team from git repo'
-    echo '    -m            Transfer git repo to landfill org'
+    echo '    -t            Transfer git repo to landfill org'
     echo '    -h            This help'
     echo ''
     echo ''
@@ -33,20 +66,15 @@ usage() {
 }
 
 create=false
-add=false
-remove=false
 transfer=false
 
-opts='p:t:carmh'
+opts='r:cth'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        p) repo="$OPTARG" ;;
-        t) team="$OPTARG" ;;
+        r) repo="$OPTARG" ;;
         c) create=true ;;
-        a) add=true ;;
-        r) remove=true ;;
-        m) transfer=true ;;
+        t) transfer=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
@@ -59,7 +87,3 @@ org=$(get_pkg_org "${repo}")
 ${create} && create_repo "${repo}" "${org}"
 
 ${transfer} && transfer_repo "${repo}" "${org}"
-
-${add} && add_team_to_repo "${repo}" "${org}" "${team}"
-
-${remove} && remove_team_from_repo "${repo}" "${org}" "${team}"

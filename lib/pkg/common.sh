@@ -21,4 +21,16 @@ get_pkg_org(){
     echo "$org"
 }
 
+api_put() {
+    curl -s -X PUT "$@"
+}
+
+api_delete() {
+    curl -s -X DELETE "$@"
+}
+
+api_post() {
+    curl -s -X POST "$@"
+}
+
 #}}}

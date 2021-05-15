@@ -15,6 +15,7 @@
 m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
 m4_include(lib/base/message.sh)
+m4_include(lib/pkg/common.sh)
 m4_include(lib/pkg/git.sh)
 m4_include(lib/pkg/repo.sh)
 
@@ -93,8 +94,11 @@ check_team(){
         [[ "${repo_src}" == "${valid_names[2]}" \
         && "${repo_dest}" == "${valid_names[1]}" ]] ;then
 
-        gitearepo -ap "${package}" -t "${repo_dest}"
-        gitearepo -rp "${package}" -t "${repo_src}"
+        local org gitname
+        org=$(get_pkg_org "${package}")
+        gitname=$(get_compliant_name "${package}")
+        add_team_to_repo "$gitname" "${org}" "${repo_dest}"
+        remove_team_from_repo "$gitname" "${org}" "${repo_src}"
     fi
 }
 

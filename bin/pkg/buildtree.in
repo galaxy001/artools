@@ -23,20 +23,26 @@ m4_include(lib/pkg/jenkins.sh)
 #{{{ new git repo
 
 subrepo_clone(){
-    local pkg="$1" gitname org
-    gitname=$(get_compliant_name "$pkg")
-    org=$(get_pkg_org "$pkg")
+    local pkg="$1"
+    local org="$2"
+    local name="$3"
 
-    msg2 "Subrepo clone [%s] from (%s)" "$pkg" "$org/$gitname"
-    git subrepo clone "${GIT_SSH}":"$org"/"$gitname".git "$pkg"
+    msg2 "Subrepo clone [%s] from (%s)" "$pkg" "$org/$name"
+    git subrepo clone "${GIT_SSH}":"$org"/"$name".git "$pkg"
 }
 
 subrepo_new(){
     cd "${TREE_DIR_ARTIX}/${group}" || return
 
-    gitearepo -cap "${package}" -t "${team}"
+    local org gitname
+    org=$(get_pkg_org "${package}")
+    gitname=$(get_compliant_name "${package}")
 
-    subrepo_clone "${package}"
+    gitearepo -cr "$gitname"
+
+    add_team_to_repo "$gitname" "$org" "${team}"
+
+    subrepo_clone "${package}" "$org" "$gitname"
 
     mkdir -p "${TREE_DIR_ARTIX}/${group}/${package}/trunk"
 
