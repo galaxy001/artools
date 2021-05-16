@@ -33,4 +33,12 @@ api_post() {
     curl -s -X POST "$@"
 }
 
+api_post() {
+    curl -s -X PATCH "$@"
+}
+
+api_get() {
+    curl -s -X GET "$@"
+}
+
 #}}}
