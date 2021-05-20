@@ -17,6 +17,7 @@ m4_include(lib/util-pkg.sh)
 m4_include(lib/base/message.sh)
 m4_include(lib/pkg/common.sh)
 m4_include(lib/pkg/git.sh)
+m4_include(lib/pkg/gitea.sh)
 m4_include(lib/pkg/repo.sh)
 m4_include(lib/pkg/jenkins.sh)
 
