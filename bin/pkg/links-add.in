@@ -103,7 +103,7 @@ check_gpg() {
     fi
 
     if (( ! VERIFY )); then
-        if ! gpg --list-key "${GPGKEY}" &>/dev/null; then
+        if ! gpg --list-secret-key ${GPGKEY:+"$GPGKEY"} &>/dev/null; then
             if [[ -n "$GPGKEY" ]]; then
                 error "The key ${GPGKEY} does not exist in your keyring."
             elif (( ! KEY )); then
@@ -121,11 +121,11 @@ create_signature() {
     local ret=0
     msg "Signing database '%s'..." "${dbfile##*/.tmp.}"
 
-    local SIGNWITHKEY=""
+    local SIGNWITHKEY=()
     if [[ -n $GPGKEY ]]; then
-        SIGNWITHKEY="-u ${GPGKEY}"
+        SIGNWITHKEY=(-u "${GPGKEY}")
     fi
-    gpg --detach-sign --use-agent --no-armor "${SIGNWITHKEY}" "$dbfile" &>/dev/null || ret=$?
+    gpg --detach-sign --use-agent --no-armor "${SIGNWITHKEY[@]}" "$dbfile" &>/dev/null || ret=$?
 
     if (( ! ret )); then
         msg2 "Created signature file '%s'" "${dbfile##*/.tmp.}.sig"
@@ -155,21 +155,13 @@ verify_signature() {
 }
 
 verify_repo_extension() {
-    local repofile=$1
+    local junk=()
+    if [[ $1 = *.db.tar* ]] && get_compression_command "$1" junk; then
+        return 0
+    fi
 
-    case $repofile in
-        *.links.tar.gz)  TAR_OPT="z" ;;
-        *.links.tar.bz2) TAR_OPT="j" ;;
-        *.links.tar.xz)  TAR_OPT="J" ;;
-        *.links.tar.zst) TAR_OPT="--zstd" ;;
-        *.links.tar.Z)   TAR_OPT="Z" ;;
-        *.links.tar)     TAR_OPT="" ;;
-        *) error "'%s' does not have a valid database archive extension." \
-                "$repofile"
-            exit 1 ;;
-    esac
-
-    printf '%s' "$TAR_OPT"
+    error "$(gettext "'%s' does not have a valid database archive extension.")" "$1"
+    exit 1
 }
 
 # write an entry to the pacman database
@@ -397,7 +389,6 @@ rotate_db() {
 }
 
 create_db() {
-    TAR_OPT=$(verify_repo_extension "$REPO_DB_FILE")
     # $LOCKFILE is already guaranteed to be absolute so this is safe
     dirname=${LOCKFILE%/*}
 
@@ -406,13 +397,13 @@ create_db() {
     tempname=$dirname/.tmp.$filename
 
     pushd "$tmpdir/${REPO_DB_NAME}" >/dev/null
-    if ( shopt -s nullglob; files=(*); (( ${#files[*]} )) ); then
-        bsdtar -c"${TAR_OPT}"f "$tempname" *
-    else
+    local files=(*)
+    if [[ ${files[*]} = '*' ]]; then
         # we have no packages remaining? zip up some emptyness
-        warning "No packages remain, creating empty database."
-        bsdtar -c"${TAR_OPT}"f "$tempname" -T /dev/null
+        warning "$(gettext "No packages remain, creating empty database.")"
+        files=(-T /dev/null)
     fi
+    bsdtar -cf - "${files[@]}" | compress_as "$filename" > "$tempname"
     popd >/dev/null
 
     create_signature "$tempname"
@@ -494,7 +485,7 @@ else
     LOCKFILE=$PWD/$REPO_DB_FILE.lck
 fi
 
-verify_repo_extension "$REPO_DB_FILE" >/dev/null
+verify_repo_extension "$REPO_DB_FILE"
 
 REPO_DB_PREFIX=${REPO_DB_FILE##*/}
 REPO_DB_PREFIX=${REPO_DB_PREFIX%.links.*}
