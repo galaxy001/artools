@@ -36,17 +36,6 @@ write_services_66_conf(){
     write_services_conf 'svDir' '/etc/66/service' 'runsvDir' '/var/lib/66/system' > "$conf"
 }
 
-write_postcfg(){
-    local yaml
-    yaml=$(write_yaml_header)
-    yaml+=$(write_yaml_map 0 'keyrings')
-    for k in archlinux artix;do
-        yaml+=$(write_yaml_seq 2 "$k")
-    done
-    yaml+=$(write_empty_line)
-    printf '%s' "${yaml}"
-}
-
 write_unpackfs() {
     local yaml
     yaml=$(write_yaml_header)
@@ -65,7 +54,6 @@ configure_calamares(){
     if [[ -d "$mods" ]];then
         msg2 "Configuring: Calamares"
         write_services_"${INITSYS}"_conf "$mods"
-        write_postcfg > "$mods"/postcfg.conf
         write_unpackfs > "$mods"/unpackfs.conf
         sed -e "s|services-openrc|services-${INITSYS}|" \
             -i "$1"/etc/calamares/settings.conf
