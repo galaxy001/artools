@@ -36,25 +36,11 @@ write_services_66_conf(){
     write_services_conf 'svDir' '/etc/66/service' 'runsvDir' '/var/lib/66/system' > "$conf"
 }
 
-write_unpackfs() {
-    local yaml
-    yaml=$(write_yaml_header)
-    yaml+=$(write_yaml_map 0 'unpack')
-    local fs="squashfs"
-#     ${persist} && fs="ext4"
-    yaml+=$(write_yaml_seq_map 2 'source' '"/run/artix/bootmnt/LiveOS/rootfs.img"')
-    yaml+=$(write_yaml_map 4 'sourcefs' \'"$fs"\')
-    yaml+=$(write_yaml_map 4 'destination' '""')
-    yaml+=$(write_empty_line)
-    printf '%s' "${yaml}"
-}
-
 configure_calamares(){
     local mods="$1/etc/calamares/modules"
     if [[ -d "$mods" ]];then
         msg2 "Configuring: Calamares"
         write_services_"${INITSYS}"_conf "$mods"
-        write_unpackfs > "$mods"/unpackfs.conf
         sed -e "s|services-openrc|services-${INITSYS}|" \
             -i "$1"/etc/calamares/settings.conf
     fi
