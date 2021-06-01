@@ -49,7 +49,7 @@ subrepo_pull(){
 prepare_commit(){
     # create new layout, copy & remove repos
     if [[ -d repos ]]; then
-        msg "Switching to new layout ..."
+        msg2 "Switching to new layout ..."
         [[ ! -d "$CARCH" ]] && mkdir "$CARCH"
 
         for r in repos/*; do
@@ -63,7 +63,7 @@ prepare_commit(){
 
         git rm -r repos
         git commit -m "switch to new repo layout"
-        msg "Done switch"
+        msg2 "Done switch"
     fi
 
     if [[ $action == 'add' ]] || [[ $action == 'move' ]] ;then
@@ -87,7 +87,7 @@ check_rebuild(){
 
 check_team(){
     if [[ "${repo_src}" == "${valid_names[0]}" \
-    && "${repo_dest}" == "${valid_names[1]}" ]] || \
+        && "${repo_dest}" == "${valid_names[1]}" ]] || \
         [[ "${repo_src}" == "${valid_names[1]}" \
         && "${repo_dest}" == "${valid_names[0]}" ]] || \
         [[ "${repo_src}" == "${valid_names[1]}" \
@@ -115,22 +115,24 @@ path_config() {
     . "$pkgbuild"
 }
 
+get_commit_msg() {
+    echo "[${repo_src}] -> [${repo_dest}] '${package}-$(get_full_version)' ${action}"
+}
+
 commit_pkg() {
     local commit_msg pkg
-    if ${remove};then
+    if ${remove}; then
         action='remove'
+        commit_msg="[${repo_src}] '$pkg' ${action}"
+        msg "Action: %s" "$commit_msg"
         if [[ "${repo_src}" == 'trunk' ]];then
             pkg=${package}
             git rm -r trunk
         else
             pkg="${package}-$(get_full_version)"
-
             prepare_commit
-
             git rm -r "$CARCH/${repo_src}"
         fi
-        commit_msg="[${repo_src}] '$pkg' ${action}"
-        msg "Action: %s" "$commit_msg"
     else
         action='modify'
         commit_msg="[${repo_src}] '${package}-$(get_full_version)' ${action}"
@@ -142,25 +144,22 @@ commit_pkg() {
 
 repo_commit_pkg() {
     local commit_msg
-    if [[ "${repo_src}" == 'trunk' ]];then
+    if [[ "${repo_src}" == 'trunk' ]]; then
         action='add'
-
+        commit_msg=$(get_commit_msg)
+        msg "Action: %s" "$commit_msg"
         prepare_commit
         check_rebuild
-
         cp trunk/* "$CARCH/${repo_dest}"/
     else
         action='move'
         [[ ! -f $pkgbuild ]] && die "%s does not exist!" "$pkgbuild"
-
+        commit_msg=$(get_commit_msg)
+        msg "Action: %s" "$commit_msg"
         prepare_commit
-
         cp "$CARCH/${repo_src}"/* "$CARCH/${repo_dest}"/
         git rm -r "$CARCH/${repo_src}"
     fi
-    commit_msg="[${repo_src}] -> [${repo_dest}] '${package}-$(get_full_version)' ${action}"
-    msg "Action: %s" "$commit_msg"
-
     git add .
     git commit -m "$commit_msg"
 }
