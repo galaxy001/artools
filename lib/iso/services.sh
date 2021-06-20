@@ -45,7 +45,6 @@ add_svc_s6(){
 
 add_svc_66(){
     local mnt="$1" names="$2"
-    chroot "$mnt" 66-tree -cnE default &>/dev/null
     for svc in $names; do
         if [[ -f "$mnt"/etc/66/service/"$svc" ]]; then
             msg2 "Setting %s: [%s]" "${INITSYS}" "$svc"
