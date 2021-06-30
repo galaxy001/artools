@@ -38,7 +38,7 @@ add_svc_s6(){
     local rlvl=/etc/s6/current
     # rebuild s6-linux-init binaries
     chroot "$mnt" rm -r "$rlvl"
-    chroot "$mnt" s6-linux-init-maker -1 -N -f /etc/s6/skel -G "/usr/bin/agetty -L -8 tty1 115200" -c "$rlvl" "$rlvl"
+    chroot "$mnt" s6-linux-init-maker -1 -N -f /etc/s6/skel -G "/usr/bin/agetty -L -8 tty7 115200" -c "$rlvl" "$rlvl"
     chroot "$mnt" mv "$rlvl"/bin/init "$rlvl"/bin/s6-init
     chroot "$mnt" cp -a "$rlvl"/bin /usr
 }
