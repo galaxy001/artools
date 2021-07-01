@@ -33,7 +33,7 @@ api_post() {
     curl -s -X POST "$@"
 }
 
-api_post() {
+api_patch() {
     curl -s -X PATCH "$@"
 }
 

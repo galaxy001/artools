@@ -18,11 +18,39 @@ m4_include(lib/base/message.sh)
 m4_include(lib/pkg/common.sh)
 m4_include(lib/admin/team.sh)
 
+add_user_to_team_in_org() {
+    local id
+    id=$(search_team "${GITEA_ORG}" "${GITEA_TEAM}")
+    add_user_to_team "${GITEA_USER}" "$id"
+}
+
+remove_user_from_team_in_org() {
+    local id
+    id=$(search_team "${GITEA_ORG}" "${GITEA_TEAM}")
+    remove_user_from_team "${GITEA_USER}" "$id"
+}
+
+add_user_to_team_in_pkg_orgs() {
+
+    for org in packages{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}; do
+        local id
+        id=$(search_team "$org" "${GITEA_TEAM}")
+
+        if ${add}; then
+            add_user_to_team "${GITEA_USER}" "$id"
+        fi
+        if ${remove}; then
+            remove_user_from_team "${GITEA_USER}" "$id"
+        fi
+    done
+}
+
 usage() {
     echo "Usage: ${0##*/} [options]"
-    echo '    -u <user>     Repo name'
+    echo '    -u <user>     User name'
     echo '    -t <team>     Team name'
     echo '    -o <org>      Org name'
+    echo '    -p            Add user to team in package[A-Z] orgs'
     echo '    -a            Add user to team in org'
     echo '    -r            Remove user from team in org'
     echo '    -h            This help'
@@ -33,17 +61,31 @@ usage() {
 
 add=false
 remove=false
+pkgorg_all=false
 
-opts='u:t:o:arh'
+GITEA_USER=''
+GITEA_TEAM=''
+GITEA_ORG=''
+
+opts='u:t:o:arph'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
-        u) repo="$OPTARG" ;;
-        t) team="$OPTARG" ;;
-        t) org="$OPTARG" ;;
+        u) GITEA_USER="$OPTARG" ;;
+        t) GITEA_TEAM="$OPTARG" ;;
+        o) GITEA_ORG="$OPTARG" ;;
+        a) add=true ;;
+        r) remove=true ;;
+        p) pkgorg_all=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
 done
 
 shift $(( OPTIND - 1 ))
+
+${pkgorg_all} && add_user_to_team_in_pkg_orgs
+
+${add} && add_user_to_team
+
+${remove} && remove_user_from_team
