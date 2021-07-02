@@ -50,7 +50,7 @@ usage() {
     echo '    -u <user>     User name'
     echo '    -t <team>     Team name'
     echo '    -o <org>      Org name'
-    echo '    -p            Add user to team in package[A-Z] orgs'
+    echo '    -p            Run for each packages[A-Z] org'
     echo '    -a            Add user to team in org'
     echo '    -r            Remove user from team in org'
     echo '    -h            This help'
@@ -86,6 +86,6 @@ shift $(( OPTIND - 1 ))
 
 ${pkgorg_all} && add_user_to_team_in_pkg_orgs
 
-${add} && add_user_to_team
+${add} && add_user_to_team_in_org
 
-${remove} && remove_user_from_team
+${remove} && remove_user_from_team_in_org
