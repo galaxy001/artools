@@ -116,7 +116,7 @@ M4 = m4 -P
 CHMODAW = chmod a-w
 CHMODX = chmod +x
 
-BIN = $(BASE_BIN) $(PKG_BIN) $(ISO_BIN)
+BIN = $(BASE_BIN) $(PKG_BIN) $(ISO_BIN) $(ADMIN_BIN)
 
 all: $(BIN)
 
