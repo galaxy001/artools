@@ -21,26 +21,22 @@ m4_include(lib/admin/team.sh)
 add_user_to_team_in_org() {
     local id
     id=$(search_team "${GITEA_ORG}" "${GITEA_TEAM}")
-    add_user_to_team "${GITEA_USER}" "$id"
+    (( $id > 0 )) && add_user_to_team "${GITEA_USER}" "$id"
 }
 
 remove_user_from_team_in_org() {
     local id
     id=$(search_team "${GITEA_ORG}" "${GITEA_TEAM}")
-    remove_user_from_team "${GITEA_USER}" "$id"
+    (( $id > 0 )) && remove_user_from_team "${GITEA_USER}" "$id"
 }
 
-add_user_to_team_in_pkg_orgs() {
-
-    for org in packages{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}; do
+run_pkg_orgs() {
+    for org in packages{A..Z}; do
         local id
         id=$(search_team "$org" "${GITEA_TEAM}")
-
-        if ${add}; then
-            add_user_to_team "${GITEA_USER}" "$id"
-        fi
-        if ${remove}; then
-            remove_user_from_team "${GITEA_USER}" "$id"
+        if (( $id > 0 )); then
+            ${add} && add_user_to_team "${GITEA_USER}" "$id"
+            ${remove} && remove_user_from_team "${GITEA_USER}" "$id"
         fi
     done
 }
@@ -84,8 +80,9 @@ done
 
 shift $(( OPTIND - 1 ))
 
-${pkgorg_all} && add_user_to_team_in_pkg_orgs
-
-${add} && add_user_to_team_in_org
-
-${remove} && remove_user_from_team_in_org
+if ${pkgorg_all}; then
+    run_pkg_orgs
+else
+    ${add} && add_user_to_team_in_org
+    ${remove} && remove_user_from_team_in_org
+fi
