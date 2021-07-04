@@ -115,27 +115,29 @@ path_config() {
     . "$pkgbuild"
 }
 
-get_commit_msg() {
+get_repo_commit_msg() {
     echo "[${repo_src}] -> [${repo_dest}] '${package}-$(get_full_version)' ${action}"
+}
+
+get_commit_msg() {
+    echo "[${repo_src}] '${package}-$(get_full_version)' ${action}"
 }
 
 commit_pkg() {
     local commit_msg pkg
     if ${remove}; then
         action='remove'
-        commit_msg="[${repo_src}] '$pkg' ${action}"
+        commit_msg=$(get_commit_msg)
         msg "Action: %s" "$commit_msg"
         if [[ "${repo_src}" == 'trunk' ]];then
-            pkg=${package}
             git rm -r trunk
         else
-            pkg="${package}-$(get_full_version)"
             prepare_commit
             git rm -r "$CARCH/${repo_src}"
         fi
     else
         action='modify'
-        commit_msg="[${repo_src}] '${package}-$(get_full_version)' ${action}"
+        commit_msg=$(get_commit_msg)
         msg "Action: %s" "$commit_msg"
         git add .
     fi
@@ -146,7 +148,7 @@ repo_commit_pkg() {
     local commit_msg
     if [[ "${repo_src}" == 'trunk' ]]; then
         action='add'
-        commit_msg=$(get_commit_msg)
+        commit_msg=$(get_repo_commit_msg)
         msg "Action: %s" "$commit_msg"
         prepare_commit
         check_rebuild
@@ -154,7 +156,7 @@ repo_commit_pkg() {
     else
         action='move'
         [[ ! -f $pkgbuild ]] && die "%s does not exist!" "$pkgbuild"
-        commit_msg=$(get_commit_msg)
+        commit_msg=$(get_repo_commit_msg)
         msg "Action: %s" "$commit_msg"
         prepare_commit
         cp "$CARCH/${repo_src}"/* "$CARCH/${repo_dest}"/
