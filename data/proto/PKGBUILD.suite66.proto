@@ -1,12 +1,12 @@
 # Maintainer: Your Name <youremail@domain.com>
 
-pkgname=NAME-66
+pkgname=NAME-suite66
 pkgver=VERSION
 pkgrel=1
 epoch=
 pkgdesc="Suite66 NAME init script"
 arch=('any')
-url="https://gitea.artixlinux.org/artixlinux/packages-66"
+url="https://gitea.artixlinux.org/artixlinux/packages-suite66"
 license=('GPL2')
 groups=()
 depends=("suite66-base" "NAME")
