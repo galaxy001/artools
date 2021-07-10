@@ -31,8 +31,8 @@ write_services_s6_conf(){
     write_services_conf 'svDir' '/etc/s6/sv' 'dbDir' '/etc/s6/rc/compiled' > "$conf"
 }
 
-write_services_66_conf(){
-    local conf="$1"/services-66.conf
+write_services_suite66_conf(){
+    local conf="$1"/services-suite66.conf
     write_services_conf 'svDir' '/etc/66/service' 'runsvDir' '/var/lib/66/system' > "$conf"
 }
 
