@@ -19,6 +19,8 @@ load_iso_config(){
 
     GPG_KEY=${GPG_KEY:-''}
 
+    COMP_LEVEL=${COMP_LEVEL:-15}
+
     return 0
 }
 
