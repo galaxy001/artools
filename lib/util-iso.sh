@@ -19,7 +19,9 @@ load_iso_config(){
 
     GPG_KEY=${GPG_KEY:-''}
 
-    COMP_LEVEL=${COMP_LEVEL:-15}
+    if [[ -z "${COMPRESSION_ARGS[*]}" ]]; then
+        COMPRESSION_ARGS=(-comp zstd -Xcompression-level 22)
+    fi
 
     return 0
 }
