@@ -218,6 +218,7 @@ display_settings(){
     msg2 "profile: %s" "${profile}"
     msg2 "INITSYS: %s" "${INITSYS}"
     [[ -n ${GPG_KEY} ]] && msg2 "GPG_KEY: %s" "${GPG_KEY}"
+    msg2 "COMP_LEVEL: %s" "${COMP_LEVEL}"
 
     msg "ISO SETTINGS:"
     msg2 "ISO_VERSION: %s" "${ISO_VERSION}"
@@ -341,6 +342,8 @@ usage() {
     echo '    -z                 Generate iso only'
     echo '                       Requires pre built images (-x)'
     echo '    -d                 Use dracut instead of mkinitcpio for iso initramfs'
+    echo '    -l                 Set the zstd compression level'
+    echo "                       [default: $COMP_LEVEL] should be 1 .. 22"
     echo '    -q                 Query settings and pretend build'
     echo '    -h                 This help'
     echo ''
@@ -348,7 +351,7 @@ usage() {
     exit "$1"
 }
 
-opts='p:r:t:i:g:czsbxmdqh'
+opts='p:r:t:i:g:czsbxmdlqh'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
@@ -364,6 +367,7 @@ while getopts "${opts}" arg; do
         b) boot_only=true ;;
         m) persist=true ;;
         d) use_dracut=true ;;
+        l) COMP_LEVEL="$OPTARG" ;;
         q) pretend=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
