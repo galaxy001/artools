@@ -5,13 +5,17 @@
 make_checksum(){
     local file="$1"
     msg2 "Creating md5sum ..."
+    cd "${iso_root}${live_dir}"
     md5sum "$file" > "$file".md5
+    cd "${OLDPWD}"
 }
 
 make_sig () {
     local file="$1"
     msg2 "Creating signature file..."
+    chown "${owner}:$(id --group "${owner}")" "${iso_root}${live_dir}"
     su "${owner}" -c "gpg --detach-sign --output $file.sig --default-key ${GPG_KEY} $file"
+    chown "root:root" "${iso_root}${live_dir}"
 }
 
 export_gpg_publickey() {

@@ -72,11 +72,9 @@ make_sfs() {
         mksquashfs "${mksfs_args[@]}"
 
         if ! ${use_dracut}; then
-            make_checksum "${iso_root}${live_dir}/${img_name}"
+            make_checksum "${img_name}"
             if [[ -n ${GPG_KEY} ]];then
-                chown "${owner}:$(id --group "${owner}")" "${iso_root}${live_dir}"
                 make_sig "${iso_root}${live_dir}/${img_name}"
-                chown "root:root" "${iso_root}${live_dir}"
             fi
         fi
         if ${persist}; then
