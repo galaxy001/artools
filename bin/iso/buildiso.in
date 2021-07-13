@@ -221,6 +221,8 @@ display_settings(){
 
     msg "ISO SETTINGS:"
     msg2 "ISO_VERSION: %s" "${ISO_VERSION}"
+    msg2 "COMPRESSION: %s" "${COMPRESSION}"
+    [[ "${COMPRESSION}" == 'zstd' ]] && msg2 "COMPRESSION_LEVEL: %s" "${COMPRESSION_LEVEL}"
 
     msg "BUILD:"
     show_profile

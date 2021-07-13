@@ -67,7 +67,7 @@ make_sfs() {
 
         mksfs_args+=("${sfs_out}")
 
-        mksfs_args+=("${COMPRESSION_ARGS[@]}" -noappend)
+        mksfs_args+=(-comp "${COMPRESSION}" "${COMPRESSION_ARGS[@]}" -noappend)
 
         mksquashfs "${mksfs_args[@]}"
 
