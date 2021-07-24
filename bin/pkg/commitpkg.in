@@ -89,7 +89,7 @@ check_team(){
     if [[ "${repo_src}" == "${valid_names[0]}" && "${repo_dest}" == "${valid_names[1]}" ]] || \
         [[ "${repo_src}" == "${valid_names[1]}" && "${repo_dest}" == "${valid_names[0]}" ]] || \
         [[ "${repo_src}" == "${valid_names[1]}" && "${repo_dest}" == "${valid_names[2]}" ]] || \
-        [[ "${repo_src}" == "${valid_names[2]}" && "${repo_dest}" == "${valid_names[1]}" ]] \
+        [[ "${repo_src}" == "${valid_names[2]}" && "${repo_dest}" == "${valid_names[1]}" ]] || \
         [[ "${repo_src}" == "${valid_names[0]}" && "${repo_dest}" == "${valid_names[2]}" ]] || \
         [[ "${repo_src}" == "${valid_names[2]}" && "${repo_dest}" == "${valid_names[0]}" ]]; then
 
