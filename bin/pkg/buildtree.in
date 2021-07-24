@@ -117,6 +117,7 @@ patch_pkg(){
     local pkgpath="$1"
     local pkg=${pkgpath%/*}
     pkg=${pkg##*/}
+    sed -e 's|arch-meson|artix-meson|' -i "$pkgpath"/PKGBUILD
     case $pkg in
         glibc)
             msg2 "Patching %s" "$pkg"
