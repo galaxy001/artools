@@ -2,24 +2,6 @@
 
 #{{{ squash
 
-make_sig () {
-    local file="$1"
-    msg2 "Creating signature file..."
-    cd "${iso_root}${live_dir}"
-    chown "${owner}:$(id --group "${owner}")" "${iso_root}${live_dir}"
-    su "${owner}" -c "gpg --detach-sign --default-key ${GPG_KEY} $file"
-    chown -R root "${iso_root}${live_dir}"
-    cd "${OLDPWD}"
-}
-
-make_checksum(){
-    local file="$1"
-    msg2 "Creating md5sum ..."
-    cd "${iso_root}${live_dir}"
-    md5sum "$file" > "$file".md5
-    cd "${OLDPWD}"
-}
-
 make_ext_img(){
     local src="$1"
     local size=32G
@@ -85,14 +67,14 @@ make_sfs() {
 
         mksfs_args+=("${sfs_out}")
 
-        mksfs_args+=(-comp xz -b 256K -Xbcj x86 -noappend)
+        mksfs_args+=(-comp "${COMPRESSION}" "${COMPRESSION_ARGS[@]}" -noappend)
 
         mksquashfs "${mksfs_args[@]}"
 
         if ! ${use_dracut}; then
             make_checksum "${img_name}"
             if [[ -n ${GPG_KEY} ]];then
-                make_sig "${img_name}"
+                make_sig "${iso_root}${live_dir}/${img_name}"
             fi
         fi
         if ${persist}; then

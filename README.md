@@ -30,7 +30,6 @@ artools
   * dosfstools
   * libisoburn
   * squashfs-tools
-  * mkinitcpio
   * grub
 
 #### Configuration

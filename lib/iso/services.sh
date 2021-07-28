@@ -43,7 +43,7 @@ add_svc_s6(){
     chroot "$mnt" cp -a "$rlvl"/bin /usr
 }
 
-add_svc_66(){
+add_svc_suite66(){
     local mnt="$1" names="$2"
     for svc in $names; do
         if [[ -f "$mnt"/etc/66/service/"$svc" ]]; then

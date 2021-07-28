@@ -138,7 +138,7 @@ make_bootfs() {
         if "${use_dracut}"; then
             prepare_initramfs_dracut "${bootfs}"
         else
-            prepare_initramfs "${bootfs}"
+            prepare_initramfs_mkinitcpio "${bootfs}"
         fi
 
         umount_overlayfs
@@ -161,7 +161,7 @@ make_grub(){
         if ${use_dracut}; then
             configure_grub_dracut
         else
-            configure_grub
+            configure_grub_mkinitcpio
         fi
 
         : > "${work_dir}"/grub.lock
@@ -207,6 +207,10 @@ prepare_build(){
     live_dir=/LiveOS
 
     mnt_dir=${chroots_iso}/${profile}/mnt
+
+    if [[ -n "${GPG_KEY}" ]]; then
+        ${use_dracut} || export_gpg_publickey
+    fi
 }
 
 display_settings(){
@@ -217,6 +221,8 @@ display_settings(){
 
     msg "ISO SETTINGS:"
     msg2 "ISO_VERSION: %s" "${ISO_VERSION}"
+    msg2 "COMPRESSION: %s" "${COMPRESSION}"
+    [[ "${COMPRESSION}" == 'zstd' ]] && msg2 "COMPRESSION_LEVEL: %s" "${COMPRESSION_LEVEL}"
 
     msg "BUILD:"
     show_profile
@@ -328,7 +334,7 @@ usage() {
     echo '    -i <name>          Init system to use'
     echo "                       [default: ${INITSYS}]"
     echo '    -g <key>           The gpg key for img signing'
-    echo "                       [default: ${GPG_KEY}]"
+    echo "                       [default: none]"
     echo '    -m                 Set SquashFS image mode to persistence'
     echo '    -c                 Disable clean work dir'
     echo '    -x                 Build chroot only'

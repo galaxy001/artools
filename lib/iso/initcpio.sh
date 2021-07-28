@@ -2,56 +2,71 @@
 
 #{{{ initcpio
 
-write_mkinitcpio_conf() {
-    msg2 "Writing mkinitcpio.conf ..."
-    local conf="$1/etc/mkinitcpio-artix.conf"
-    printf "%s\n" 'MODULES=(loop dm-snapshot)' > "$conf"
-    printf "%s\n" 'COMPRESSION="xz"' >> "$conf"
-    if [[ "${profile}" == 'base' ]];then
-        printf "%s\n" 'HOOKS=(base udev artix_shutdown artix artix_loop_mnt
-                            artix_pxe_common artix_pxe_http artix_pxe_nbd artix_pxe_nfs
-                            artix_kms modconf block filesystems keyboard keymap)' >> "$conf"
-    else
-        printf "%s\n" 'HOOKS=(base udev artix_shutdown artix artix_loop_mnt
-                            artix_kms modconf block filesystems keyboard keymap)' >> "$conf"
+make_checksum(){
+    local file="$1"
+    msg2 "Creating md5sum ..."
+    cd "${iso_root}${live_dir}"
+    md5sum "$file" > "$file".md5
+    cd "${OLDPWD}"
+}
+
+make_sig () {
+    local file="$1"
+    msg2 "Creating signature file..."
+    chown "${owner}:$(id --group "${owner}")" "${iso_root}${live_dir}"
+    su "${owner}" -c "gpg --detach-sign --output $file.sig --default-key ${GPG_KEY} $file"
+    chown "root:root" "${iso_root}${live_dir}"
+}
+
+export_gpg_publickey() {
+    key_export=${WORKSPACE_DIR}/pubkey.gpg
+    if [[ ! -e "${key_export}" ]]; then
+        gpg --batch --output "${key_export}" --export "${GPG_KEY}"
     fi
 }
 
-prepare_initcpio(){
-    msg2 "Copying initcpio ..."
-    local dest="$1"
-    cp /etc/initcpio/hooks/artix* "$dest"/etc/initcpio/hooks
-    cp /etc/initcpio/install/artix* "$dest"/etc/initcpio/install
-    cp /etc/initcpio/artix_shutdown "$dest"/etc/initcpio
-}
+prepare_initramfs_mkinitcpio() {
+    local mnt="$1" packages=() mkinitcpio_conf k
 
-prepare_initramfs(){
-    local mnt="$1"
+    mkinitcpio_conf=mkinitcpio-default.conf
+    [[ "${profile}" == 'base' ]] && mkinitcpio_conf=mkinitcpio-pxe.conf
+    k=$(<"$mnt"/usr/src/linux/version)
 
-    prepare_initcpio "$mnt"
+    read_from_list "${common_dir}/Packages-boot"
+    basestrap "${basestrap_args[@]}" "$mnt" "${packages[@]}"
 
-    write_mkinitcpio_conf "$mnt"
-
-    if [[ -n ${GPG_KEY} ]]; then
-        su "${owner}" -c "gpg --export ${GPG_KEY} >/tmp/GPG_KEY"
-        exec 17<>/tmp/GPG_KEY
+    if [[ -n "${GPG_KEY}" ]]; then
+        exec {ARTIX_GNUPG_FD}<>"${key_export}"
+        export ARTIX_GNUPG_FD
     fi
-    local _kernel
-     _kernel=$(<"$mnt"/usr/src/linux/version)
-    ARTIX_GNUPG_FD=${GPG_KEY:+17} artools-chroot "$mnt" \
-        /usr/bin/mkinitcpio -k "${_kernel}" \
-        -c /etc/mkinitcpio-artix.conf \
+
+    artools-chroot "$mnt" mkinitcpio -k "$k" \
+        -c /etc/"$mkinitcpio_conf" \
         -g /boot/initramfs.img
 
     if [[ -n "${GPG_KEY}" ]]; then
-        exec 17<&-
+        exec {ARTIX_GNUPG_FD}<&-
+        unset ARTIX_GNUPG_FD
     fi
-    if [[ -f /tmp/GPG_KEY ]]; then
-        rm /tmp/GPG_KEY
+    if [[ -f "${key_export}" ]]; then
+        rm "${key_export}"
     fi
-
     cp "$mnt"/boot/initramfs.img "${iso_root}"/boot/initramfs-"${arch}".img
     prepare_boot_extras "$mnt"
+}
+
+configure_grub_mkinitcpio() {
+    msg "Configuring grub kernel options ..."
+    local ro_opts=()
+    local rw_opts=()
+    local kopts=("label=${iso_label}")
+
+    [[ "${profile}" != 'base' ]] && kopts+=('overlay=livefs')
+
+    sed -e "s|@kopts@|${kopts[*]}|" \
+        -e "s|@ro_opts@|${ro_opts[*]}|" \
+        -e "s|@rw_opts@|${rw_opts[*]}|" \
+        -i "${iso_root}"/boot/grub/kernels.cfg
 }
 
 #}}}

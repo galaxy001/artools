@@ -19,6 +19,18 @@ load_iso_config(){
 
     GPG_KEY=${GPG_KEY:-''}
 
+    COMPRESSION="${COMPRESSION:-zstd}"
+
+    COMPRESSION_LEVEL="${COMPRESSION_LEVEL:-15}"
+
+    if [[ -z "${COMPRESSION_ARGS[*]}" ]]; then
+        COMPRESSION_ARGS=(-Xcompression-level "${COMPRESSION_LEVEL}")
+    fi
+
+    if [[ "${COMPRESSION}" == 'xz' ]]; then
+        COMPRESSION_ARGS=(-Xbcj x86)
+    fi
+
     return 0
 }
 

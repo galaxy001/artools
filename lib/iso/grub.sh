@@ -2,27 +2,12 @@
 
 #{{{ grub
 
-configure_grub(){
-    msg "Configuring grub kernel options ..."
-    local ro_opts=()
-    local rw_opts=()
-    local kopts=("label=${iso_label}")
-
-    [[ "${profile}" != 'base' ]] && kopts+=('overlay=livefs')
-
-    sed -e "s|@kopts@|${kopts[*]}|" \
-        -e "s|@ro_opts@|${ro_opts[*]}|" \
-        -e "s|@rw_opts@|${rw_opts[*]}|" \
-        -i "${iso_root}"/boot/grub/kernels.cfg
-}
-
 prepare_grub(){
     local platform=i386-pc img='core.img' prefix=/boot/grub
     local lib="$1"/usr/lib/grub
     local theme="$1"/usr/share/grub
     local livecfg="$2"/usr/share/grub
     local grub=${iso_root}/boot/grub efi=${iso_root}/efi/boot
-
 
     prepare_dir "${grub}/${platform}"
 

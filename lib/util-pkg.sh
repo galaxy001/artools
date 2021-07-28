@@ -27,7 +27,7 @@ load_pkg_config(){
     )
 
     local dev_tree=(
-        packages-{python,perl,java,ruby}
+        packages-{llvm,python,perl,java,ruby}
         python-{world,galaxy}
     )
 
