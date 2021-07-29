@@ -16,24 +16,25 @@ m4_include(lib/util-base.sh)
 m4_include(lib/util-pkg.sh)
 m4_include(lib/base/message.sh)
 m4_include(lib/pkg/common.sh)
+m4_include(lib/pkg/repo.sh)
 m4_include(lib/admin/team.sh)
 
 subrepos() {
     local subs
-    subs=$(find "${TREE_DIR_ARTIX}/${GROUP}" -type f -name .gitrepo)
+    subs=$(find "${TREE_DIR_ARTIX}/${GROUP}" -type f -name .gitrepo | sort)
     echo "${subs[@]}"
 }
 
 get_team() {
     local p="$1" t
-    if [[ -d "$p/$CARCH/core" ]]; then
-        t=core
-    elif [[ -d "$p/$CARCH/extra" ]]; then
-        t=extra
-    elif [[ -d "$p/$CARCH/community" ]]; then
-        t=community
-    elif [[ -d "$p/$CARCH/multilib" ]]; then
-        t=multilib
+    if [[ -d "$p/$CARCH/${valid_names[0]}" ]] || [[ -d "$p/repos/${valid_names[0]}"-any ]] || [[ -d "$p/repos/${valid_names[0]}-$CARCH" ]]; then
+        t="${valid_names[0]}"
+    elif [[ -d "$p/$CARCH/${valid_names[1]}" ]] || [[ -d "$p/repos/${valid_names[1]}"-any ]] || [[ -d "$p/repos/${valid_names[1]}-$CARCH" ]]; then
+        t="${valid_names[1]}"
+    elif [[ -d "$p/$CARCH/${valid_names[2]}" ]] || [[ -d "$p/repos/${valid_names[2]}"-any ]] || [[ -d "$p/repos/${valid_names[2]}-$CARCH" ]]; then
+        t="${valid_names[2]}"
+    elif [[ -d "$p/$CARCH/${valid_names[3]}" ]] || [[ -d "$p/repos/${valid_names[3]}"-any ]] || [[ -d "$p/repos/${valid_names[3]}-$CARCH" ]]; then
+        t="${valid_names[3]}"
     fi
     echo "$t"
 }
@@ -42,11 +43,14 @@ run() {
     for r in $(subrepos); do
         local pkg=${r%/*} gitname org team
         team=$(get_team "$pkg")
-        pkg=${name##*/}
+        pkg=${pkg##*/}
         gitname=$(get_compliant_name "$pkg")
         org=$(get_pkg_org "$gitname")
 
-        check_team "$org" "$gitname" "$team"
+#         msg "pkg: %s team: %s" "$gitname" "$team"
+        if ! has_team "$org" "$gitname" "$team"; then
+            warning "repo: (%s) has no team assigned! Should be [%s]" "$gitname"  "$team"
+        fi
     done
 }
 

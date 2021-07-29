@@ -34,15 +34,18 @@ remove_user_from_team() {
     api_delete "$url" -H  "accept: application/json"
 }
 
-check_team() {
+has_team() {
     local org="$1"
     local repo="$2"
     local team="$3"
-    local url
+    local url match
 
     url="${GIT_URL}/api/v1/repos/$org/$repo/teams/$team?access_token=${GIT_TOKEN}"
-
-    api_get "$url" -H  "accept: application/json"
+    match=$(api_get "$url" -H  "accept: application/json"  | jq '.name')
+    if [[ $match ]]; then
+        return 0
+    fi
+    return 1
 }
 
 # }}}
