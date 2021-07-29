@@ -34,4 +34,15 @@ remove_user_from_team() {
     api_delete "$url" -H  "accept: application/json"
 }
 
+check_team() {
+    local org="$1"
+    local repo="$2"
+    local team="$3"
+    local url
+
+    url="${GIT_URL}/api/v1/repos/$org/$repo/teams/$team?access_token=${GIT_TOKEN}"
+
+    api_get "$url" -H  "accept: application/json"
+}
+
 # }}}

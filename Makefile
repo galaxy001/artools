@@ -101,7 +101,8 @@ LN_BUILDISO = \
 	buildiso-goblins
 
 ADMIN_BIN = \
-	bin/admin/giteaadmin
+	bin/admin/giteaadmin \
+	bin/admin/giteacheck
 
 DIRMODE = -dm0755
 FILEMODE = -m0644
