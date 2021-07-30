@@ -41,20 +41,26 @@ get_team() {
 }
 
 run() {
-    for r in $(subrepos); do
-        local pkg=${r%/*} gitname org team
-        team=$(get_team "$pkg")
-        pkg=${pkg##*/}
-        gitname=$(get_compliant_name "$pkg")
-        org=$(get_pkg_org "$gitname")
+    if "${check}"; then
+        local repos
+        for org in packages{A..Z} packages{Ruby,Perl,Python}; do
+            repos=$(list_org_repos "$org")
+            for r in "$repos"; do
+                check_repo_content "$org" "$r"
+            done
+        done
+    fi
+    if "${list}"; then
+        for r in $(subrepos); do
+            local pkg=${r%/*} gitname org team
+            team=$(get_team "$pkg")
+            pkg=${pkg##*/}
+            gitname=$(get_compliant_name "$pkg")
+            org=$(get_pkg_org "$gitname")
 
-        if "${check}"; then
-            check_repo_content "$org" "$gitname"
-        fi
-        if "${list}"; then
             list_repo_teams "$org" "$gitname" "$team"
-        fi
-    done
+        done
+    fi
 }
 
 load_makepkg_config
@@ -63,11 +69,11 @@ load_valid_names
 
 usage() {
     echo "Usage: ${0##*/} [options]"
-    echo '    -g <group>    Group name'
-    echo '    -c            Check if a repository is obsolete'
+    echo '    -g <group>    Group name (-l)'
+    echo '    -c            Check all package orgs if a repository is obsolete'
     echo '    -l            List team assigned to a repository'
-    echo '    -a            Add missing team to a repository'
-    echo '    -r            Rremove wrong team from a repository'
+    echo '    -a            Add missing team to a repository (-l)'
+    echo '    -r            Rremove wrong team from a repository (-l)'
     echo '    -h            This help'
     echo ''
     echo ''

@@ -38,7 +38,7 @@ list_org_repos() {
     local org="$1"
     local url repos=()
 
-    url="${GIT_URL}/api/v1/orgs/packagesA/repos?access_token=${GIT_TOKEN}"
+    url="${GIT_URL}/api/v1/orgs/$org/repos?access_token=${GIT_TOKEN}"
 
     repos+=($(api_get "$url" -H  "accept: application/json" | jq '.[] .name' | tr -d \"))
 
@@ -76,18 +76,20 @@ list_repo_teams() {
 check_repo_content() {
     local org="$1"
     local repo="$2"
-    local url content
+    local url new old
 
     url="${GIT_URL}/api/v1/repos/$org/$repo/contents/$CARCH"
 
-    content=$(api_get "$url" -H  "accept: application/json" | jq '.[] .path')
+#     msg "Checking [%s] for (%s)" "$repo" "$CARCH"
+    new=$(api_get "$url" -H  "accept: application/json" | jq '.[] .path' | tr -d \")
 
-    if [[ -z "$content" ]]; then
+    if [[ -z "$new" ]]; then
+        warning "No (%s) found in repo [%s]! Trying (repos) ..." "$CARCH" "$repo"
         url="${GIT_URL}/api/v1/repos/$org/$repo/contents/repos"
-        content=$(api_get "$url" -H  "accept: application/json" | jq '.[] .path')
-    fi
-    if [[ -z "$content" ]]; then
-        warning "repo %s is obsolete!" "$repo"
+        old=$(api_get "$url" -H  "accept: application/json" | jq '.[] .path' | tr -d \")
+        if [[ -z "$old" ]]; then
+            warning "Neither (%s) nor (%s) found in repo [%s]!" "$CARCH" 'repos' "$repo"
+        fi
     fi
 }
 
