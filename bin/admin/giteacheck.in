@@ -45,7 +45,7 @@ run() {
         local repos
         for org in packages{A..Z} packages{Ruby,Perl,Python}; do
             repos=$(list_org_repos "$org")
-            for r in "$repos"; do
+            for r in $repos; do
                 check_repo_content "$org" "$r"
             done
         done
