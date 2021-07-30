@@ -17,6 +17,7 @@ m4_include(lib/util-pkg.sh)
 m4_include(lib/base/message.sh)
 m4_include(lib/pkg/common.sh)
 m4_include(lib/pkg/repo.sh)
+m4_include(lib/pkg/gitea.sh)
 m4_include(lib/admin/team.sh)
 
 subrepos() {
@@ -47,9 +48,14 @@ run() {
         gitname=$(get_compliant_name "$pkg")
         org=$(get_pkg_org "$gitname")
 
-#         msg "pkg: %s team: %s" "$gitname" "$team"
-        if ! has_team "$org" "$gitname" "$team"; then
-            warning "repo: (%s) has no team assigned! Should be [%s]" "$gitname"  "$team"
+        if "${check}"; then
+            if ! has_team "$org" "$gitname" "$team"; then
+                warning "repo [%s] has no team assigned! Should be (%s)" "$gitname"  "$team"
+                "${add}" && add_team_to_repo "$gitname" "$org" "$team"
+            fi
+        fi
+        if "${list}"; then
+            list_repo_teams "$org" "$gitname" "$team"
         fi
     done
 }
@@ -62,6 +68,9 @@ usage() {
     echo "Usage: ${0##*/} [options]"
     echo '    -g <group>    Group name'
     echo '    -c            Check if a team is assigned to a repository'
+    echo '    -l            List teams assigned to a repository'
+    echo '    -a            Add missing team to a repository'
+    echo '    -r            Rremove wrong team from a repository'
     echo '    -h            This help'
     echo ''
     echo ''
@@ -69,14 +78,21 @@ usage() {
 }
 
 check=false
+add=false
+remove=false
+list=false
+
 GROUP=packages
 
-opts='g:ch'
+opts='g:clrah'
 
 while getopts "${opts}" arg; do
     case "${arg}" in
         g) GROUP="$OPTARG" ;;
         c) check=true ;;
+        a) add=true ;;
+        r) remove=true ;;
+        l) list=true ;;
         h|?) usage 0 ;;
         *) echo "invalid argument '${arg}'"; usage 1 ;;
     esac
