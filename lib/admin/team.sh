@@ -34,52 +34,34 @@ remove_user_from_team() {
     api_delete "$url" -H  "accept: application/json"
 }
 
-has_team() {
-    local org="$1"
-    local repo="$2"
-    local team="$3"
-    local url match
-
-    url="${GIT_URL}/api/v1/repos/$org/$repo/teams/$team?access_token=${GIT_TOKEN}"
-    match=$(api_get "$url" -H  "accept: application/json" | jq '.name')
-
-    msg "repo [%s] team query ..." "$repo"
-
-    if [[ "$match" != null ]]; then
-        msg2 "result: %s" "$match"
-        return 0
-    fi
-    return 1
-}
-
 list_org_repos() {
     local org="$1"
-    local url repos
+    local url repos=()
 
     url="${GIT_URL}/api/v1/orgs/packagesA/repos?access_token=${GIT_TOKEN}"
 
-    repos=$(curl -X GET "$url" -H  "accept: application/json" | jq '.[] .name' | tr -d \")
+    repos+=($(api_get "$url" -H  "accept: application/json" | jq '.[] .name' | tr -d \"))
 
-    echo "$repos"
+    echo "${repos[@]}"
 }
 
 list_repo_teams() {
     local org="$1"
     local repo="$2"
     local team="$3"
-    local url teams
+    local url teams=()
 
     url="${GIT_URL}/api/v1/repos/$org/$repo/teams?access_token=${GIT_TOKEN}"
 
     msg "repo [%s] team query ..." "$repo"
     msg2 "assigned: %s" "$team"
-    teams=($(api_get "$url" -H  "accept: application/json" | jq '.[] .name' | tr -d \"))
+    teams+=($(api_get "$url" -H  "accept: application/json" | jq '.[] .name' | tr -d \"))
 
     if (( ${#teams[@]} < 2 )); then
         warning "repo [%s] has no team assigned! Should be (%s)" "$repo"  "$team"
         "${add}" && add_team_to_repo "$repo" "$org" "$team"
-
-    elif (( ${#teams[@]} > 2 )); then
+    fi
+    if (( ${#teams[@]} > 2 )); then
         for t in "${teams[@]}"; do
             if [[ "$t" != $team ]]; then
                 if [[ "$t" != Owners ]]; then
@@ -88,6 +70,24 @@ list_repo_teams() {
                 fi
             fi
         done
+    fi
+}
+
+check_repo_content() {
+    local org="$1"
+    local repo="$2"
+    local url content
+
+    url="${GIT_URL}/api/v1/repos/$org/$repo/contents/$CARCH"
+
+    content=$(api_get "$url" -H  "accept: application/json" | jq '.[] .path')
+
+    if [[ -z "$content" ]]; then
+        url="${GIT_URL}/api/v1/repos/$org/$repo/contents/repos"
+        content=$(api_get "$url" -H  "accept: application/json" | jq '.[] .path')
+    fi
+    if [[ -z "$content" ]]; then
+        warning "repo %s is obsolete!" "$repo"
     fi
 }
 

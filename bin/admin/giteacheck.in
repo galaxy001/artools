@@ -49,10 +49,7 @@ run() {
         org=$(get_pkg_org "$gitname")
 
         if "${check}"; then
-            if ! has_team "$org" "$gitname" "$team"; then
-                warning "repo [%s] has no team assigned! Should be (%s)" "$gitname"  "$team"
-                "${add}" && add_team_to_repo "$gitname" "$org" "$team"
-            fi
+            check_repo_content "$org" "$gitname"
         fi
         if "${list}"; then
             list_repo_teams "$org" "$gitname" "$team"
@@ -67,8 +64,8 @@ load_valid_names
 usage() {
     echo "Usage: ${0##*/} [options]"
     echo '    -g <group>    Group name'
-    echo '    -c            Check if a team is assigned to a repository'
-    echo '    -l            List teams assigned to a repository'
+    echo '    -c            Check if a repository is obsolete'
+    echo '    -l            List team assigned to a repository'
     echo '    -a            Add missing team to a repository'
     echo '    -r            Rremove wrong team from a repository'
     echo '    -h            This help'
