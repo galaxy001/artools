@@ -72,6 +72,12 @@ get_pacman_conf "${repo}"
 
 get_makepkg_conf
 
+if [[ -f "${DATADIR}/setarch-aliases.d/${arch}" ]]; then
+	read -r set_arch < "${DATADIR}/setarch-aliases.d/${arch}"
+else
+	set_arch="${arch}"
+fi
+
 check_root SOURCE_DATE_EPOCH,SRCDEST,SRCPKGDEST,PKGDEST,LOGDEST,MAKEFLAGS,PACKAGER,GNUPGHOME
 
 mkchrootpkg_args+=("${@:$OPTIND}")
@@ -92,7 +98,7 @@ if ${create_first} || [[ ! -d "${chroots_pkg}/${repo}-${arch}" ]];then
 
     rm -rf --one-file-system "${chroots_pkg}/${repo}-${arch}"
     (umask 0022; mkdir -p "${chroots_pkg}/${repo}-${arch}")
-    setarch "${arch}" mkchroot \
+    setarch "${set_arch}" mkchroot \
         -C "${pacman_conf}" \
         -M "${makepkg_conf}" \
         "${chroots_pkg}/${repo}-${arch}/root" \

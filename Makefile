@@ -1,4 +1,4 @@
-VERSION=0.24
+V=0.26
 
 TOOLS = artools
 PREFIX ?= /usr
@@ -21,6 +21,8 @@ BASE_DATA = \
 
 PKG_CONF = \
 	data/conf/artools-pkg.conf
+
+SETARCH_ALIASES = \
 
 PKG_BIN = \
 	bin/pkg/buildpkg \
@@ -105,7 +107,7 @@ FILEMODE = -m0644
 MODE =  -m0755
 LN = ln -sf
 RM = rm -f
-M4 = m4 -P
+M4 = m4 -P --define=m4_artools_pkg_version=$V
 CHMODAW = chmod a-w
 CHMODX = chmod +x
 
@@ -136,6 +138,9 @@ install_base:
 
 	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)
 	install $(FILEMODE) $(BASE_DATA) $(DESTDIR)$(DATADIR)/$(TOOLS)
+
+	install $(DIRMODE) $(DESTDIR)$(DATADIR)/$(TOOLS)/setarch-aliases.d
+	for a in ${SETARCH_ALIASES}; do install $(FILEMODE) setarch-aliases.d/$$a $(DESTDIR)$(DATADIR)/$(TOOLS)/setarch-aliases.d; done
 
 install_pkg:
 	install $(DIRMODE) $(DESTDIR)$(SYSCONFDIR)/$(TOOLS)

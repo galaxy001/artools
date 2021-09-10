@@ -168,7 +168,13 @@ eval "$(grep '^CARCH=' "$working_dir/etc/makepkg.conf")"
 
 [[ -z $nosetarch ]] || unset CARCH
 
-${CARCH:+setarch "$CARCH"} chroot "${working_dir}" "$@"
+if [[ -f "@datadir@/artools/setarch-aliases.d/${CARCH}" ]]; then
+	read -r set_arch < "@datadir@/artools/setarch-aliases.d/${CARCH}"
+else
+	set_arch="${CARCH}"
+fi
+
+${CARCH:+setarch "${set_arch}"} chroot "${working_dir}" "$@"
 
 ret=$?
 
